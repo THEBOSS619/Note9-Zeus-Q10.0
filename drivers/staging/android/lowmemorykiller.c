@@ -308,6 +308,22 @@ extern u64 zswap_pool_pages;
 extern atomic_t zswap_stored_pages;
 #endif
 
+static int test_task_lmk_waiting(struct task_struct *p)
+{
+	struct task_struct *t = p;
+
+	do {
+		task_lock(t);
+		if (task_lmk_waiting(t)) {
+			task_unlock(t);
+			return 1;
+		}
+		task_unlock(t);
+	} while_each_thread(p, t);
+
+	return 0;
+}
+
 static unsigned long lowmem_scan(struct shrinker *s, struct shrink_control *sc)
 {
 	struct task_struct *tsk;
@@ -404,25 +420,22 @@ static unsigned long lowmem_scan(struct shrinker *s, struct shrink_control *sc)
 		if (test_task_flag(tsk, TIF_MEMALLOC))
 			continue;
 
+		if (time_before_eq(jiffies, lowmem_deathpending_timeout)) {
+			if (test_task_lmk_waiting(tsk)) {
+				rcu_read_unlock();
+				return 0;
+			}
+		}
+
 		p = find_lock_task_mm(tsk);
 		if (!p)
 			continue;
 
-		if (task_lmk_waiting(p)) {
-			task_unlock(p);
-
-			if (time_before_eq(jiffies,
-					   lowmem_deathpending_timeout)) {
-				rcu_read_unlock();
-				return SHRINK_STOP;
-			}
-
-			continue;
-		}
 		if (p->state & TASK_UNINTERRUPTIBLE) {
 			task_unlock(p);
 			continue;
 		}
+
 		oom_score_adj = p->signal->oom_score_adj;
 		if (oom_score_adj < min_score_adj) {
 			task_unlock(p);
