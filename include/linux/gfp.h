@@ -41,7 +41,11 @@ struct vm_area_struct;
 #define ___GFP_OTHER_NODE	0x800000u
 #define ___GFP_WRITE		0x1000000u
 #define ___GFP_KSWAPD_RECLAIM	0x2000000u
+#ifdef CONFIG_RBIN
 #define ___GFP_RBIN				0x4000000u
+#else
+#define ___GFP_CMA		0x4000000u
+#endif
 /* If the above are modified, __GFP_BITS_SHIFT may need updating */
 
 /*
@@ -55,9 +59,14 @@ struct vm_area_struct;
 #define __GFP_HIGHMEM	((__force gfp_t)___GFP_HIGHMEM)
 #define __GFP_DMA32	((__force gfp_t)___GFP_DMA32)
 #define __GFP_MOVABLE	((__force gfp_t)___GFP_MOVABLE)  /* ZONE_MOVABLE allowed */
+#ifdef CONFIG_RBIN
 #define __GFP_RBIN	((__force gfp_t)___GFP_RBIN)      /* Allocate from RBIN */
 #define GFP_ZONEMASK	(__GFP_DMA|__GFP_HIGHMEM|__GFP_DMA32|__GFP_MOVABLE)
-
+#else
+#define __GFP_CMA	((__force gfp_t)___GFP_CMA)
+#define GFP_ZONEMASK	(__GFP_DMA|__GFP_HIGHMEM|__GFP_DMA32|__GFP_MOVABLE| \
+			__GFP_CMA)
+#endif
 /*
  * Page mobility and placement hints
  *
@@ -276,7 +285,12 @@ static inline int gfpflags_to_migratetype(const gfp_t gfp_flags)
 		return MIGRATE_UNMOVABLE;
 
 	/* Group based on mobility */
+#ifndef CONFIG_CMA
 	return (gfp_flags & GFP_MOVABLE_MASK) >> GFP_MOVABLE_SHIFT;
+#else
+	return ((gfp_flags & GFP_MOVABLE_MASK) >> GFP_MOVABLE_SHIFT) |
+	       ((gfp_flags & __GFP_CMA) != 0);
+#endif
 }
 #undef GFP_MOVABLE_MASK
 #undef GFP_MOVABLE_SHIFT
