@@ -2469,6 +2469,25 @@ static struct page *__rmqueue(struct zone *zone, unsigned int order,
 	return page;
 }
 
+static struct page *__rmqueue_cma(struct zone *zone, unsigned int order,
+					int migratetype)
+{
+	struct page *page = 0;
+#ifdef CONFIG_CMA
+	if (migratetype == MIGRATE_MOVABLE && !zone->cma_alloc)
+		page = __rmqueue_cma_rbin_fallback(zone, order);
+	else
+#endif
+		page = __rmqueue_smallest(zone, order, migratetype);
+
+	if (unlikely(!page)) {
+		page = __rmqueue_fallback(zone, order, migratetype);
+	}
+
+	trace_mm_page_alloc_zone_locked(page, order, migratetype);
+	return page;
+}
+
 /*
  * Obtain a specified number of elements from the buddy allocator, all under
  * a single hold of the lock, for efficiency.  Add them to the supplied list.
@@ -2476,13 +2495,17 @@ static struct page *__rmqueue(struct zone *zone, unsigned int order,
  */
 static int rmqueue_bulk(struct zone *zone, unsigned int order,
 			unsigned long count, struct list_head *list,
-			int migratetype, bool cold)
+			int migratetype, bool cold, int cma)
 {
 	int i, alloced = 0;
 
 	spin_lock(&zone->lock);
 	for (i = 0; i < count; ++i) {
-		struct page *page = __rmqueue(zone, order, migratetype);
+		struct page *page;
+		if (cma)
+			page = __rmqueue_cma(zone, order, migratetype);
+		else
+			page = __rmqueue(zone, order, migratetype);
 		if (unlikely(page == NULL))
 			break;
 
@@ -2910,7 +2933,8 @@ struct page *buffered_rmqueue(struct zone *preferred_zone,
 			if (list_empty(list)) {
 				pcp->count += rmqueue_bulk(zone, 0,
 						pcp->batch, list,
-						migratetype_rmqueue, cold);
+						migratetype_rmqueue, cold,
+						gfp_flags & __GFP_CMA);
 				if (unlikely(list_empty(list)))
 					goto failed;
 			}
@@ -2957,8 +2981,12 @@ struct page *buffered_rmqueue(struct zone *preferred_zone,
 				if (page)
 					trace_mm_page_alloc_zone_locked(page, order, migratetype);
 			}
-			if (!page)
-				page = __rmqueue(zone, order, migratetype_rmqueue);
+			if (!page) {
+				if (gfp_flags & __GFP_CMA)
+					page = __rmqueue_cma(zone, order, migratetype);
+				else
+					page = __rmqueue(zone, order, migratetype_rmqueue);
+			}
 		} while (page && check_new_pages(page, order));
 		spin_unlock(&zone->lock);
 		if (!page)
@@ -7714,6 +7742,7 @@ int __alloc_contig_range(unsigned long start, unsigned long end,
 	if (ret)
 		return ret;
 
+	cc.zone->cma_alloc = 1;
 	/*
 	 * In case of -EBUSY, we'd like to know which page causes problem.
 	 * So, just fall through. test_pages_isolated() has a tracepoint
@@ -7796,6 +7825,7 @@ int __alloc_contig_range(unsigned long start, unsigned long end,
 done:
 	undo_isolate_page_range(pfn_max_align_down(start),
 				pfn_max_align_up(end), migratetype);
+	cc.zone->cma_alloc = 0;
 	return ret;
 }
 

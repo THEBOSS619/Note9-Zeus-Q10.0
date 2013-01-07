@@ -408,6 +408,10 @@ struct zone {
 	atomic_t rbin_alloc;
 #endif
 
+#ifdef CONFIG_CMA
+	bool			cma_alloc;
+#endif
+
 #ifndef CONFIG_SPARSEMEM
 	/*
 	 * Flags for a pageblock_nr_pages block. See pageblock-flags.h.
