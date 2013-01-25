@@ -49,6 +49,8 @@
 #include <linux/proc_fs.h>
 #include <linux/slab.h>
 #include <linux/poll.h>
+#include <linux/mutex.h>
+#include <linux/delay.h>
 
 #define CREATE_TRACE_POINTS
 #include "trace/lowmemorykiller.h"
@@ -324,6 +326,8 @@ static int test_task_lmk_waiting(struct task_struct *p)
 	return 0;
 }
 
+static DEFINE_MUTEX(scan_mutex);
+
 static unsigned long lowmem_scan(struct shrinker *s, struct shrink_control *sc)
 {
 	struct task_struct *tsk;
@@ -336,11 +340,17 @@ static unsigned long lowmem_scan(struct shrinker *s, struct shrink_control *sc)
 	int selected_tasksize = 0;
 	short selected_oom_score_adj;
 	int array_size = ARRAY_SIZE(lowmem_adj);
-	int other_free = global_page_state(NR_FREE_PAGES) - totalreserve_pages;
-	int other_file = global_node_page_state(NR_FILE_PAGES) -
-				global_node_page_state(NR_SHMEM) -
-				global_node_page_state(NR_UNEVICTABLE) -
-				total_swapcache_pages();
+	int other_free;
+	int other_file;
+
+	if (mutex_lock_interruptible(&scan_mutex) < 0)
+		return 0;
+
+	other_free = global_page_state(NR_FREE_PAGES) - totalreserve_pages;
+	other_file = global_node_page_state(NR_FILE_PAGES) -
+					global_node_page_state(NR_SHMEM) -
+					global_node_page_state(NR_UNEVICTABLE) -
+					total_swapcache_pages();
 	static DEFINE_RATELIMIT_STATE(lmk_rs, DEFAULT_RATELIMIT_INTERVAL, 1);
 	unsigned long nr_cma_free;
 	unsigned long nr_rbin_free, nr_rbin_pool, nr_rbin_alloc, nr_rbin_file;
@@ -401,6 +411,7 @@ static unsigned long lowmem_scan(struct shrinker *s, struct shrink_control *sc)
 	if (min_score_adj == OOM_SCORE_ADJ_MAX + 1) {
 		lowmem_print(5, "lowmem_scan %lu, %x, return 0\n",
 			     sc->nr_to_scan, sc->gfp_mask);
+		mutex_unlock(&scan_mutex);
 		return SHRINK_STOP;
 	}
 
@@ -423,6 +434,9 @@ static unsigned long lowmem_scan(struct shrinker *s, struct shrink_control *sc)
 		if (time_before_eq(jiffies, lowmem_deathpending_timeout)) {
 			if (test_task_lmk_waiting(tsk)) {
 				rcu_read_unlock();
+				/* give the system time to free up the memory */
+				msleep_interruptible(20);
+				mutex_unlock(&scan_mutex);
 				return 0;
 			}
 		}
@@ -523,11 +537,14 @@ static unsigned long lowmem_scan(struct shrinker *s, struct shrink_control *sc)
 		lowmem_lmkcount++;
 
 		get_task_struct(selected);
+		/* give the system time to free up the memory */
+		msleep_interruptible(20);
 	}
 
 	lowmem_print(4, "lowmem_scan %lu, %x, return %lu\n",
 		     sc->nr_to_scan, sc->gfp_mask, rem);
 	rcu_read_unlock();
+	mutex_unlock(&scan_mutex);
 
 	if (!rem)
 		rem = SHRINK_STOP;
