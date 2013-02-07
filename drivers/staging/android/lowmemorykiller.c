@@ -429,6 +429,9 @@ static unsigned long lowmem_scan(struct shrinker *s, struct shrink_control *sc)
 			continue;
 
 		if (test_task_flag(tsk, TIF_MEMALLOC))
+
+		/* if task no longer has any memory ignore it */
+		if (test_task_flag(tsk, TIF_MM_RELEASED))
 			continue;
 
 		if (time_before_eq(jiffies, lowmem_deathpending_timeout)) {
@@ -537,13 +540,14 @@ static unsigned long lowmem_scan(struct shrinker *s, struct shrink_control *sc)
 		lowmem_lmkcount++;
 
 		get_task_struct(selected);
+		rcu_read_unlock();
 		/* give the system time to free up the memory */
 		msleep_interruptible(20);
-	}
+	} else
+		rcu_read_unlock();
 
 	lowmem_print(4, "lowmem_scan %lu, %x, return %lu\n",
 		     sc->nr_to_scan, sc->gfp_mask, rem);
-	rcu_read_unlock();
 	mutex_unlock(&scan_mutex);
 
 	if (!rem)
