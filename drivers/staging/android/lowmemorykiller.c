@@ -52,6 +52,7 @@
 #include <linux/mutex.h>
 #include <linux/delay.h>
 #include <linux/swap.h>
+#include <linux/fs.h>
 
 #ifdef CONFIG_HIGHMEM
 #define _ZONE ZONE_HIGHMEM
@@ -434,10 +435,18 @@ static unsigned long lowmem_scan(struct shrinker *s, struct shrink_control *sc)
 		return 0;
 
 	other_free = global_page_state(NR_FREE_PAGES) - totalreserve_pages;
-	other_file = global_node_page_state(NR_FILE_PAGES) -
+
+	if (global_node_page_state(NR_SHMEM) + total_swapcache_pages() +
+			global_node_page_state(NR_UNEVICTABLE) <
+			global_node_page_state(NR_FILE_PAGES))
+		other_file = global_node_page_state(NR_FILE_PAGES) -
 					global_node_page_state(NR_SHMEM) -
 					global_node_page_state(NR_UNEVICTABLE) -
 					total_swapcache_pages();
+	else
+		other_file = 0;
+
+
 	static DEFINE_RATELIMIT_STATE(lmk_rs, DEFAULT_RATELIMIT_INTERVAL, 1);
 	unsigned long nr_cma_free;
 	unsigned long nr_rbin_free, nr_rbin_pool, nr_rbin_alloc, nr_rbin_file;
