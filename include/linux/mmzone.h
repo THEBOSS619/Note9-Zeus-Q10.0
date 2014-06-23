@@ -39,8 +39,6 @@ enum {
 	MIGRATE_UNMOVABLE,
 	MIGRATE_MOVABLE,
 	MIGRATE_RECLAIMABLE,
-	MIGRATE_PCPTYPES,	/* the number of types on the pcp lists */
-	MIGRATE_HIGHATOMIC = MIGRATE_PCPTYPES,
 #ifdef CONFIG_CMA
 	/*
 	 * MIGRATE_CMA migration type is designed to mimic the way
@@ -68,6 +66,8 @@ enum {
 	MIGRATE_RBIN,
 #endif
 #endif
+	MIGRATE_PCPTYPES, /* the number of types on the pcp lists */
+	MIGRATE_HIGHATOMIC = MIGRATE_PCPTYPES,
 #ifdef CONFIG_MEMORY_ISOLATION
 	MIGRATE_ISOLATE,	/* can't allocate from here */
 #endif
@@ -81,6 +81,7 @@ extern char * const migratetype_names[MIGRATE_TYPES];
 #  define is_migrate_cma(migratetype) unlikely((migratetype) == MIGRATE_CMA)
 #  define is_migrate_cma_page(_page) \
 	(get_pageblock_migratetype(_page) == MIGRATE_CMA)
+#  define get_cma_migrate_type() MIGRATE_CMA
 #ifdef CONFIG_RBIN
 #  define is_migrate_rbin(migratetype) unlikely((migratetype) == MIGRATE_RBIN)
 #  define is_migrate_rbin_nolikely(migratetype) ((migratetype) == MIGRATE_RBIN)
@@ -104,6 +105,7 @@ extern char * const migratetype_names[MIGRATE_TYPES];
 #else
 #  define is_migrate_cma(migratetype) false
 #  define is_migrate_cma_page(_page) false
+#  define get_cma_migrate_type() MIGRATE_MOVABLE
 #  define is_migrate_rbin(migratetype) false
 #  define is_migrate_rbin_nolikely(migratetype) false
 #  define is_migrate_rbin_page(_page) false
