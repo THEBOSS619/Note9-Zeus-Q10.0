@@ -1,6 +1,8 @@
 #ifndef __MM_CMA_H__
 #define __MM_CMA_H__
 
+#define IS_GCMA ((struct gcma *)(void *)0xFF)
+
 struct cma {
 #ifdef CONFIG_RBIN
 	bool is_rbin;
@@ -10,6 +12,7 @@ struct cma {
 	unsigned long   *bitmap;
 	unsigned int order_per_bit; /* Order of pages represented by one bit */
 	struct mutex    lock;
+	struct gcma	*gcma;
 #ifdef CONFIG_CMA_DEBUGFS
 	const char	*name;
 	struct hlist_head mem_head;
