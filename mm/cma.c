@@ -99,53 +99,17 @@ static void cma_clear_bitmap(struct cma *cma, unsigned long pfn,
 	mutex_unlock(&cma->lock);
 }
 
-/*
- * Return reserved pages for CMA to buddy allocator for using those pages
- * as movable pages.
- * Return 0 if it's called successfully. Otherwise, non-zero.
- */
-static int free_reserved_pages(unsigned long pfn, unsigned long count)
+static int __init cma_activate_area(struct cma *cma)
 {
-	int ret = 0;
-	unsigned long base_pfn;
+	int bitmap_size = BITS_TO_LONGS(cma_bitmap_maxno(cma)) * sizeof(long);
+	unsigned long base_pfn = cma->base_pfn, pfn = base_pfn;
+	unsigned i = cma->count >> pageblock_order;
 	struct zone *zone;
 #ifdef CONFIG_RBIN
 	bool is_rbin = cma->is_rbin;
 #else
 	bool is_rbin = false;
 #endif
-
-	count = count >> pageblock_order;
-	zone = page_zone(pfn_to_page(pfn));
-
-	do {
-		unsigned i;
-
-		base_pfn = pfn;
-		for (i = pageblock_nr_pages; i; --i, pfn++) {
-			WARN_ON_ONCE(!pfn_valid(pfn));
-			/*
-			 * alloc_contig_range requires the pfn range
-			 * specified to be in the same zone. Make this
-			 * simple by forcing the entire CMA resv range
-			 * to be in the same zone.
-			 */
-			if (page_zone(pfn_to_page(pfn)) != zone) {
-				ret = -EINVAL;
-				break;
-			}
-		}
-		init_cma_reserved_pageblock(pfn_to_page(base_pfn), is_rbin);
-	} while (--count);
-
-	return ret;
-}
-
-static int __init cma_activate_area(struct cma *cma)
-{
-	int bitmap_size = BITS_TO_LONGS(cma_bitmap_maxno(cma)) * sizeof(long);
-	unsigned long base_pfn = cma->base_pfn, pfn = base_pfn;
-	int fail;
 
 	cma->bitmap = kzalloc(bitmap_size, GFP_KERNEL);
 
@@ -154,13 +118,32 @@ static int __init cma_activate_area(struct cma *cma)
 
 	WARN_ON_ONCE(!pfn_valid(pfn));
 
-	if (cma->gcma == IS_GCMA)
-		fail = gcma_init(cma->base_pfn, cma->count, &cma->gcma);
-	else
-		fail = free_reserved_pages(cma->base_pfn, cma->count);
-	if (fail != 0) {
-		goto err;
+	if (cma->gcma == IS_GCMA) {
+		if (gcma_init(cma->base_pfn, cma->count, &cma->gcma))
+			goto err;
+		goto success;
 	}
+	zone = page_zone(pfn_to_page(pfn));
+
+	do {
+		unsigned j;
+
+		base_pfn = pfn;
+		for (j = pageblock_nr_pages; j; --j, pfn++) {
+			WARN_ON_ONCE(!pfn_valid(pfn));
+			/*
+			 * alloc_contig_range requires the pfn range
+			 * specified to be in the same zone. Make this
+			 * simple by forcing the entire CMA resv range
+			 * to be in the same zone.
+			 */
+			if (page_zone(pfn_to_page(pfn)) != zone)
+				goto err;
+		}
+		init_cma_reserved_pageblock(pfn_to_page(base_pfn), is_rbin);
+	} while (--i);
+
+success:
 	mutex_init(&cma->lock);
 
 #ifdef CONFIG_CMA_DEBUGFS
