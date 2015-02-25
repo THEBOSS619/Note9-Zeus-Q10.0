@@ -524,6 +524,7 @@ struct request_queue {
 #define QUEUE_FLAG_FUA	       24	/* device supports FUA writes */
 #define QUEUE_FLAG_FLUSH_NQ    25	/* flush not queueuable */
 #define QUEUE_FLAG_DAX         26	/* device supports DAX */
+#define QUEUE_FLAG_FAST        27	/* fast block device (e.g. ram based) */
 #ifdef CONFIG_JOURNAL_DATA_TAG
 #define QUEUE_FLAG_JOURNAL_TAG     31      /* supports JOURNAL_DATA_TAG */
 #endif
@@ -614,6 +615,7 @@ static inline void queue_flag_clear(unsigned int flag, struct request_queue *q)
 #define blk_queue_secure_erase(q) \
 	(test_bit(QUEUE_FLAG_SECERASE, &(q)->queue_flags))
 #define blk_queue_dax(q)	test_bit(QUEUE_FLAG_DAX, &(q)->queue_flags)
+#define blk_queue_fast(q)	test_bit(QUEUE_FLAG_FAST, &(q)->queue_flags)
 
 #ifdef CONFIG_JOURNAL_DATA_TAG
 #define blk_queue_journal_tag(q) \
