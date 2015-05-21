@@ -193,12 +193,12 @@ static struct notifier_block lmk_vmpr_nb = {
 
 static int test_task_flag(struct task_struct *p, int flag)
 {
-	struct task_struct *t = p;
+	struct task_struct *t;
 
-	do {
+	for_each_thread(p, t) {
 		if (test_tsk_thread_flag(t, flag))
 			return 1;
-	} while_each_thread(p, t);
+	}
 
 	return 0;
 }
@@ -413,16 +413,16 @@ extern atomic_t zswap_stored_pages;
 
 static int test_task_lmk_waiting(struct task_struct *p)
 {
-	struct task_struct *t = p;
+	struct task_struct *t;
 
-	do {
+	for_each_thread(p, t) {
 		task_lock(t);
 		if (task_lmk_waiting(t)) {
 			task_unlock(t);
 			return 1;
 		}
 		task_unlock(t);
-	} while_each_thread(p, t);
+	}
 
 	return 0;
 }
