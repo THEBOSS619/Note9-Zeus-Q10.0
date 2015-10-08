@@ -18,6 +18,8 @@
  *
  *  v1.6 - remove autosleep and hybrid modes (autosleep not working on shamu)
  *
+ *  v1.6.1 - add autosleep and hybrid modes and hybrid default (UpInTheAir@XDA)
+ *
  *  v1.7 - do only run state change if change actually requests a new state
  *
  * This software is licensed under the terms of the GNU General Public
@@ -50,7 +52,7 @@ static DECLARE_WORK(power_resume_work, power_resume);
 static DEFINE_SPINLOCK(state_lock);
 
 static int state; // Yank555.lu : Current powersave state (screen on / off)
-static int mode;  // Yank555.lu : Current powersave mode  (userspace / panel)
+static int mode;  // Yank555.lu : Current powersave mode  (kernel / userspace / panel / hybrid)
 
 void register_power_suspend(struct power_suspend *handler)
 {
@@ -167,13 +169,25 @@ void set_power_suspend_state(int new_state)
 	}
 }
 
+void set_power_suspend_state_autosleep_hook(int new_state)
+{
+#ifdef POWER_SUSPEND_DEBUG
+	pr_info("[POWERSUSPEND] autosleep resquests %s.\n", new_state == POWER_SUSPEND_ACTIVE ? "sleep" : "wakeup");
+#endif
+	// Only allow autosleep hook changes in autosleep & hybrid mode
+	if (mode == POWER_SUSPEND_AUTOSLEEP || mode == POWER_SUSPEND_HYBRID)
+		set_power_suspend_state(new_state);
+}
+
+EXPORT_SYMBOL(set_power_suspend_state_autosleep_hook);
+
 void set_power_suspend_state_panel_hook(int new_state)
 {
 	#ifdef CONFIG_POWERSUSPEND_DEBUG
 	pr_info("[POWERSUSPEND] panel resquests %s.\n", new_state == POWER_SUSPEND_ACTIVE ? "sleep" : "wakeup");
 	#endif
-	// Yank555.lu : Only allow panel hook changes in panel mode
-	if (mode == POWER_SUSPEND_PANEL)
+	// Only allow autosleep hook changes in autosleep & hybrid mode
+	if (mode == POWER_SUSPEND_AUTOSLEEP || mode == POWER_SUSPEND_HYBRID)
 		set_power_suspend_state(new_state);
 }
 
@@ -226,8 +240,10 @@ static ssize_t power_suspend_mode_store(struct kobject *kobj,
 	sscanf(buf, "%d\n", &data);
 
 	switch (data) {
+		case POWER_SUSPEND_AUTOSLEEP:
 		case POWER_SUSPEND_PANEL:
 		case POWER_SUSPEND_USERSPACE:	mode = data;
+		case POWER_SUSPEND_HYBRID:	mode = data;
 						return count;
 		default:
 			return -EINVAL;
@@ -294,8 +310,10 @@ static int __init power_suspend_init(void)
 		return -ENOMEM;
 	}
 
+//	mode = POWER_SUSPEND_AUTOSLEEP;	// Yank555.lu : Default to autosleep mode
 //	mode = POWER_SUSPEND_USERSPACE;	// Yank555.lu : Default to userspace mode
-	mode = POWER_SUSPEND_PANEL;	// Yank555.lu : Default to display panel mode
+//	mode = POWER_SUSPEND_PANEL;	// Yank555.lu : Default to display panel mode
+	mode = POWER_SUSPEND_HYBRID;	// Yank555.lu : Default to display panel / autosleep hybrid mode
 
 	return 0;
 }
