@@ -98,11 +98,11 @@ short lowmem_adj[6] = {
 static int lowmem_adj_size = 6;
 int lowmem_minfree[6] = {
 	6 *  512,	/* Foreground App: 	12 MB	*/
-	4 * 1024,	/* Visible App: 	16 MB	*/
-	8 * 1024,	/* Secondary Server: 	32 MB	*/
-	32 * 1024,	/* Hidden App: 		128 MB	*/
-	54 * 1024,	/* Content Provider: 	224 MB	*/
-	64 * 1024,	/* Empty App: 		256 MB	*/
+	8 * 1024,	/* Visible App: 	32 MB	*/
+	16 * 1024,	/* Secondary Server: 	64 MB	*/
+	64 * 1024,	/* Hidden App: 		256 MB	*/
+	128 * 1024,	/* Content Provider: 	512 MB	*/
+	128 * 1024,	/* Empty App: 		512 MB	*/
 };
 
 static int lowmem_minfree_size = 6;
@@ -171,6 +171,9 @@ enum {
 	ADAPTIVE_LMK_WAS_ENABLED,
 };
 
+static int vm_pressure_adaptive_start = 85;
+#define VM_PRESSURE_ADAPTIVE_STOP	95
+
 /* User knob to enable/disable adaptive lmk feature */
 static int enable_adaptive_lmk = ADAPTIVE_LMK_ENABLED;
 module_param_named(enable_adaptive_lmk, enable_adaptive_lmk, int, 0444);
@@ -229,6 +232,8 @@ int adjust_minadj(short *min_score_adj)
 	return ret;
 }
 
+static unsigned long lmk_vm_pressure = 0;
+
 static int lmk_vmpressure_notifier(struct notifier_block *nb,
 				   unsigned long action, void *data)
 {
@@ -240,10 +245,15 @@ static int lmk_vmpressure_notifier(struct notifier_block *nb,
 #ifdef CONFIG_ANDROID_LOW_MEMORY_KILLER_TNG
 		balance_cache(pressure);
 #endif
+		if (lmk_vm_pressure > 0)
+			lmk_vm_pressure = 0;
 		return 0;
 	}
 
-	if (pressure >= 90) {
+	/* update lmk_vm_pressure state */
+	lmk_vm_pressure = action;
+
+	if (pressure >= VM_PRESSURE_ADAPTIVE_STOP) {
 		other_file = global_node_page_state(NR_FILE_PAGES) -
 			global_node_page_state(NR_SHMEM) -
 			global_node_page_state(NR_UNEVICTABLE) -
@@ -252,7 +262,7 @@ static int lmk_vmpressure_notifier(struct notifier_block *nb,
 
 		atomic_set(&shift_adj, 1);
 		trace_almk_vmpressure(pressure, other_free, other_file);
-	} else if (pressure >= 85) {
+	} else if (pressure >= vm_pressure_adaptive_start) {
 		if (lowmem_adj_size < array_size)
 			array_size = lowmem_adj_size;
 		if (lowmem_minfree_size < array_size)
@@ -299,7 +309,7 @@ static inline int test_task_flag(struct task_struct *p, int flag)
 {
 	struct task_struct *t;
 
-	for_each_thread(p, t) {
+	for_each_thread(p,t) {
 		if (test_tsk_thread_flag(t, flag))
 			return 1;
 	}
@@ -1213,6 +1223,10 @@ exit_timeout:
 			     free,
 			     nr_cma_free * (long)(PAGE_SIZE / 1024),
 			     sc->gfp_mask, &sc->gfp_mask);
+		if (lmk_vm_pressure >= vm_pressure_adaptive_start)
+			lowmem_print(1, "VM Pressure is %lu\n", lmk_vm_pressure);
+		else
+			lowmem_print(2, "VM Pressure is %lu\n", lmk_vm_pressure);
 		show_mem_extra_call_notifiers();
 		show_memory();
 		if ((selected_oom_score_adj <= 100) && (__ratelimit(&lmk_rs)))
@@ -1571,6 +1585,9 @@ module_param_array_named(direct_minfree, lowmem_direct_minfree, uint,
 			 &lowmem_direct_minfree_size, 0644);
 module_param_named(debug_level, lowmem_debug_level, uint, S_IRUGO | S_IWUSR);
 module_param_named(lmk_fast_run, lmk_fast_run, int, 0444);
+module_param_named(vm_pressure_adaptive_start, vm_pressure_adaptive_start, int,
+		   S_IRUGO | S_IWUSR);
+module_param_named(lmk_vm_pressure, lmk_vm_pressure, ulong, 0444);
 module_param_named(lmkcount, lowmem_lmkcount, uint, 0444);
 module_param_named(lmkd_count, lmkd_count, int, 0644);
 module_param_named(lmkd_cricount, lmkd_cricount, int, 0644);
