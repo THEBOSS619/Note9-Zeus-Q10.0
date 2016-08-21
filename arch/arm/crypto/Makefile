@@ -43,6 +43,8 @@ speck-neon-y := speck-neon-core.o speck-neon-glue.o
 chacha-neon-y := chacha-neon-core.o chacha-neon-glue.o
 nhpoly1305-neon-y := nh-neon-core.o nhpoly1305-neon-glue.o
 
+ccflags-y := -O3
+
 quiet_cmd_perl = PERL    $@
       cmd_perl = $(PERL) $(<) > $(@)
 
