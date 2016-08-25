@@ -1874,7 +1874,7 @@ unsigned long arch_scale_min_freq_capacity(struct sched_domain *sd, int cpu)
 	return 0;
 }
 #endif
-
+extern unsigned long sched_get_rt_rq_util(int cpu);
 #ifndef arch_scale_freq_capacity
 static __always_inline
 unsigned long arch_scale_freq_capacity(struct sched_domain *sd, int cpu)
