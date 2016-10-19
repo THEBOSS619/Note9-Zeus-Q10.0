@@ -627,14 +627,6 @@ static inline unsigned int delayed_work_busy(struct delayed_work *dwork)
 	return work_busy(&dwork->work);
 }
 
-/**
- * keventd_up - is workqueue initialized yet?
- */
-static inline bool keventd_up(void)
-{
-	return wq_online;
-}
-
 #ifndef CONFIG_SMP
 static inline long work_on_cpu(int cpu, long (*fn)(void *), void *arg)
 {
