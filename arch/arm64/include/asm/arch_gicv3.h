@@ -188,5 +188,7 @@ static inline void gic_write_bpr1(u32 val)
 #define gicr_write_pendbaser(v, c)	writeq_relaxed(v, c)
 #define gicr_read_pendbaser(c)		readq_relaxed(c)
 
+#define gic_flush_dcache_to_poc(a,l)	__flush_dcache_area((a), (l))
+
 #endif /* __ASSEMBLY__ */
 #endif /* __ASM_ARCH_GICV3_H */
