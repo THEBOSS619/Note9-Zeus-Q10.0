@@ -156,6 +156,12 @@ extern int register_hmp_task_migration_notifier(struct notifier_block *nb);
 extern u64 nr_running_integral(unsigned int cpu);
 #endif
 
+#ifdef CONFIG_SCHED_HMP
+extern void free_task_load_ptrs(struct task_struct *p);
+#else /* CONFIG_SCHED_HMP */
+static inline void free_task_load_ptrs(struct task_struct *p) { }
+#endif
+
 #if defined(CONFIG_SMP) && defined(CONFIG_NO_HZ_COMMON)
 extern void cpu_load_update_nohz_start(void);
 extern void cpu_load_update_nohz_stop(void);
