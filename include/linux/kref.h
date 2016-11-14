@@ -38,6 +38,11 @@ static inline unsigned int kref_read(const struct kref *kref)
 	return refcount_read(&kref->refcount);
 }
 
+static inline int kref_read(const struct kref *kref)
+{
+	return atomic_read(&kref->refcount);
+}
+
 /**
  * kref_get - increment refcount for object.
  * @kref: object.
