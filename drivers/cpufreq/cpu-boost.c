@@ -170,8 +170,13 @@ static void update_policy_online(void)
 		policy = cpufreq_cpu_get(i);
 		cpumask_or(&updated, &updated, policy->related_cpus);
 
-		pr_debug("Updating policy for CPU%d\n", i);
-		cpufreq_update_policy(i);
+		/*
+		 * Both clusters have synchronous cores, only update
+		 * the frequency for one core in each cluster.
+		 */
+		if (i == 0 || i == 4) {
+			cpufreq_update_policy(i);
+		}
 	}
 	put_online_cpus();
 }
