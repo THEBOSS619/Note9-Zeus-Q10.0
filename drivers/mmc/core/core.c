@@ -863,7 +863,7 @@ EXPORT_SYMBOL(mmc_interrupt_hpi);
  */
 int mmc_wait_for_cmd(struct mmc_host *host, struct mmc_command *cmd, int retries)
 {
-	struct mmc_request mrq = {NULL};
+	struct mmc_request mrq = {};
 
 	WARN_ON(!host->claimed);
 
@@ -1744,7 +1744,7 @@ int __mmc_set_signal_voltage(struct mmc_host *host, int signal_voltage)
 
 int mmc_set_signal_voltage(struct mmc_host *host, int signal_voltage, u32 ocr)
 {
-	struct mmc_command cmd = {0};
+	struct mmc_command cmd = {};
 	int err = 0;
 	u32 clock;
 
@@ -2693,7 +2693,7 @@ EXPORT_SYMBOL(mmc_calc_max_discard);
 
 int mmc_set_blocklen(struct mmc_card *card, unsigned int blocklen)
 {
-	struct mmc_command cmd = {0};
+	struct mmc_command cmd = {};
 
 	if (mmc_card_blockaddr(card) || mmc_card_ddr52(card) ||
 	    mmc_card_hs400(card) || mmc_card_hs400es(card))
@@ -2709,7 +2709,7 @@ EXPORT_SYMBOL(mmc_set_blocklen);
 int mmc_set_blockcount(struct mmc_card *card, unsigned int blockcount,
 			bool is_rel_write)
 {
-	struct mmc_command cmd = {0};
+	struct mmc_command cmd = {};
 
 	cmd.opcode = MMC_SET_BLOCK_COUNT;
 	cmd.arg = blockcount & 0x0000FFFF;

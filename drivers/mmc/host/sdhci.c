@@ -2044,8 +2044,8 @@ static int sdhci_execute_tuning(struct mmc_host *mmc, u32 opcode)
 	 * of loops reaches 40 times.
 	 */
 	do {
-		struct mmc_command cmd = {0};
-		struct mmc_request mrq = {NULL};
+		struct mmc_command cmd = {};
+		struct mmc_request mrq = {};
 
 		cmd.opcode = opcode;
 		cmd.arg = 0;
