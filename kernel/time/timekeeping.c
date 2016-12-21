@@ -352,8 +352,7 @@ static inline u64 timekeeping_get_ns(struct tk_read_base *tkr)
 	return timekeeping_delta_to_ns(tkr, delta);
 }
 
-static inline u64 timekeeping_cycles_to_ns(struct tk_read_base *tkr,
-					   u64 cycles)
+static inline u64 timekeeping_cycles_to_ns(struct tk_read_base *tkr, u64 cycles)
 {
 	u64 delta;
 
@@ -1681,7 +1680,7 @@ void timekeeping_resume(void)
 	struct clocksource *clock = tk->tkr_mono.clock;
 	unsigned long flags;
 	struct timespec64 ts_new, ts_delta;
-	cycle_t cycle_now;
+	u64 cycle_now;
 
 	sleeptime_injected = false;
 	read_persistent_clock64(&ts_new);
