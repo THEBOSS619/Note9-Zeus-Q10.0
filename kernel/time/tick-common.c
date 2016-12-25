@@ -206,8 +206,8 @@ static void tick_setup_device(struct tick_device *td,
 			      struct clock_event_device *newdev, int cpu,
 			      const struct cpumask *cpumask)
 {
-	ktime_t next_event;
 	void (*handler)(struct clock_event_device *) = NULL;
+	ktime_t next_event = 0;
 
 	/*
 	 * First device setup ?
@@ -221,7 +221,7 @@ static void tick_setup_device(struct tick_device *td,
 			tick_do_timer_cpu = cpu;
 
 			tick_next_period = ktime_get();
-			tick_period = ktime_set(0, NSEC_PER_SEC / HZ);
+			tick_period = NSEC_PER_SEC / HZ;
 #ifdef CONFIG_NO_HZ_FULL
 			/*
 			 * The boot CPU may be nohz_full, in which case set
