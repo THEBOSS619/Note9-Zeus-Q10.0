@@ -130,9 +130,7 @@ static inline void tick_nohz_idle_exit(void) { }
 
 static inline ktime_t tick_nohz_get_sleep_length(void)
 {
-	ktime_t len = { .tv64 = NSEC_PER_SEC/HZ };
-
-	return len;
+	return NSEC_PER_SEC / HZ;
 }
 static inline ktime_t tick_nohz_get_sleep_length_cpu(int cpu)
 {
