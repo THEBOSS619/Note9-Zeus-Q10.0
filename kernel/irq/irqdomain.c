@@ -746,13 +746,54 @@ unsigned int irq_find_mapping(struct irq_domain *domain,
 EXPORT_SYMBOL_GPL(irq_find_mapping);
 
 #ifdef CONFIG_IRQ_DOMAIN_DEBUG
+static void virq_debug_show_one(struct seq_file *m, struct irq_desc *desc)
+{
+	struct irq_domain *domain;
+	struct irq_data *data;
+
+	domain = desc->irq_data.domain;
+	data = &desc->irq_data;
+
+	while (domain) {
+		unsigned int irq = data->irq;
+		unsigned long hwirq = data->hwirq;
+		struct irq_chip *chip;
+		bool direct;
+
+		if (data == &desc->irq_data)
+			seq_printf(m, "%5d  ", irq);
+		else
+			seq_printf(m, "%5d+ ", irq);
+		seq_printf(m, "0x%05lx  ", hwirq);
+
+		chip = irq_data_get_irq_chip(data);
+		seq_printf(m, "%-15s  ", (chip && chip->name) ? chip->name : "none");
+
+		seq_printf(m, data ? "0x%p  " : "  %p  ",
+			   irq_data_get_irq_chip_data(data));
+
+		seq_printf(m, "   %c    ", (desc->action && desc->action->handler) ? '*' : ' ');
+		direct = (irq == hwirq) && (irq < domain->revmap_direct_max_irq);
+		seq_printf(m, "%6s%-8s  ",
+			   (hwirq < domain->revmap_size) ? "LINEAR" : "RADIX",
+			   direct ? "(DIRECT)" : "");
+		seq_printf(m, "%s\n", domain->name);
+#ifdef CONFIG_IRQ_DOMAIN_HIERARCHY
+		domain = domain->parent;
+		data = data->parent_data;
+#else
+		domain = NULL;
+#endif
+	}
+}
+
 static int virq_debug_show(struct seq_file *m, void *private)
 {
 	unsigned long flags;
 	struct irq_desc *desc;
 	struct irq_domain *domain;
 	struct radix_tree_iter iter;
-	void *data, **slot;
+	void **slot;
 	int i;
 
 	seq_printf(m, " %-16s  %-6s  %-10s  %-10s  %s\n",
@@ -760,15 +801,26 @@ static int virq_debug_show(struct seq_file *m, void *private)
 	mutex_lock(&irq_domain_mutex);
 	list_for_each_entry(domain, &irq_domain_list, link) {
 		struct device_node *of_node;
+		const char *name;
+
 		int count = 0;
+
 		of_node = irq_domain_get_of_node(domain);
+		if (of_node)
+			name = of_node_full_name(of_node);
+		else if (is_fwnode_irqchip(domain->fwnode))
+			name = container_of(domain->fwnode, struct irqchip_fwid,
+					    fwnode)->name;
+		else
+			name = "";
+
 		radix_tree_for_each_slot(slot, &domain->revmap_tree, &iter, 0)
 			count++;
 		seq_printf(m, "%c%-16s  %6u  %10u  %10u  %s\n",
 			   domain == irq_default_domain ? '*' : ' ', domain->name,
 			   domain->revmap_size + count, domain->revmap_size,
 			   domain->revmap_direct_max_irq,
-			   of_node ? of_node_full_name(of_node) : "");
+			   name);
 	}
 	mutex_unlock(&irq_domain_mutex);
 
@@ -782,30 +834,7 @@ static int virq_debug_show(struct seq_file *m, void *private)
 			continue;
 
 		raw_spin_lock_irqsave(&desc->lock, flags);
-		domain = desc->irq_data.domain;
-
-		if (domain) {
-			struct irq_chip *chip;
-			int hwirq = desc->irq_data.hwirq;
-			bool direct;
-
-			seq_printf(m, "%5d  ", i);
-			seq_printf(m, "0x%05x  ", hwirq);
-
-			chip = irq_desc_get_chip(desc);
-			seq_printf(m, "%-15s  ", (chip && chip->name) ? chip->name : "none");
-
-			data = irq_desc_get_chip_data(desc);
-			seq_printf(m, data ? "0x%p  " : "  %p  ", data);
-
-			seq_printf(m, "   %c    ", (desc->action && desc->action->handler) ? '*' : ' ');
-			direct = (i == hwirq) && (i < domain->revmap_direct_max_irq);
-			seq_printf(m, "%6s%-8s  ",
-				   (hwirq < domain->revmap_size) ? "LINEAR" : "RADIX",
-				   direct ? "(DIRECT)" : "");
-			seq_printf(m, "%s\n", desc->irq_data.domain->name);
-		}
-
+		virq_debug_show_one(m, desc);
 		raw_spin_unlock_irqrestore(&desc->lock, flags);
 	}
 

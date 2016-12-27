@@ -58,7 +58,6 @@ static void __maybe_unused irqtime_account_delta(struct irqtime *irqtime, u64 de
 void irqtime_account_irq(struct task_struct *curr)
 {
 	struct irqtime *irqtime = this_cpu_ptr(&cpu_irqtime);
-	u64 *cpustat = kcpustat_this_cpu->cpustat;
 	s64 delta;
 	int cpu;
 #ifdef CONFIG_SCHED_WALT
@@ -82,15 +81,10 @@ void irqtime_account_irq(struct task_struct *curr)
 	 * in that case, so as not to confuse scheduler with a special task
 	 * that do not consume any time, but still wants to run.
 	 */
-	if (hardirq_count()) {
-		cpustat[CPUTIME_IRQ] += delta;
-		irqtime->tick_delta += delta;
-	} else if (in_serving_softirq() && curr != this_cpu_ksoftirqd()) {
-		cpustat[CPUTIME_SOFTIRQ] += delta;
-		irqtime->tick_delta += delta;
-	}
-
-	u64_stats_update_end(&irqtime->sync);
+	if (hardirq_count())
+		irqtime_account_delta(irqtime, delta, CPUTIME_IRQ);
+	else if (in_serving_softirq() && curr != this_cpu_ksoftirqd())
+		irqtime_account_delta(irqtime, delta, CPUTIME_SOFTIRQ);
 }
 EXPORT_SYMBOL_GPL(irqtime_account_irq);
 
@@ -639,9 +633,9 @@ static void cputime_adjust(struct task_cputime *curr,
 	utime = curr->utime;
 
 	/*
-	 * If either stime or both stime and utime are 0, assume all runtime is
-	 * userspace. Once a task gets some ticks, the monotonicy code at
-	 * 'update' will ensure things converge to the observed ratio.
+	 * If either stime or utime are 0, assume all runtime is userspace.
+	 * Once a task gets some ticks, the monotonicy code at 'update:'
+	 * will ensure things converge to the observed ratio.
 	 */
 	if (stime == 0) {
 		utime = rtime;
@@ -752,21 +746,21 @@ void vtime_account_system(struct task_struct *tsk)
 	write_seqcount_end(&tsk->vtime_seqcount);
 }
 
-void vtime_account_user(struct task_struct *tsk)
-{
-	write_seqcount_begin(&tsk->vtime_seqcount);
-	tsk->vtime_snap_whence = VTIME_SYS;
-	if (vtime_delta(tsk))
-		account_user_time(tsk, get_vtime_delta(tsk));
-	write_seqcount_end(&tsk->vtime_seqcount);
-}
-
 void vtime_user_enter(struct task_struct *tsk)
 {
 	write_seqcount_begin(&tsk->vtime_seqcount);
 	if (vtime_delta(tsk))
 		__vtime_account_system(tsk);
 	tsk->vtime_snap_whence = VTIME_USER;
+	write_seqcount_end(&tsk->vtime_seqcount);
+}
+
+void vtime_user_exit(struct task_struct *tsk)
+{
+	write_seqcount_begin(&tsk->vtime_seqcount);
+	if (vtime_delta(tsk))
+		account_user_time(tsk, get_vtime_delta(tsk));
+	tsk->vtime_snap_whence = VTIME_SYS;
 	write_seqcount_end(&tsk->vtime_seqcount);
 }
 

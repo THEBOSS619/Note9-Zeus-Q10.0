@@ -108,8 +108,8 @@ COMPAT_SYSCALL_DEFINE2(gettimeofday, struct compat_timeval __user *, tv,
 COMPAT_SYSCALL_DEFINE2(settimeofday, struct compat_timeval __user *, tv,
 		       struct timezone __user *, tz)
 {
+	struct timespec64 new_ts;
 	struct timeval user_tv;
-	struct timespec	new_ts;
 	struct timezone new_tz;
 
 	if (tv) {
@@ -123,7 +123,7 @@ COMPAT_SYSCALL_DEFINE2(settimeofday, struct compat_timeval __user *, tv,
 			return -EFAULT;
 	}
 
-	return do_sys_settimeofday(tv ? &new_ts : NULL, tz ? &new_tz : NULL);
+	return do_sys_settimeofday64(tv ? &new_ts : NULL, tz ? &new_tz : NULL);
 }
 
 static int __compat_get_timeval(struct timeval *tv, const struct compat_timeval __user *ctv)
@@ -240,18 +240,20 @@ COMPAT_SYSCALL_DEFINE2(nanosleep, struct compat_timespec __user *, rqtp,
 		       struct compat_timespec __user *, rmtp)
 {
 	struct timespec tu, rmt;
+	struct timespec64 tu64;
 	mm_segment_t oldfs;
 	long ret;
 
 	if (compat_get_timespec(&tu, rqtp))
 		return -EFAULT;
 
-	if (!timespec_valid(&tu))
+	tu64 = timespec_to_timespec64(tu);
+	if (!timespec64_valid(&tu64))
 		return -EINVAL;
 
 	oldfs = get_fs();
 	set_fs(KERNEL_DS);
-	ret = hrtimer_nanosleep(&tu,
+	ret = hrtimer_nanosleep(&tu64,
 				rmtp ? (struct timespec __user *)&rmt : NULL,
 				HRTIMER_MODE_REL, CLOCK_MONOTONIC);
 	set_fs(oldfs);
@@ -466,35 +468,6 @@ COMPAT_SYSCALL_DEFINE2(setrlimit, unsigned int, resource,
 	return do_prlimit(current, resource, &r, NULL);
 }
 
-#ifdef COMPAT_RLIM_OLD_INFINITY
-
-COMPAT_SYSCALL_DEFINE2(old_getrlimit, unsigned int, resource,
-		       struct compat_rlimit __user *, rlim)
-{
-	struct rlimit r;
-	int ret;
-	mm_segment_t old_fs = get_fs();
-
-	set_fs(KERNEL_DS);
-	ret = sys_old_getrlimit(resource, (struct rlimit __user *)&r);
-	set_fs(old_fs);
-
-	if (!ret) {
-		if (r.rlim_cur > COMPAT_RLIM_OLD_INFINITY)
-			r.rlim_cur = COMPAT_RLIM_INFINITY;
-		if (r.rlim_max > COMPAT_RLIM_OLD_INFINITY)
-			r.rlim_max = COMPAT_RLIM_INFINITY;
-
-		if (!access_ok(VERIFY_WRITE, rlim, sizeof(*rlim)) ||
-		    __put_user(r.rlim_cur, &rlim->rlim_cur) ||
-		    __put_user(r.rlim_max, &rlim->rlim_max))
-			return -EFAULT;
-	}
-	return ret;
-}
-
-#endif
-
 COMPAT_SYSCALL_DEFINE2(getrlimit, unsigned int, resource,
 		       struct compat_rlimit __user *, rlim)
 {
@@ -539,72 +512,6 @@ int put_compat_rusage(const struct rusage *r, struct compat_rusage __user *ru)
 	    __put_user(r->ru_nivcsw, &ru->ru_nivcsw))
 		return -EFAULT;
 	return 0;
-}
-
-COMPAT_SYSCALL_DEFINE4(wait4,
-	compat_pid_t, pid,
-	compat_uint_t __user *, stat_addr,
-	int, options,
-	struct compat_rusage __user *, ru)
-{
-	if (!ru) {
-		return sys_wait4(pid, stat_addr, options, NULL);
-	} else {
-		struct rusage r;
-		int ret;
-		unsigned int status;
-		mm_segment_t old_fs = get_fs();
-
-		set_fs (KERNEL_DS);
-		ret = sys_wait4(pid,
-				(stat_addr ?
-				 (unsigned int __user *) &status : NULL),
-				options, (struct rusage __user *) &r);
-		set_fs (old_fs);
-
-		if (ret > 0) {
-			if (put_compat_rusage(&r, ru))
-				return -EFAULT;
-			if (stat_addr && put_user(status, stat_addr))
-				return -EFAULT;
-		}
-		return ret;
-	}
-}
-
-COMPAT_SYSCALL_DEFINE5(waitid,
-		int, which, compat_pid_t, pid,
-		struct compat_siginfo __user *, uinfo, int, options,
-		struct compat_rusage __user *, uru)
-{
-	siginfo_t info;
-	struct rusage ru;
-	long ret;
-	mm_segment_t old_fs = get_fs();
-
-	memset(&info, 0, sizeof(info));
-
-	set_fs(KERNEL_DS);
-	ret = sys_waitid(which, pid, (siginfo_t __user *)&info, options,
-			 uru ? (struct rusage __user *)&ru : NULL);
-	set_fs(old_fs);
-
-	if ((ret < 0) || (info.si_signo == 0))
-		return ret;
-
-	if (uru) {
-		/* sys_waitid() overwrites everything in ru */
-		if (COMPAT_USE_64BIT_TIME)
-			ret = copy_to_user(uru, &ru, sizeof(ru));
-		else
-			ret = put_compat_rusage(&ru, uru);
-		if (ret)
-			return -EFAULT;
-	}
-
-	BUG_ON(info.si_code & __SI_MASK);
-	info.si_code |= __SI_CHLD;
-	return copy_siginfo_to_user32(uinfo, &info);
 }
 
 static int compat_get_user_cpu_mask(compat_ulong_t __user *user_mask_ptr,

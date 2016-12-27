@@ -380,7 +380,10 @@ void handle_nested_irq(unsigned int irq)
 	irqd_set(&desc->irq_data, IRQD_IRQ_INPROGRESS);
 	raw_spin_unlock_irq(&desc->lock);
 
-	action_ret = action->thread_fn(action->irq, action->dev_id);
+	action_ret = IRQ_NONE;
+	for_each_action_of_desc(desc, action)
+		action_ret |= action->thread_fn(action->irq, action->dev_id);
+
 	if (!noirqdebug)
 		note_interrupt(desc, action_ret);
 
@@ -940,6 +943,13 @@ void irq_modify_status(unsigned int irq, unsigned long clr, unsigned long set)
 
 	if (!desc)
 		return;
+
+	/*
+	 * Warn when a driver sets the no autoenable flag on an already
+	 * active interrupt.
+	 */
+	WARN_ON_ONCE(!desc->depth && (set & _IRQ_NOAUTOEN));
+
 	irq_settings_clr_and_set(desc, clr, set);
 
 	trigger = irqd_get_trigger_type(&desc->irq_data);
