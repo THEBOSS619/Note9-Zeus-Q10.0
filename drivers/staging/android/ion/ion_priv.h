@@ -153,7 +153,7 @@ struct ion_iovm_map {
  *			handle, used for debugging
  * @pid:		pid of last client to reference this buffer in a
  *			handle, used for debugging
-*/
+ */
 struct ion_buffer {
 	struct kref ref;
 	union {
