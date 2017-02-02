@@ -568,4 +568,13 @@ static inline void tcp_saved_syn_free(struct tcp_sock *tp)
 int tcp_skb_shift(struct sk_buff *to, struct sk_buff *from, int pcount,
 		  int shiftlen);
 
+static inline u16 tcp_mss_clamp(const struct tcp_sock *tp, u16 mss)
+{
+	/* We use READ_ONCE() here because socket might not be locked.
+	 * This happens for listeners.
+	 */
+	u16 user_mss = READ_ONCE(tp->rx_opt.user_mss);
+
+	return (user_mss && user_mss < mss) ? user_mss : mss;
+}
 #endif	/* _LINUX_TCP_H */
