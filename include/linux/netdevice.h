@@ -2779,6 +2779,11 @@ static inline bool skb_csum_off_chk_help_cmn_v4_only(struct sk_buff *skb)
 	return skb_csum_offload_chk_help(skb, &csum_offl_spec);
 }
 
+static inline void skb_gro_flush_final(struct sk_buff *skb, struct sk_buff **pp, int flush)
+{
+	NAPI_GRO_CB(skb)->flush |= flush;
+}
+
 static inline int dev_hard_header(struct sk_buff *skb, struct net_device *dev,
 				  unsigned short type,
 				  const void *daddr, const void *saddr,
