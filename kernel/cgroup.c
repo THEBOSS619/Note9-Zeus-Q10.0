@@ -229,7 +229,7 @@ static u16 have_free_callback __read_mostly;
 
 /* cgroup namespace for init task */
 struct cgroup_namespace init_cgroup_ns = {
-	.count		= { .counter = 2, },
+	.count		= REFCOUNT_INIT(2),
 	.user_ns	= &init_user_ns,
 	.ns.ops		= &cgroupns_operations,
 	.ns.inum	= PROC_CGROUP_INIT_INO,
@@ -6541,7 +6541,7 @@ static struct cgroup_namespace *alloc_cgroup_ns(void)
 		kfree(new_ns);
 		return ERR_PTR(ret);
 	}
-	atomic_set(&new_ns->count, 1);
+	refcount_set(&new_ns->count, 1);
 	new_ns->ns.ops = &cgroupns_operations;
 	return new_ns;
 }
