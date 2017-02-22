@@ -689,7 +689,7 @@ void gmap_discard(struct gmap *gmap, unsigned long from, unsigned long to)
 		if (!vma)
 			continue;
 		size = min(to - gaddr, PMD_SIZE - (gaddr & ~PMD_MASK));
-		zap_page_range(vma, vmaddr, size, NULL);
+		zap_page_range(vma, vmaddr, size);
 	}
 	up_read(&gmap->mm->mmap_sem);
 }
