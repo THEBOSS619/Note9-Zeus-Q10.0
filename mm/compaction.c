@@ -24,6 +24,10 @@
 #ifdef CONFIG_STATE_NOTIFIER
 #include <linux/state_notifier.h>
 #endif
+#include <linux/fb.h>
+#include <linux/moduleparam.h>
+#include <linux/time.h>
+#include <linux/workqueue.h>
 #include "internal.h"
 
 #ifdef CONFIG_COMPACTION
@@ -1806,6 +1810,48 @@ static struct notifier_block compact_notifier_block = {
 };
 #endif
 
+static struct workqueue_struct *compaction_wq;
+static struct delayed_work compaction_work;
+static bool screen_on = true;
+static int compaction_timeout_ms = 900000;
+module_param_named(compaction_forced_timeout_ms, compaction_timeout_ms, int,
+			0644);
+static int compaction_soff_delay_ms = 3000;
+module_param_named(compaction_screen_off_delay_ms, compaction_soff_delay_ms, int,
+			0644);
+static unsigned long compaction_forced_timeout;
+
+
+static int fb_notifier_callback(struct notifier_block *self, unsigned long event, void *data)
+{
+	struct fb_event *evdata = data;
+	int *blank;
+
+	if ((event == FB_EVENT_BLANK) && evdata && evdata->data) {
+		blank = evdata->data;
+
+		switch (*blank) {
+		case FB_BLANK_POWERDOWN:
+			screen_on = false;
+			if (time_after(jiffies, compaction_forced_timeout) && !delayed_work_busy(&compaction_work)) {
+				compaction_forced_timeout = jiffies + msecs_to_jiffies(compaction_timeout_ms);
+				queue_delayed_work(compaction_wq, &compaction_work,
+					msecs_to_jiffies(compaction_soff_delay_ms));
+			}
+		break;
+		case FB_BLANK_UNBLANK:
+			screen_on = true;
+		break;
+		}
+	}
+
+	return 0;
+}
+
+static struct notifier_block compaction_notifier_block = {
+	.notifier_call = fb_notifier_callback,
+};
+
 /* Compact all zones within a node */
 static void compact_node(int nid)
 {
@@ -1850,6 +1896,23 @@ static void compact_nodes(void)
 
 	for_each_online_node(nid)
 		compact_node(nid);
+}
+
+static void do_compaction(struct work_struct *work)
+{
+	/* Return early if the screen is on */
+	if (screen_on)
+		return;
+
+	pr_info("Scheduled memory compaction is starting");
+
+	/* Do full compaction */
+	compact_nodes();
+
+	/* Force compaction timeout */
+	compaction_forced_timeout = jiffies + msecs_to_jiffies(compaction_timeout_ms);
+
+	pr_info("Scheduled memory compaction is completed");
 }
 
 /* The written value is actually unused, all memory is compacted */
@@ -2138,4 +2201,20 @@ static int  __init mem_compaction_init(void)
 }
 late_initcall(mem_compaction_init);
 #endif
+
+static int  __init scheduled_compaction_init(void)
+{
+	compaction_wq = create_freezable_workqueue("compaction_wq");
+
+	if (!compaction_wq)
+		return -EFAULT;
+
+	INIT_DELAYED_WORK(&compaction_work, do_compaction);
+
+	fb_register_client(&compaction_notifier_block);
+
+	return 0;
+}
+late_initcall(scheduled_compaction_init);
+
 #endif /* CONFIG_COMPACTION */
