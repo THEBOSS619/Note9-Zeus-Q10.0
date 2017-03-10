@@ -79,8 +79,6 @@ struct power_table {
 
 static DEFINE_IDA(cpufreq_ida);
 
-static unsigned int cpufreq_dev_count;
-
 static DEFINE_MUTEX(cooling_list_lock);
 static LIST_HEAD(cpufreq_dev_list);
 
@@ -945,6 +943,7 @@ __cpufreq_cooling_register(struct device_node *np,
 	unsigned int freq, i, num_cpus;
 	int ret;
 	struct thermal_cooling_device_ops *cooling_ops;
+	bool first;
 
 	if (!alloc_cpumask_var(&temp_mask, GFP_KERNEL))
 		return ERR_PTR(-ENOMEM);
@@ -1054,13 +1053,14 @@ __cpufreq_cooling_register(struct device_node *np,
 	cpufreq_dev->cool_dev = cool_dev;
 
 	mutex_lock(&cooling_list_lock);
-	list_add(&cpufreq_dev->node, &cpufreq_dev_list);
-
 	/* Register the notifier for first cpufreq cooling device */
-	if (!cpufreq_dev_count++)
+	first = list_empty(&cpufreq_dev_list);
+	list_add(&cpufreq_dev->node, &cpufreq_dev_list);
+	mutex_unlock(&cooling_list_lock);
+
+	if (first)
 		cpufreq_register_notifier(&thermal_cpufreq_notifier_block,
 					  CPUFREQ_POLICY_NOTIFIER);
-	mutex_unlock(&cooling_list_lock);
 
 	goto put_policy;
 
@@ -1201,6 +1201,7 @@ EXPORT_SYMBOL(of_cpufreq_power_cooling_register);
 void cpufreq_cooling_unregister(struct thermal_cooling_device *cdev)
 {
 	struct cpufreq_cooling_device *cpufreq_dev;
+	bool last;
 
 	if (!cdev)
 		return;
@@ -1208,13 +1209,14 @@ void cpufreq_cooling_unregister(struct thermal_cooling_device *cdev)
 	cpufreq_dev = cdev->devdata;
 
 	mutex_lock(&cooling_list_lock);
+	list_del(&cpufreq_dev->node);
 	/* Unregister the notifier for the last cpufreq cooling device */
-	if (!--cpufreq_dev_count)
+	last = list_empty(&cpufreq_dev_list);
+	mutex_unlock(&cooling_list_lock);
+
+	if (last)
 		cpufreq_unregister_notifier(&thermal_cpufreq_notifier_block,
 					    CPUFREQ_POLICY_NOTIFIER);
-
-	list_del(&cpufreq_dev->node);
-	mutex_unlock(&cooling_list_lock);
 
 	thermal_cooling_device_unregister(cpufreq_dev->cool_dev);
 	ida_simple_remove(&cpufreq_ida, cpufreq_dev->id);
