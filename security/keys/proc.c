@@ -250,7 +250,7 @@ static int proc_keys_show(struct seq_file *m, void *v)
 		   showflag(key, 'U', KEY_FLAG_USER_CONSTRUCT),
 		   state < 0 ? 'N' : '-',
 		   showflag(key, 'i', KEY_FLAG_INVALIDATED),
-		   atomic_read(&key->usage),
+		   refcount_read(&key->usage),
 		   xbuf,
 		   key->perm,
 		   from_kuid_munged(seq_user_ns(m), key->uid),
