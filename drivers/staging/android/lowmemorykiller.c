@@ -1367,7 +1367,8 @@ static int lmk_hotplug_callback(struct notifier_block *self,
 static struct shrinker lowmem_shrinker = {
 	.scan_objects = lowmem_scan,
 	.count_objects = lowmem_count,
-	.seeks = 32
+	.seeks = 32,
+	.flags = SHRINKER_LMK
 };
 
 #ifdef CONFIG_ANDROID_BG_SCAN_MEM
