@@ -56,6 +56,11 @@ unsigned long cma_get_size(const struct cma *cma)
 	return cma->count << PAGE_SHIFT;
 }
 
+const char *cma_get_name(const struct cma *cma)
+{
+	return cma->name ? cma->name : "(undefined)";
+}
+
 static unsigned long cma_bitmap_aligned_mask(const struct cma *cma,
 					     unsigned int align_order)
 {
@@ -203,7 +208,8 @@ core_initcall(cma_init_reserved_areas);
  */
 int __init cma_init_reserved_mem_with_name(phys_addr_t base, phys_addr_t size,
 				 unsigned int order_per_bit,
-				 struct cma **res_cma, const char *name)
+				 const char *name,
+				 struct cma **res_cma)
 {
 	struct cma *cma;
 	phys_addr_t alignment;
@@ -233,6 +239,13 @@ int __init cma_init_reserved_mem_with_name(phys_addr_t base, phys_addr_t size,
 	 * subsystems (like slab allocator) are available.
 	 */
 	cma = &cma_areas[cma_area_count];
+	if (name) {
+		cma->name = name;
+	} else {
+		cma->name = kasprintf(GFP_KERNEL, "cma%d\n", cma_area_count);
+		if (!cma->name)
+			return -ENOMEM;
+	}
 	cma->base_pfn = PFN_DOWN(base);
 	cma->count = size >> PAGE_SHIFT;
 	cma->order_per_bit = order_per_bit;
@@ -403,7 +416,7 @@ int __init __declare_contiguous(phys_addr_t base,
 	}
 
 	ret = cma_init_reserved_mem_with_name(base, size, order_per_bit,
-					      res_cma, name);
+					      name, res_cma);
 	if (ret)
 		goto free_mem;
 
