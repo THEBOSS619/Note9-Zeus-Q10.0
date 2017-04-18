@@ -431,6 +431,22 @@ extern u64 zswap_pool_pages;
 extern atomic_t zswap_stored_pages;
 #endif
 
+static int test_task_state(struct task_struct *p, int state)
+{
+	struct task_struct *t;
+
+	for_each_thread(p, t) {
+		task_lock(t);
+		if (t->state & state) {
+			task_unlock(t);
+			return 1;
+		}
+		task_unlock(t);
+	}
+
+	return 0;
+}
+
 static int test_task_lmk_waiting(struct task_struct *p)
 {
 	struct task_struct *t;
@@ -595,7 +611,7 @@ static unsigned long lowmem_scan(struct shrinker *s, struct shrink_control *sc)
 #endif
 
 
-	if (mutex_lock_interruptible(&scan_mutex) < 0)
+	if (!mutex_trylock(&scan_mutex))
 		return 0;
 
 	other_free = global_page_state(NR_FREE_PAGES) - totalreserve_pages;
@@ -691,8 +707,6 @@ static unsigned long lowmem_scan(struct shrinker *s, struct shrink_control *sc)
 		if (time_before_eq(jiffies, lowmem_deathpending_timeout)) {
 			if (test_task_lmk_waiting(tsk)) {
 				rcu_read_unlock();
-				/* give the system time to free up the memory */
-				msleep_interruptible(20);
 				mutex_unlock(&scan_mutex);
 				return 0;
 			}
@@ -752,6 +766,16 @@ static unsigned long lowmem_scan(struct shrinker *s, struct shrink_control *sc)
 #if defined(CONFIG_ZSWAP)
 		int orig_tasksize = selected_tasksize - selected_swap_rss;
 #endif
+
+		if (test_task_lmk_waiting(selected) &&
+		    (test_task_state(selected, TASK_UNINTERRUPTIBLE))) {
+			lowmem_print(2, "'%s' (%d) is already killed\n",
+				     selected->comm,
+				     selected->pid);
+			rcu_read_unlock();
+			mutex_unlock(&scan_mutex);
+			return 0;
+		}
 
 		task_lock(selected);
 		send_sig(SIGKILL, selected, 0);
