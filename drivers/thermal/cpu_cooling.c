@@ -933,6 +933,7 @@ __cpufreq_cooling_register(struct device_node *np,
 	if (!cpufreq_cdev)
 		return ERR_PTR(-ENOMEM);
 
+	cpufreq_cdev->policy = policy;
 	num_cpus = cpumask_weight(policy->related_cpus);
 	cpufreq_cdev->time_in_idle = kcalloc(num_cpus,
 					    sizeof(*cpufreq_cdev->time_in_idle),
