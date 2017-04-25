@@ -187,23 +187,19 @@ static int build_dyn_power_table(struct cpufreq_cooling_device *cpufreq_cdev,
 	struct power_table *power_table;
 	struct dev_pm_opp *opp;
 	struct device *dev = NULL;
-	int num_opps = 0, cpu, i, ret = 0;
+	int num_opps = 0, cpu = cpufreq_cdev->policy->cpu, i, ret = 0;
 	unsigned long freq;
 
-	for_each_cpu(cpu, &cpufreq_cdev->allowed_cpus) {
-		dev = get_cpu_device(cpu);
-		if (!dev) {
-			dev_warn(&cpufreq_cdev->cdev->device,
-				 "No cpu device for cpu %d\n", cpu);
-			continue;
-		}
-
-		num_opps = dev_pm_opp_get_opp_count(dev);
-		if (num_opps > 0)
-			break;
-		else if (num_opps < 0)
-			return num_opps;
+	dev = get_cpu_device(cpu);
+	if (unlikely(!dev)) {
+		dev_warn(&cpufreq_cdev->cdev->device,
+			 "No cpu device for cpu %d\n", cpu);
+		return -ENODEV;
 	}
+
+	num_opps = dev_pm_opp_get_opp_count(dev);
+	if (num_opps < 0)
+		return num_opps;
 
 	if (num_opps == 0)
 		return -EINVAL;
