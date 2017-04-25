@@ -64,12 +64,12 @@ struct cpufreq_cooling_device {
 	unsigned int *freq_table;	/* In descending order */
 	struct thermal_cooling_device *cdev;
 	struct cpufreq_policy *policy;
-	struct cpumask allowed_cpus;
 	struct list_head node;
-	struct time_in_idle *idle_time;
+	struct cpumask allowed_cpus;
 	struct power_table *dyn_power_table;
 	int dyn_power_table_entries;
 	struct device *cpu_dev;
+	struct time_in_idle *idle_time;
 	get_static_t plat_get_static_power;
 	int *var_table;
 	int *var_coeff;
