@@ -66,8 +66,7 @@ struct cpufreq_cooling_device {
 	struct cpufreq_policy *policy;
 	struct cpumask allowed_cpus;
 	struct list_head node;
-	u64 *time_in_idle;
-	u64 *time_in_idle_timestamp;
+	struct time_in_idle *idle_time;
 	struct power_table *dyn_power_table;
 	int dyn_power_table_entries;
 	struct device *cpu_dev;
