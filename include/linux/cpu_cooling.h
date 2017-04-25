@@ -57,14 +57,15 @@
  */
 struct cpufreq_cooling_device {
 	int id;
-	struct thermal_cooling_device *cool_dev;
+	u32 last_load;
 	unsigned int cpufreq_state;
 	unsigned int clipped_freq;
 	unsigned int max_level;
 	unsigned int *freq_table;	/* In descending order */
+	struct thermal_cooling_device *cdev;
+	struct cpufreq_policy *policy;
 	struct cpumask allowed_cpus;
 	struct list_head node;
-	u32 last_load;
 	u64 *time_in_idle;
 	u64 *time_in_idle_timestamp;
 	struct power_table *dyn_power_table;
