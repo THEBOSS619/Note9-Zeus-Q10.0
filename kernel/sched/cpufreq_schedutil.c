@@ -112,9 +112,6 @@ static bool sugov_should_update_freq(struct sugov_policy *sg_policy, u64 time)
 {
 	s64 delta_ns;
 
-	if (sg_policy->work_in_progress)
-		return false;
-
 	/*
 	 * Since cpufreq_update_util() is called with rq->lock held for
 	 * the @target_cpu, our per-cpu data is fully serialized.
