@@ -2365,8 +2365,6 @@ static struct task_struct *_pick_next_task_rt(struct rq *rq)
 	return p;
 }
 
-extern int _update_rt_rq_load_avg(u64 now, int cpu, struct rt_rq *rt_rq, int running);
-
 static struct task_struct *
 pick_next_task_rt(struct rq *rq, struct task_struct *prev, struct rq_flags *rf)
 {
@@ -2423,9 +2421,6 @@ pick_next_task_rt(struct rq *rq, struct task_struct *prev, struct rq_flags *rf)
 	_update_rt_rq_load_avg(rq_clock_task(rq), cpu_of(rq), rt_rq,
 					rq->curr->sched_class == &rt_sched_class);
 
-	if (p)
-		update_rt_rq_load_avg(rq_clock_task(rq), cpu_of(rq), rt_rq,
-					rq->curr->sched_class == &rt_sched_class);
 
 	clear_victim_flag(p);
 
@@ -3743,7 +3738,6 @@ static void task_tick_rt(struct rq *rq, struct task_struct *p, int queued)
 	for_each_sched_rt_entity(rt_se) {
 		struct rt_rq *rt_rq = rt_rq_of_se(rt_se);
 
-		update_rt_load_avg(now, rt_se, rt_rq, cpu_of(rq_of_rt_rq(rt_rq)));
 	}
 
 	watchdog(rq, p);
