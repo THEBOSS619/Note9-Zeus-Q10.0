@@ -234,6 +234,8 @@ a single line of text and contains the following stats separated by whitespace:
 		Unit: 4K bytes
  bd_writes	the number of writes to backing device
 		Unit: 4K bytes
+ dup_data_size	  deduplicated data size
+ meta_data_size	  the amount of metadata allocated for deduplication feature
 
 9) Deactivate:
 	swapoff /dev/zram0
