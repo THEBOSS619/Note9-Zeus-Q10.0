@@ -612,6 +612,13 @@ struct dl_rq {
 #endif
 	/* This is the "average utilization" for this runqueue */
 	s64 avg_bw;
+
+	/*
+	 * "Active utilization" for this runqueue: increased when a
+	 * task wakes up (becomes TASK_RUNNING) and decreased when a
+	 * task blocks
+	 */
+	u64 running_bw;
 };
 
 #ifdef CONFIG_FAIR_GROUP_SCHED
