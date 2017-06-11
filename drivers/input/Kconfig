@@ -263,6 +263,14 @@ config SEC_AUTO_INPUT
 	  To compile this driver as a module, choose M here: the
 	  module will be called autoinput.
 
+config POCKET_JUDGE
+	bool "Pocket Judge"
+	depends on INPUT
+	default n
+	help
+	  Enables and disables interrupts based on pocket state to optimize
+	  battery consumption in-pocket.
+
 comment "Input Device Drivers"
 
 source "drivers/input/keyboard/Kconfig"
