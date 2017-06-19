@@ -9982,7 +9982,7 @@ more_balance:
 			cpumask_clear_cpu(env.dst_cpu, env.cpus);
 
 			env.dst_rq	 = cpu_rq(env.new_dst_cpu);
-			env.dst_cpu	 = env.new_dst_cpu;
+			env.dst_cpu	 = env.new_dst_cpu;	
 			env.flags	&= ~LBF_DST_PINNED;
 			env.loop	 = 0;
 			env.loop_break	 = sched_nr_migrate_break;
@@ -10461,6 +10461,10 @@ void nohz_balance_enter_idle(int cpu)
 	 * If this cpu is going down, then nothing needs to be done.
 	 */
 	if (!cpu_active(cpu))
+		return;
+
+	/* Spare idle load balancing on CPUs that don't want to be disturbed: */
+	if (!is_housekeeping_cpu(cpu))
 		return;
 
 	if (test_bit(NOHZ_TICK_STOPPED, nohz_flags(cpu)))
