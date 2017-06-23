@@ -5067,9 +5067,37 @@ static bool cpu_overutilized(int cpu);
 static unsigned long capacity_orig_of(int cpu);
 static unsigned long cpu_util(int cpu);
 unsigned long boosted_cpu_util(int cpu);
+
+static bool sd_overutilized(struct sched_domain *sd)
+{
+	return sd->shared->overutilized;
+}
+
+static void set_sd_overutilized(struct sched_domain *sd)
+{
+	sd->shared->overutilized = true;
+}
+
+static void clear_sd_overutilized(struct sched_domain *sd)
+{
+	sd->shared->overutilized = false;
+}
+
+static inline void update_overutilized_status(struct rq *rq)
+{
+	struct sched_domain *sd;
+
+	rcu_read_lock();
+	sd = rcu_dereference(rq->sd);
+	if (sd && !sd_overutilized(sd) &&
+	    cpu_overutilized(rq->cpu))
+		set_sd_overutilized(sd);
+	rcu_read_unlock();
+}
 #else
+#define update_overutilized_status(rq) do {} while (0)
 #define boosted_cpu_util(cpu) cpu_util_freq(cpu)
-#endif
+#endif /* CONFIG_SMP */
 
 /*
  * The enqueue_task method is called before nr_running is
@@ -5135,6 +5163,8 @@ enqueue_task_fair(struct rq *rq, struct task_struct *p, int flags)
 
 	if (!se) {
 		add_nr_running(rq, 1);
+		if (!task_new)
+			update_overutilized_status(rq);
 
 		if (unlikely(p->nr_cpus_allowed == 1))
 			rq->nr_pinned_tasks++;
@@ -5162,14 +5192,8 @@ enqueue_task_fair(struct rq *rq, struct task_struct *p, int flags)
 
 	if (!se) {
 		walt_inc_cumulative_runnable_avg(rq, p);
-		if (!task_new && !rq->rd->overutilized &&
-		    cpu_overutilized(rq->cpu)) {
-			rq->rd->overutilized = true;
-			trace_sched_overutilized(true);
-		}
 	}
 
-#endif /* CONFIG_SMP */
 	hrtick_update(rq);
 }
 
@@ -7447,14 +7471,17 @@ select_task_rq_fair(struct task_struct *p, int prev_cpu, int sd_flag, int wake_f
 		selected_cpu = exynos_select_cpu(p, prev_cpu, sync);
 		if (selected_cpu >= 0)
 			return selected_cpu;
-	} else if (energy_aware() && !(cpu_rq(prev_cpu)->rd->overutilized)) {
-		rcu_read_lock();
+	} else { 
+	rcu_read_lock();
+	sd = rcu_dereference(cpu_rq(prev_cpu)->sd);
+	if (energy_aware() && sd && !sd_overutilized(sd)) {
 		new_cpu = select_energy_cpu_brute(p, prev_cpu, sync);
-		rcu_read_unlock();
-		return new_cpu;
+		goto unlock;
+	}
 	}
 
-	rcu_read_lock();
+	sd = NULL;
+
 	for_each_domain(cpu, tmp) {
 		if (!(tmp->flags & SD_LOAD_BALANCE))
 			break;
@@ -7497,6 +7524,8 @@ select_task_rq_fair(struct task_struct *p, int prev_cpu, int sd_flag, int wake_f
 	} else {
 		new_cpu = find_idlest_cpu(sd, p, cpu, prev_cpu, sd_flag);
 	}
+
+unlock:
 	rcu_read_unlock();
 
 	return new_cpu;
@@ -8679,6 +8708,7 @@ struct sd_lb_stats {
 	struct sched_group *local;	/* Local group in this sd */
 	unsigned long total_load;	/* Total load of all groups in sd */
 	unsigned long total_capacity;	/* Total capacity of all groups in sd */
+	unsigned long total_util;	/* Total util of all groups in sd */
 	unsigned long avg_load;	/* Average load across all groups in sd */
 
 	struct sg_lb_stats busiest_stat;/* Statistics of the busiest group */
@@ -8698,6 +8728,7 @@ static inline void init_sd_lb_stats(struct sd_lb_stats *sds)
 		.local = NULL,
 		.total_load = 0UL,
 		.total_capacity = 0UL,
+		.total_util = 0UL,
 		.busiest_stat = {
 			.avg_load = 0UL,
 			.sum_nr_running = 0,
@@ -9059,7 +9090,7 @@ static inline void update_cpu_stats_if_tickless(struct rq *rq) { }
 static inline void update_sg_lb_stats(struct lb_env *env,
 			struct sched_group *group, int load_idx,
 			int local_group, struct sg_lb_stats *sgs,
-			bool *overload, bool *overutilized)
+			bool *overload, bool *overutilized, bool *misfit_task)
 {
 	unsigned long load;
 	int i, nr_running;
@@ -9101,9 +9132,12 @@ static inline void update_sg_lb_stats(struct lb_env *env,
 		if (!nr_running && idle_cpu(i))
 			sgs->idle_cpus++;
 
-		if (cpu_overutilized(i))
+		if (cpu_overutilized(i)) {
 			*overutilized = true;
 
+			if (rq->misfit_task)
+				*misfit_task = true;
+		}
 		if (!sgs->group_misfit_task && rq->misfit_task)
 			sgs->group_misfit_task = capacity_of(i);
 	}
@@ -9238,14 +9272,10 @@ static inline enum fbq_type fbq_classify_rq(struct rq *rq)
  */
 static inline void update_sd_lb_stats(struct lb_env *env, struct sd_lb_stats *sds)
 {
-	struct sched_domain *child = env->sd->child;
 	struct sched_group *sg = env->sd->groups;
 	struct sg_lb_stats tmp_sgs;
 	int load_idx, prefer_sibling = 0;
-	bool overload = false, overutilized = false;
-
-	if (child && child->flags & SD_PREFER_SIBLING)
-		prefer_sibling = 1;
+	bool overload = false, overutilized = false, misfit_task = false;
 
 	load_idx = get_sd_load_idx(env->sd, env->idle);
 
@@ -9264,7 +9294,8 @@ static inline void update_sd_lb_stats(struct lb_env *env, struct sd_lb_stats *sd
 		}
 
 		update_sg_lb_stats(env, sg, load_idx, local_group, sgs,
-						&overload, &overutilized);
+						&overload, &overutilized,
+						&misfit_task);
 
 		if (local_group)
 			goto next_group;
@@ -9304,6 +9335,7 @@ next_group:
 		/* Now, start updating sd_lb_stats */
 		sds->total_load += sgs->group_load;
 		sds->total_capacity += sgs->group_capacity;
+		sds->total_util += sgs->group_util;
 
 		sg = sg->next;
 	} while (sg != env->sd->groups);
@@ -9317,19 +9349,45 @@ next_group:
 		/* update overload indicator if we are at root domain */
 		if (env->dst_rq->rd->overload != overload)
 			env->dst_rq->rd->overload = overload;
+	}
+	if (overutilized)
+		set_sd_overutilized(env->sd);
+	else
+		clear_sd_overutilized(env->sd);
 
-		/* Update over-utilization (tipping point, U >= 0) indicator */
-		if (env->dst_rq->rd->overutilized != overutilized) {
-			env->dst_rq->rd->overutilized = overutilized;
-			trace_sched_overutilized(overutilized);
-		}
-	} else {
-		if (!env->dst_rq->rd->overutilized && overutilized) {
-			env->dst_rq->rd->overutilized = true;
-			trace_sched_overutilized(true);
+	/*
+	 * If there is a misfit task in one cpu in this sched_domain
+	 * it is likely that the imbalance cannot be sorted out among
+	 * the cpu's in this sched_domain. In this case set the
+	 * overutilized flag at the parent sched_domain.
+	 */
+	if (misfit_task) {
+		struct sched_domain *sd = env->sd->parent;
+
+ 		/*
+		 * In case of a misfit task, load balance at the parent
+		 * sched domain level will make sense only if the the cpus
+		 * have a different capacity. If cpus at a domain level have
+		 * the same capacity, the misfit task cannot be well
+		 * accomodated	in any of the cpus and there in no point in
+		 * trying a load balance at this level
+		 */
+		while (sd) {
+			if (sd->flags & SD_ASYM_CPUCAPACITY) {
+				set_sd_overutilized(sd);
+				break;
+			}
+			sd = sd->parent;
 		}
 	}
 
+	/*
+	 * If the domain util is greater that domain capacity, load balancing
+	 * needs to be done at the next sched domain level as well.
+	 */
+	if (lb_sd_parent(env->sd) &&
+	    sds->total_capacity * 1024 < sds->total_util * capacity_margin)
+		set_sd_overutilized(env->sd->parent);
 }
 
 /**
@@ -9618,7 +9676,7 @@ static struct sched_group *find_busiest_group(struct lb_env *env)
 			skip_lb = !ehmp_trigger_lb(src_cpu, env->dst_cpu);
 		}
 	} else {
-		skip_lb = energy_aware() && !env->dst_rq->rd->overutilized;
+		skip_lb = energy_aware() && !sd_overutilized(env->sd);
 	}
 	if (skip_lb)
 		goto out_balanced;
@@ -10623,6 +10681,9 @@ static void rebalance_domains(struct rq *rq, enum cpu_idle_type idle)
 		}
 		max_cost += sd->max_newidle_lb_cost;
 
+		if (energy_aware() && !sd_overutilized(sd))
+                        continue;
+
 		if (!(sd->flags & SD_LOAD_BALANCE))
 			continue;
 
@@ -10980,17 +11041,13 @@ static void task_tick_fair(struct rq *rq, struct task_struct *curr, int queued)
 	if (static_branch_unlikely(&sched_numa_balancing))
 		task_tick_numa(rq, curr);
 
-#ifdef CONFIG_SMP
-	if (!rq->rd->overutilized && cpu_overutilized(task_cpu(curr))) {
-		rq->rd->overutilized = true;
-		trace_sched_overutilized(true);
-	}
-
 	rq->misfit_task = !task_fits_max(curr, rq->cpu);
 #endif
 #ifdef CONFIG_EXYNOS_HOTPLUG_GOVERNOR
 	exynos_hpgov_update_rq_load(rq->cpu);
 #endif
+
+	update_overutilized_status(rq);
 }
 
 /*
