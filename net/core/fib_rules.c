@@ -502,7 +502,7 @@ int fib_nl_newrule(struct sk_buff *skb, struct nlmsghdr *nlh)
 		last = r;
 	}
 
-	fib_rule_get(rule);
+	refcount_set(&rule->refcnt, 1);
 
 	if (last)
 		list_add_rcu(&rule->list, &last->list);
