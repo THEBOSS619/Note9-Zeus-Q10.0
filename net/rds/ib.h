@@ -219,7 +219,7 @@ struct rds_ib_device {
 	unsigned int		max_initiator_depth;
 	unsigned int		max_responder_resources;
 	spinlock_t		spinlock;	/* protect the above */
-	atomic_t		refcount;
+	refcount_t		refcount;
 	struct work_struct	free_work;
 };
 
