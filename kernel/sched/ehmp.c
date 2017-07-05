@@ -1667,176 +1667,7 @@ pure_initcall(init_ontime);
  * cpu selection                                                      *
  **********************************************************************/
 unsigned long boosted_task_util(struct task_struct *p);
-int energy_diff(struct energy_env *eenv);
-
-static inline int find_best_target(struct sched_domain *sd, struct task_struct *p)
-{
-	int target_cpu = -1;
-	int backup_cpu = -1;
-	unsigned long target_util = 0;
-	unsigned long backup_util = ULONG_MAX;
-	unsigned long lowest_util = ULONG_MAX;
-	unsigned long backup_capacity = ULONG_MAX;
-	unsigned long min_util = boosted_task_util(p);
-	struct sched_group *sg;
-	int cpu = 0;
-	struct cpumask energy_candidates;
-
-	sg = sd->groups;
-	cpumask_clear(&energy_candidates);
-
-	do {
-		int i;
-
-		for_each_cpu_and(i, tsk_cpus_allowed(p), sched_group_cpus(sg)) {
-			unsigned long cur_capacity, new_util, wake_util;
-			unsigned long min_wake_util = ULONG_MAX;
-
-			if (!cpu_online(i))
-				continue;
-
-			/*
-			 * p's blocked utilization is still accounted for on prev_cpu
-			 * so prev_cpu will receive a negative bias due to the double
-			 * accounting. However, the blocked utilization may be zero.
-			 */
-			wake_util = cpu_util_wake(i, p);
-			new_util = wake_util + task_util(p);
-
-			/*
-			 * Ensure minimum capacity to grant the required boost.
-			 * The target CPU can be already at a capacity level higher
-			 * than the one required to boost the task.
-			 */
-			new_util = max(min_util, new_util);
-
-			if (new_util > capacity_orig_of(i)) {
-				if (wake_util >= capacity_orig_of(i))
-					continue;
-
-				if (task_util(p) > (capacity_orig_of(i) >> 1))
-					continue;
-			}
-
-			cur_capacity = capacity_curr_of(i);
-
-			trace_ehmp_find_best_target_stat(i, cur_capacity, new_util, target_util);
-
-			if (new_util < cur_capacity) {
-				if (cpumask_test_cpu(i, cpu_coregroup_mask(cpu))) {
-					if (new_util > lowest_util ||
-					    wake_util > min_wake_util)
-						continue;
-					min_wake_util = wake_util;
-					lowest_util = new_util;
-					target_cpu = i;
-				} else {
-					if (cpu_rq(i)->nr_running) {
-						if (new_util < target_util)
-							continue;
-						target_util = new_util;
-						target_cpu = i;
-					} else {
-						cpumask_set_cpu(i, &energy_candidates);
-						trace_ehmp_find_best_target_candi(i);
-					}
-				}
-			} else if (backup_capacity >= cur_capacity) {
-				/* Find a backup cpu with least capacity. */
-				backup_capacity = cur_capacity;
-				if (new_util < backup_util) {
-					backup_util = new_util;
-					backup_cpu = i;
-					cpumask_set_cpu(backup_cpu, &energy_candidates);
-					trace_ehmp_find_best_target_candi(backup_cpu);
-				}
-			}
-		}
-
-		if (target_cpu >= 0)
-			break;
-	} while (sg = sg->next, sg != sd->groups);
-
-	trace_ehmp_find_best_target_cpu(target_cpu, target_util);
-
-	if (target_cpu < 0) {
-		int min_nrg_diff = 0;
-		int nrg_diff, i;
-
-		for_each_cpu(i, &energy_candidates) {
-			struct energy_env eenv = {
-				.util_delta     = task_util(p),
-				.src_cpu        = task_cpu(p),
-				.dst_cpu        = i,
-				.p              = p,
-			};
-
-			if (eenv.src_cpu == eenv.dst_cpu)
-				continue;
-
-			if (capacity_orig_of(eenv.src_cpu) > capacity_orig_of(eenv.dst_cpu)
-				&& task_util(p) <= capacity_orig_of(eenv.dst_cpu)
-				&& cpu_util(eenv.dst_cpu) < capacity_orig_of(eenv.dst_cpu))
-				return eenv.dst_cpu;
-
-			nrg_diff = energy_diff(&eenv);
-			if (nrg_diff < min_nrg_diff) {
-				target_cpu = i;
-				min_nrg_diff = nrg_diff;
-			}
-		}
-
-		if (target_cpu < 0)
-			target_cpu = backup_cpu;
-	}
-
-	return target_cpu;
-}
-
-static int select_energy_cpu(struct sched_domain *sd, struct task_struct *p,
-				int prev_cpu, int sd_flag, bool boosted)
-{
-	int target_cpu = prev_cpu, tmp_target;
-
-	/* Find a cpu with sufficient capacity */
-	tmp_target = find_best_target(sd, p);
-	if (tmp_target >= 0) {
-		target_cpu = tmp_target;
-		if (boosted && idle_cpu(target_cpu))
-			goto out;
-
-		if (sd_flag & SD_BALANCE_FORK)
-			goto out;
-
-		if (capacity_orig_of(task_cpu(p)) > capacity_orig_of(target_cpu)
-			&& task_util(p) <= capacity_orig_of(target_cpu)
-			&& cpu_util(target_cpu) < capacity_orig_of(target_cpu))
-			goto out;
-	}
-
-	if (target_cpu != prev_cpu) {
-		struct energy_env eenv = {
-			.util_delta     = task_util(p),
-			.src_cpu        = prev_cpu,
-			.dst_cpu        = target_cpu,
-			.p              = p,
-		};
-
-		/* Not enough spare capacity on previous cpu */
-		if (cpu_overutilized(prev_cpu))
-			goto out;
-
-		if (energy_diff(&eenv) >= 0) {
-			target_cpu = prev_cpu;
-			goto out;
-		}
-
-		goto out;
-	}
-
-out:
-	return target_cpu;
-}
+int select_energy_cpu_brute(struct task_struct *p, int prev_cpu, int sync);
 
 int exynos_select_cpu_rt(struct sched_domain *sd, struct task_struct *p, bool boost)
 {
@@ -1924,11 +1755,11 @@ out:
 	return target_cpu;
 }
 
-int exynos_select_cpu(struct task_struct *p, int prev_cpu, int sync, int sd_flag)
+int exynos_select_cpu(struct task_struct *p, int prev_cpu, int sync)
 {
 	struct sched_domain *sd;
 	int target_cpu = -1;
-	bool boosted, prefer_idle;
+	bool prefer_idle;
 	unsigned long min_util;
 	struct boost_trigger trigger = {
 		.trigger = 0,
@@ -1943,10 +1774,8 @@ int exynos_select_cpu(struct task_struct *p, int prev_cpu, int sync, int sd_flag
 		goto unlock;
 
 #ifdef CONFIG_CGROUP_SCHEDTUNE
-	boosted = schedtune_task_boost(p) > 0;
 	prefer_idle = schedtune_prefer_idle(p) > 0;
 #else
-	boosted = get_sysctl_sched_cfs_boost() > 0;
 	prefer_idle = 0;
 #endif
 
@@ -1974,7 +1803,7 @@ int exynos_select_cpu(struct task_struct *p, int prev_cpu, int sync, int sd_flag
 	}
 
 	if (sched_feat(ENERGY_AWARE) && !(cpu_rq(prev_cpu)->rd->overutilized)) {
-		target_cpu = select_energy_cpu(sd, p, prev_cpu, sd_flag, boosted);
+		target_cpu = select_energy_cpu_brute(p, prev_cpu, sync);
 		if (cpu_selected(target_cpu))
 			goto check_ontime;
 	}

@@ -38,7 +38,7 @@ extern unsigned long global_boost(void);
 extern int find_second_max_cap(void);
 
 extern int exynos_select_cpu(struct task_struct *p, int prev_cpu,
-					int sync, int sd_flag);
+					int sync);
 
 extern void ontime_migration(void);
 extern int ontime_can_migration(struct task_struct *p, int cpu);
@@ -66,7 +66,7 @@ static inline int find_second_max_cap(void) { return -EINVAL; }
 static inline int exynos_select_cpu(struct task_struct *p,
 						int prev_cpu) { return -EINVAL; }
 static inline int exynos_select_cpu(struct task_struct *p, int prev_cpu,
-					int sync, int sd_flag) { return -EINVAL; }
+					int sync) { return -EINVAL; }
 
 static inline void ontime_migration(void) { }
 static inline int ontime_can_migration(struct task_struct *p, int cpu) { return 1; }

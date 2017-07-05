@@ -20,6 +20,7 @@ obj-y += core_hmp.o fair_hmp.o
 else
 obj-y += core.o fair.o
 endif
+CFLAGS_fair.o := -Wno-array-bounds
 obj-y += loadavg.o clock.o cputime.o
 obj-y += idle_task.o rt.o deadline.o stop_task.o
 obj-y += wait.o swait.o completion.o idle.o
