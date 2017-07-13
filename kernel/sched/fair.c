@@ -9196,6 +9196,9 @@ static void update_cpu_capacity(struct sched_domain *sd, int cpu)
 	cpu_rq(cpu)->cpu_capacity_margin = capacity + (capacity >> 2);
 	ehmp_update_overutilized(cpu, capacity);
 
+	capacity *= arch_scale_max_freq_capacity(sd, cpu);
+	capacity >>= SCHED_CAPACITY_SHIFT;
+
 	mcc = &cpu_rq(cpu)->rd->max_cpu_capacity;
 
 	raw_spin_lock_irqsave(&mcc->lock, flags);
