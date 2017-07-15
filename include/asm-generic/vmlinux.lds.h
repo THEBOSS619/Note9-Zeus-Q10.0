@@ -238,7 +238,8 @@
 	LIKELY_PROFILE()		       				\
 	BRANCH_PROFILE()						\
 	TRACE_PRINTKS()							\
-	TRACEPOINT_STR()
+	TRACEPOINT_STR()                                                \
+	*(.data.[a-zA-Z_]*)
 
 /*
  * Data section helpers
@@ -500,7 +501,7 @@
 #define ENTRY_TEXT							\
 		ALIGN_FUNCTION();					\
 		VMLINUX_SYMBOL(__entry_text_start) = .;			\
-		*(.entry.text)						\
+		KEEP(*(.entry.text))					\
 		VMLINUX_SYMBOL(__entry_text_end) = .;
 
 #define IRQENTRY_TEXT							\
@@ -605,7 +606,8 @@
 #define SBSS(sbss_align)						\
 	. = ALIGN(sbss_align);						\
 	.sbss : AT(ADDR(.sbss) - LOAD_OFFSET) {				\
-		*(.sbss)						\
+		*(SBSS_MAIN)						\
+		*(.sbss .sbss.*)					\
 		*(.scommon)						\
 	}
 
