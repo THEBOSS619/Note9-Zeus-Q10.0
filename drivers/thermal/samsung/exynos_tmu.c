@@ -1195,7 +1195,7 @@ static struct thermal_zone_of_device_ops exynos_hotplug_sensor_ops = {
 	.throttle_cpu_hotplug = exynos_throttle_cpu_hotplug,
 };
 
-static struct thermal_zone_of_device_ops exynos_sensor_ops = {
+static const struct thermal_zone_of_device_ops exynos_sensor_ops = {
 	.get_temp = exynos_get_temp,
 	.set_emul_temp = exynos_tmu_set_emulation,
 	.get_trend = exynos_get_trend,
