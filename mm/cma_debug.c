@@ -171,7 +171,7 @@ static void cma_debugfs_add_one(struct cma *cma, int idx)
 	} else {
 		char name[16];
 
-		sprintf(name, "cma-%d", idx);
+		scnprintf(name, sizeof(name), "cma-%d", idx);
 		tmp = debugfs_create_dir(name, cma_debugfs_root);
 	}
 
