@@ -567,4 +567,5 @@ static inline bool lmk_kill_possible(void)
 	return false;
 }
 #endif
+void setup_zone_pageset(struct zone *zone);
 #endif	/* __MM_INTERNAL_H */
