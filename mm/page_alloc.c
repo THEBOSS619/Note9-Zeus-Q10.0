@@ -5307,8 +5307,7 @@ static DEFINE_PER_CPU(struct per_cpu_pageset, boot_pageset);
  */
 DEFINE_MUTEX(zonelists_mutex);
 
-/* return values int ....just for stop_machine() */
-static int __build_all_zonelists(void *data)
+static void __build_all_zonelists(void *data)
 {
 	int nid;
 	int __maybe_unused cpu;
@@ -5344,8 +5343,6 @@ static int __build_all_zonelists(void *data)
 			set_cpu_numa_mem(cpu, local_memory_node(cpu_to_node(cpu)));
 #endif
 	}
-
-	return 0;
 }
 
 static noinline void __init
@@ -5387,9 +5384,7 @@ void __ref build_all_zonelists(pg_data_t *pgdat)
 	if (system_state == SYSTEM_BOOTING) {
 		build_all_zonelists_init();
 	} else {
-		/* we have to stop all cpus to guarantee there is no user
-		   of zonelist */
-		stop_machine(__build_all_zonelists, pgdat, NULL);
+		__build_all_zonelists(pgdat);
 		/* cpuset refresh routine should be here */
 	}
 	vm_total_pages = nr_free_pagecache_pages();
