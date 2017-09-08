@@ -4,6 +4,7 @@
 #include <linux/spinlock.h>
 #include <linux/uidgid.h>
 #include <uapi/linux/ipc.h>
+#include <linux/refcount.h>
 
 #define IPCMNI 32768  /* <= MAX_INT limit for ipc arrays (including sysctl changes) */
 
@@ -14,6 +15,7 @@ struct kern_ipc_perm
 	bool		deleted;
 	int		id;
 	key_t		key;
+	refcount_t refcount;
 	kuid_t		uid;
 	kgid_t		gid;
 	kuid_t		cuid;
