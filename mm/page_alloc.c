@@ -4278,7 +4278,7 @@ __alloc_pages_nodemask(gfp_t gfp_mask, unsigned int order,
 {
 	struct page *page;
 	unsigned int alloc_flags = ALLOC_WMARK_LOW;
-	gfp_t alloc_mask = gfp_mask; /* The gfp_t that was actually used for allocation */
+	gfp_t alloc_mask; /* The gfp_t that was actually used for allocation */
 	struct alloc_context ac = {
 		.high_zoneidx = gfp_zone(gfp_mask),
 		.zonelist = zonelist,
@@ -4298,6 +4298,7 @@ __alloc_pages_nodemask(gfp_t gfp_mask, unsigned int order,
 	}
 
 	gfp_mask &= gfp_allowed_mask;
+	alloc_mask = gfp_mask;
 
 	lockdep_trace_alloc(gfp_mask);
 
