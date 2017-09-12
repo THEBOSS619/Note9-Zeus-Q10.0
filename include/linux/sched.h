@@ -1102,19 +1102,7 @@ struct energy_env {
 	int			dst_cpu;
 	int			trg_cpu;
 	int			energy;
-	int			payoff;
 	struct task_struct	*p;
-	struct {
-		int before;
-		int after;
-		int delta;
-		int diff;
-	} nrg;
-	struct {
-		int before;
-		int after;
-		int delta;
-	} cap;
 };
 
 
