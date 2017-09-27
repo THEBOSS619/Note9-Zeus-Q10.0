@@ -75,6 +75,8 @@ SCHED_FEAT(RT_RUNTIME_SHARE, true)
 SCHED_FEAT(LB_MIN, false)
 SCHED_FEAT(ATTACH_AGE_LOAD, true)
 
+SCHED_FEAT(WA_IDLE, true)
+
 /*
  * UtilEstimation. Use estimated CPU utilization.
  */
