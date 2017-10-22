@@ -35,14 +35,14 @@
 
 #include <rdma/ib_verbs.h>
 #include <linux/mlx5/driver.h>
-
+#include <linux/refcount.h>
 
 struct mlx5_core_cq {
 	u32			cqn;
 	int			cqe_sz;
 	__be32		       *set_ci_db;
 	__be32		       *arm_db;
-	atomic_t		refcount;
+	refcount_t		refcount;
 	struct completion	free;
 	unsigned		vector;
 	unsigned int		irqn;

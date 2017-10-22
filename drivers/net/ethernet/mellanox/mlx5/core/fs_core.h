@@ -33,6 +33,7 @@
 #ifndef _MLX5_FS_CORE_
 #define _MLX5_FS_CORE_
 
+#include <linux/refcount.h>
 #include <linux/mlx5/fs.h>
 
 enum fs_node_type {
@@ -80,7 +81,7 @@ struct fs_node {
 	struct fs_node		*root;
 	/* lock the node for writing and traversing */
 	struct mutex		lock;
-	atomic_t		refcount;
+	refcount_t		refcount;
 	void			(*remove_func)(struct fs_node *);
 };
 
