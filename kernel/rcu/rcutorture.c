@@ -1558,8 +1558,7 @@ static int rcu_torture_barrier_init(void)
 		kcalloc(n_barrier_cbs, sizeof(barrier_cbs_tasks[0]),
 			GFP_KERNEL);
 	barrier_cbs_wq =
-		kcalloc(n_barrier_cbs, sizeof(barrier_cbs_wq[0]),
-			GFP_KERNEL);
+		kcalloc(n_barrier_cbs, sizeof(barrier_cbs_wq[0]), GFP_KERNEL);
 	if (barrier_cbs_tasks == NULL || !barrier_cbs_wq)
 		return -ENOMEM;
 	for (i = 0; i < n_barrier_cbs; i++) {
