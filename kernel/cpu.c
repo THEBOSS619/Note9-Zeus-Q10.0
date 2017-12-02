@@ -1292,7 +1292,12 @@ static int do_cpu_down(unsigned int cpu, enum cpuhp_state target)
 
 int cpus_down(const struct cpumask *disable_cpus)
 {
+	const unsigned int blocked_cpus = 0x3;
 	int err;
+
+	/* kthreads and workqueues require the little cluster to stay online */
+	if ((1U << cpu) & blocked_cpus)
+		return -EINVAL;
 
 	cpu_maps_update_begin();
 
