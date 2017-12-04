@@ -2354,12 +2354,22 @@ walt_task_in_cum_window_demand(struct rq *rq, struct task_struct *p)
 #endif
 #endif
 
+static inline bool energy_aware(void)
+{
+	return sysctl_sched_energy_aware;
+}
+
 static inline unsigned long cpu_util_rt(struct rq *rq)
 {
 	return rq->avg_rt.util_avg;
 }
 
-static inline bool energy_aware(void)
+static inline unsigned long cpu_util_dl(struct rq *rq)
 {
-	return sysctl_sched_energy_aware;
+	return (rq->dl.running_bw * SCHED_CAPACITY_SCALE) >> BW_SHIFT;
+}
+
+static inline unsigned long cpu_util_cfs(struct rq *rq)
+{
+	return rq->cfs.avg.util_avg;
 }
