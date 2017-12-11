@@ -98,6 +98,13 @@ SCHED_FEAT(ENERGY_FILTER, false)
 
 SCHED_FEAT(HISI_FILTER, true)
 
+/*
+ * Enforce the priority of candidates selected by find_best_target()
+ * ON: If the target CPU saves any energy, use that.
+ * OFF: Use whichever of target or backup saves most.
+ */
+SCHED_FEAT(FBT_STRICT_ORDER, false)
+
 #ifdef CONFIG_SCHED_EHMP
 SCHED_FEAT(EXYNOS_HMP, true)
 SCHED_FEAT(EXYNOS_HMP_OM, true)
