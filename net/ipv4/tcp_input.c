@@ -765,9 +765,6 @@ static void tcp_rcv_rtt_update(struct tcp_sock *tp, u32 sample, int win_dep)
 	u32 new_sample = tp->rcv_rtt_est.rtt_us;
 	long m = sample;
 
-	if (m == 0)
-		m = 1;
-
 	if (new_sample != 0) {
 		/* If we sample in larger samples in the non-timestamp
 		 * case, we could grossly overestimate the RTT especially
@@ -808,6 +805,8 @@ static inline void tcp_rcv_rtt_measure(struct tcp_sock *tp)
 	if (before(tp->rcv_nxt, tp->rcv_rtt_est.seq))
 		return;
 	delta_us = skb_mstamp_us_delta(&tp->tcp_mstamp, &tp->rcv_rtt_est.time);
+	if (!delta_us)
+		delta_us = 1;
 	tcp_rcv_rtt_update(tp, delta_us, 1);
 
 new_measure:
