@@ -3019,6 +3019,7 @@ int abox_hw_params_fixup_helper(struct snd_soc_pcm_runtime *rtd,
 	snd_pcm_format_t format;
 	struct snd_soc_dapm_widget *w_mst = NULL;
 	int stream_mst = 0;
+	bool skip_ipc = false;
 
 	dev_info(dev, "%s[%s](%d)\n", __func__, dai->name, stream);
 
@@ -3088,6 +3089,13 @@ int abox_hw_params_fixup_helper(struct snd_soc_pcm_runtime *rtd,
 		stream_mst = stream;
 	}
 
+	if (w_tgt->power) {
+		dev_info(dev, "%s: %s: skip ipc due to active already\n",
+				__func__, w_tgt->name);
+		skip_ipc = true;
+		goto unlock;
+	}
+
 	/* channel mixing isn't supported */
 	abox_set_sif_channels(data, msg_format, params_channels(params));
 
@@ -3154,9 +3162,12 @@ unlock:
 	if (!w_tgt)
 		goto out;
 
+	if (skip_ipc)
+		goto fixup;
+
 	abox_sample_rate_put_ipc(dev, rate, msg_rate);
 	abox_sif_format_put_ipc(dev, format, channels, msg_format);
-
+fixup:
 	hw_param_interval(params, SNDRV_PCM_HW_PARAM_RATE)->min =
 			abox_get_sif_rate(data, msg_rate);
 	hw_param_interval(params, SNDRV_PCM_HW_PARAM_CHANNELS)->min =
