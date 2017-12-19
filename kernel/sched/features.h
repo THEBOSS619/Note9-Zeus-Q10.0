@@ -99,6 +99,15 @@ SCHED_FEAT(ENERGY_FILTER, false)
 SCHED_FEAT(HISI_FILTER, true)
 
 /*
+ * Energy aware scheduling algorithm choices:
+ * EAS_PREFER_IDLE
+ *   Direct tasks in a schedtune.prefer_idle=1 group through
+ *   the EAS path for wakeup task placement. Otherwise, put
+ *   those tasks through the mainline slow path.
+ */
+SCHED_FEAT(EAS_PREFER_IDLE, true)
+
+/*
  * Enforce the priority of candidates selected by find_best_target()
  * ON: If the target CPU saves any energy, use that.
  * OFF: Use whichever of target or backup saves most.
