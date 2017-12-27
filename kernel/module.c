@@ -62,6 +62,26 @@
 #include <linux/bsearch.h>
 #include <linux/dynamic_debug.h>
 #include <uapi/linux/module.h>
+
+#ifndef CONFIG_MODULES
+SYSCALL_DEFINE2(delete_module, const char __user *, name_user,
+		unsigned int, flags)
+{
+	return 0;
+}
+
+SYSCALL_DEFINE3(init_module, void __user *, umod,
+		unsigned long, len, const char __user *, uargs)
+{
+	return 0;
+}
+
+SYSCALL_DEFINE3(finit_module, int, fd, const char __user *, uargs, int, flags)
+{
+	return 0;
+}
+#else
+
 #include "module-internal.h"
 
 #ifdef CONFIG_TIMA_LKMAUTH_CODE_PROT
@@ -4550,3 +4570,5 @@ void module_layout(struct module *mod,
 }
 EXPORT_SYMBOL(module_layout);
 #endif
+
+#endif // CONFIG_MODULES
