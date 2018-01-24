@@ -706,17 +706,36 @@ static unsigned long lowmem_scan(struct shrinker *s, struct shrink_control *sc)
 		if (test_task_flag(tsk, TIF_MM_RELEASED))
 			continue;
 
-		if (time_before_eq(jiffies, lowmem_deathpending_timeout)) {
-			if (test_task_lmk_waiting(tsk)) {
-				rcu_read_unlock();
-				mutex_unlock(&scan_mutex);
-				return 0;
-			}
-		}
+		if (oom_reaper) {
+			p = find_lock_task_mm(tsk);
+			if (!p)
+				continue;
 
-		p = find_lock_task_mm(tsk);
-		if (!p)
-			continue;
+			if (test_bit(MMF_OOM_VICTIM, &p->mm->flags)) {
+				if (test_bit(MMF_OOM_SKIP, &p->mm->flags)) {
+					task_unlock(p);
+					continue;
+				} else if (time_before_eq(jiffies,
+						lowmem_deathpending_timeout)) {
+					task_unlock(p);
+					rcu_read_unlock();
+					mutex_unlock(&scan_mutex);
+					return 0;
+				}
+			}
+		} else {
+			if (time_before_eq(jiffies,
+					   lowmem_deathpending_timeout))
+				if (test_task_lmk_waiting(tsk)) {
+					rcu_read_unlock();
+					mutex_unlock(&scan_mutex);
+					return 0;
+				}
+
+			p = find_lock_task_mm(tsk);
+			if (!p)
+				continue;
+		}
 
 		if (p->state & TASK_UNINTERRUPTIBLE) {
 			task_unlock(p);
