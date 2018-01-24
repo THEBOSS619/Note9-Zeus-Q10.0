@@ -7001,6 +7001,7 @@ static inline int find_best_target(struct task_struct *p, int *backup_cpu,
 	unsigned long min_wake_util = ULONG_MAX;
 	unsigned long target_max_spare_cap = 0;
 	unsigned long best_active_util = ULONG_MAX;
+	unsigned long target_max_free_util = 0;	
 	int best_idle_cstate = INT_MAX;
 	struct sched_domain *sd;
 	struct sched_group *sg;
@@ -7217,16 +7218,21 @@ static inline int find_best_target(struct task_struct *p, int *backup_cpu,
 			 * that CPU at an higher OPP.
 			 *
 			 * Thus, this case keep track of the CPU with the
-			 * smallest maximum capacity and highest spare maximum
-			 * capacity.
+			 * smallest maximum capacity, highest spare maximum
+			 * capacity and highest free cpu utility.
 			 */
 
 			/* Favor CPUs with maximum spare capacity */
 			if ((capacity_orig - new_util) < target_max_spare_cap)
 				continue;
 
+			/* Favor CPUs with maximum free utilization */
+			if ((capacity_orig - cpu_util(i)) < target_max_free_util)
+				continue;
+
 			target_max_spare_cap = capacity_orig - new_util;
 			target_capacity = capacity_orig;
+			target_max_free_util = capacity_orig - cpu_util(i);
 			target_cpu = i;
 		}
 
