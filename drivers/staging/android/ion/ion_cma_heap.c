@@ -23,6 +23,7 @@
 #include <linux/dma-mapping.h>
 #include <linux/exynos_ion.h>
 #include <linux/cma.h>
+#include <linux/highmem.h>
 
 /* for ion_heap_ops structure */
 #include "ion_priv.h"
@@ -45,6 +46,7 @@ static int ion_cma_allocate(struct ion_heap *heap, struct ion_buffer *buffer,
 	struct ion_buffer_info *info;
 	struct page *page;
 	unsigned long size = len;
+	unsigned long nr_pages = size >> PAGE_SHIFT;
 	int ret;
 
 	if (!ion_is_heap_available(heap, flags, NULL))
@@ -70,6 +72,21 @@ static int ion_cma_allocate(struct ion_heap *heap, struct ion_buffer *buffer,
 		ret = -ENOMEM;
 		pr_err("%s: Fail to allocate buffer from CMA\n", __func__);
 		goto err;
+	}
+
+	if (PageHighMem(page)) {
+		unsigned long nr_clear_pages = nr_pages;
+
+		while (nr_clear_pages > 0) {
+			void *vaddr = kmap_atomic(page);
+
+			memset(vaddr, 0, PAGE_SIZE);
+			kunmap_atomic(vaddr);
+			page++;
+			nr_clear_pages--;
+		}
+	} else {
+		memset(page_address(page), 0, size);
 	}
 
 	if (!(flags & ION_FLAG_NOZEROED))
