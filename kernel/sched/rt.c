@@ -2876,12 +2876,112 @@ static int find_best_rt_target(struct task_struct* task, int cpu,
 	return target_cpu;
 }
 
+static int rt_energy_aware_wake_cpu(struct task_struct *task)
+{
+	struct sched_domain *sd;
+	struct sched_group *sg, *sg_target = NULL;
+	struct cpumask *lowest_mask = this_cpu_cpumask_var_ptr(local_cpu_mask);
+	int cpu, best_cpu = -1;
+	struct cpumask search_cpu, backup_search_cpu;
+	unsigned long cpu_capacity, capacity = ULONG_MAX;
+	unsigned long util, best_cpu_util = ULONG_MAX;
+	unsigned long best_cpu_util_cum = ULONG_MAX;
+	unsigned long util_cum;
+	unsigned long tutil = task_util(task);
+	int best_cpu_idle_idx = INT_MAX;
+	int cpu_idle_idx = -1;
+
+	rcu_read_lock();
+	sd = rcu_dereference(per_cpu(sd_ea, task_cpu(task)));
+	if (!sd) {
+		rcu_read_unlock();
+		return best_cpu;
+	}
+
+	sg = sd->groups;
+	do {
+		cpu = group_first_cpu(sg);
+		cpu_capacity = capacity_orig_of(cpu);
+		if (cpu_capacity < capacity) {
+			capacity = cpu_capacity;
+			sg_target = sg;
+		}
+	} while (sg = sg->next, sg != sd->groups);
+	rcu_read_unlock();
+
+	cpumask_and(&search_cpu, lowest_mask,
+		    sched_group_span(sg_target));
+	cpumask_copy(&backup_search_cpu, lowest_mask);
+	cpumask_andnot(&backup_search_cpu, &backup_search_cpu,
+		       &search_cpu);
+
+retry:
+	for_each_cpu(cpu, &search_cpu) {
+		if (cpu_isolated(cpu))
+			continue;
+
+		if (sched_cpu_high_irqload(cpu))
+			continue;
+
+		util = cpu_util(cpu);
+
+		if (__cpu_overutilized(cpu, util + tutil))
+			continue;
+
+		/* Find the least loaded CPU */
+		if (util > best_cpu_util)
+			continue;
+
+		/*
+		 * If the previous CPU has same load, keep it as
+		 * best_cpu.
+		 */
+		if (best_cpu_util == util && best_cpu == task_cpu(task))
+			continue;
+
+		/*
+		 * If candidate CPU is the previous CPU, select it.
+		 * Otherwise, if its load is same with best_cpu and in
+		 * a shallower C-state, select it.  If all above
+		 * conditions are same, select the least cumulative
+		 * window demand CPU.
+		 */
+		if (sysctl_sched_cstate_aware)
+			cpu_idle_idx = idle_get_state_idx(cpu_rq(cpu));
+
+		util_cum = cpu_util_cum(cpu, 0);
+		if (cpu != task_cpu(task) && best_cpu_util == util) {
+			if (best_cpu_idle_idx < cpu_idle_idx)
+				continue;
+
+			if (best_cpu_idle_idx == cpu_idle_idx &&
+			    best_cpu_util_cum < util_cum)
+				continue;
+		}
+
+		best_cpu_idle_idx = cpu_idle_idx;
+		best_cpu_util_cum = util_cum;
+		best_cpu_util = util;
+		best_cpu = cpu;
+	}
+
+	if (best_cpu != -1) {
+		return best_cpu;
+	} else if (!cpumask_empty(&backup_search_cpu)) {
+		cpumask_copy(&search_cpu, &backup_search_cpu);
+		cpumask_clear(&backup_search_cpu);
+		goto retry;
+	} else {
+		return best_cpu;
+	}
+}
+
 static int find_lowest_rq(struct task_struct *task, int sync)
 {
 	struct sched_domain *sd;
 	struct cpumask *lowest_mask = this_cpu_cpumask_var_ptr(local_cpu_mask);
 	int this_cpu = smp_processor_id();
-	int cpu      = task_cpu(task);
+	int cpu = -1;
 	bool boosted, prefer_idle;
 
 #ifdef CONFIG_SCHED_USE_FLUID_RT
@@ -2898,6 +2998,12 @@ static int find_lowest_rq(struct task_struct *task, int sync)
 	/* Constructing cpumask of lowest priorities */
 	if (!cpupri_find(&task_rq(task)->rd->cpupri, task, lowest_mask))
 		return -1; /* No targets found */
+
+	if (energy_aware())
+		cpu = rt_energy_aware_wake_cpu(task);
+
+	if (cpu == -1)
+		cpu = task_cpu(task);
 
 	/*
 	 * Return current cpu if WF_SYNC hint is set and present in
