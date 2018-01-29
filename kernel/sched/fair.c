@@ -5266,8 +5266,6 @@ static inline void hrtick_update(struct rq *rq)
 #endif
 
 #ifdef CONFIG_SMP
-static bool __cpu_overutilized(int cpu, int delta);
-static bool cpu_overutilized(int cpu);
 static unsigned long capacity_orig_of(int cpu);
 static unsigned long cpu_util(int cpu);
 unsigned long boosted_cpu_util(int cpu);
@@ -5893,12 +5891,6 @@ unsigned long capacity_min_of(int cpu)
 	return arch_scale_cpu_capacity(NULL, cpu) *
 	       arch_scale_min_freq_capacity(NULL, cpu)
 	       >> SCHED_CAPACITY_SHIFT;
-}
-
-
-static inline bool energy_aware(void)
-{
-	return sched_feat(ENERGY_AWARE);
 }
 
 /*
