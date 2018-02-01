@@ -54,14 +54,9 @@ static u64 zswap_pool_total_size;
 /* Number of memory pages used by the compressed pool */
 u64 zswap_pool_pages;
 /* The number of compressed pages currently stored in zswap */
-atomic_t zswap_stored_pages = ATOMIC_INIT(0);
-
-#ifdef CONFIG_ZSWAP_SAME_PAGE_SHARING
-/* The number of swapped out pages which are identified as duplicate
-   to the existing zswap pages. Compression and storing of these
-   pages is avoided */
-static atomic_t zswap_duplicate_pages = ATOMIC_INIT(0);
-#endif
+static atomic_t zswap_stored_pages = ATOMIC_INIT(0);
+/* The number of same-value filled pages currently stored in zswap */
+static atomic_t zswap_same_filled_pages = ATOMIC_INIT(0);
 
 /*
  * The statistics below are not protected from concurrent access for
@@ -131,6 +126,11 @@ module_param_cb(zpool, &zswap_zpool_param_ops, &zswap_zpool_type, 0644);
 static unsigned int zswap_max_pool_percent = 50;
 module_param_named(max_pool_percent, zswap_max_pool_percent, uint, 0644);
 
+/* Enable/disable handling same-value filled pages (enabled by default) */
+static bool zswap_same_filled_pages_enabled = true;
+module_param_named(same_filled_pages_enabled, zswap_same_filled_pages_enabled,
+		   bool, 0644);
+
 /*********************************
 * data structures
 **********************************/
@@ -182,14 +182,10 @@ struct zswap_pool {
  *            be held while changing the refcount.  Since the lock must
  *            be held, there is no reason to also make refcount atomic.
  * length - the length in bytes of the compressed page data.  Needed during
- *          decompression
+ *          decompression. For a same value filled page length is 0.
  * pool - the zswap_pool the entry's data is in
  * handle - zpool allocation handle that stores the compressed page data
- *          if page is zero-filled, handle is 0.
- * #else
- * zhandle - pointer to struct zswap_handle where length and handle are moved into.
- *           if page is zero-filled, zhandle is NULL.
- * #endif
+ * value - value of the same-value filled pages which have same content
  */
 #ifndef CONFIG_ZSWAP_SAME_PAGE_SHARING
 struct zswap_entry {
@@ -198,7 +194,10 @@ struct zswap_entry {
 	int refcount;
 	unsigned int length;
 	struct zswap_pool *pool;
-	unsigned long handle;
+	union {
+		unsigned long handle;
+		unsigned long value;
+	};
 };
 #else
 struct zswap_entry {
@@ -528,21 +527,12 @@ static struct zswap_handle *zswap_same_page_search(struct zswap_pool *pool, stru
  */
 static void zswap_free_entry(struct zswap_entry *entry)
 {
-	if (is_page_zero_filled(entry)) {
-		atomic_dec(&zswap_zero_pages);
-		goto zeropage_out;
+	if (!entry->length)
+		atomic_dec(&zswap_same_filled_pages);
+	else {
+		zpool_free(entry->pool->zpool, entry->handle);
+		zswap_pool_put(entry->pool);
 	}
-#ifdef CONFIG_ZSWAP_SAME_PAGE_SHARING
-	entry->zhandle->ref_count--;
-	if (!entry->zhandle->ref_count)
-		zswap_free_handle(entry->pool, entry->zhandle);
-	else
-		atomic_dec(&zswap_duplicate_pages);
-#else
-	zpool_free(entry->pool->zpool, entry->handle);
-#endif
-zeropage_out:
-	zswap_pool_put(entry->pool);
 	zswap_entry_cache_free(entry);
 	atomic_dec(&zswap_stored_pages);
 	zswap_update_total_size();
@@ -1251,6 +1241,28 @@ static int page_zero_filled(void *ptr)
 	return 1;
 }
 
+static int zswap_is_page_same_filled(void *ptr, unsigned long *value)
+{
+	unsigned int pos;
+	unsigned long *page;
+
+	page = (unsigned long *)ptr;
+	for (pos = 1; pos < PAGE_SIZE / sizeof(*page); pos++) {
+		if (page[pos] != page[0])
+			return 0;
+	}
+	*value = page[0];
+	return 1;
+}
+
+static void zswap_fill_page(void *ptr, unsigned long value)
+{
+	unsigned long *page;
+
+	page = (unsigned long *)ptr;
+	memset_l(page, value, PAGE_SIZE / sizeof(unsigned long));
+}
+
 /*********************************
 * frontswap hooks
 **********************************/
@@ -1263,7 +1275,7 @@ static int zswap_frontswap_store(unsigned type, pgoff_t offset,
 	struct crypto_comp *tfm;
 	int ret;
 	unsigned int dlen = PAGE_SIZE, len;
-	unsigned long handle;
+	unsigned long handle, value;
 	char *buf;
 	u8 *src, *dst;
 #ifdef CONFIG_ZSWAP_ENABLE_WRITEBACK
@@ -1315,6 +1327,19 @@ static int zswap_frontswap_store(unsigned type, pgoff_t offset,
 		zswap_reject_kmemcache_fail++;
 		ret = -ENOMEM;
 		goto reject;
+	}
+
+	if (zswap_same_filled_pages_enabled) {
+		src = kmap_atomic(page);
+		if (zswap_is_page_same_filled(src, &value)) {
+			kunmap_atomic(src);
+			entry->offset = offset;
+			entry->length = 0;
+			entry->value = value;
+			atomic_inc(&zswap_same_filled_pages);
+			goto insert_entry;
+		}
+		kunmap_atomic(src);
 	}
 
 	/* if entry is successfully added, it keeps the reference */
@@ -1472,11 +1497,11 @@ static int zswap_frontswap_load(unsigned type, pgoff_t offset,
 	}
 	spin_unlock(&tree->lock);
 
-	if (is_page_zero_filled(entry)) {
+	if (!entry->length) {
 		dst = kmap_atomic(page);
-		memset(dst, 0, PAGE_SIZE);
+		zswap_fill_page(dst, entry->value);
 		kunmap_atomic(dst);
-		goto zeropage_out;
+		goto freeentry;
 	}
 
 	/* decompress */
@@ -1533,7 +1558,7 @@ static int zswap_frontswap_load(unsigned type, pgoff_t offset,
 #endif
 	BUG_ON(ret);
 
-zeropage_out:
+freeentry:
 	spin_lock(&tree->lock);
 	zswap_entry_put(tree, entry);
 	spin_unlock(&tree->lock);
@@ -1659,12 +1684,8 @@ static int __init zswap_debugfs_init(void)
 			zswap_debugfs_root, &zswap_pool_pages);
 	debugfs_create_atomic_t("stored_pages", S_IRUGO,
 			zswap_debugfs_root, &zswap_stored_pages);
-#ifdef CONFIG_ZSWAP_SAME_PAGE_SHARING
-	debugfs_create_atomic_t("duplicate_pages", S_IRUGO,
-			zswap_debugfs_root, &zswap_duplicate_pages);
-#endif
-	debugfs_create_atomic_t("zero_pages", S_IRUGO,
-			zswap_debugfs_root, &zswap_zero_pages);
+	debugfs_create_atomic_t("same_filled_pages", 0444,
+			zswap_debugfs_root, &zswap_same_filled_pages);
 
 	return 0;
 }
