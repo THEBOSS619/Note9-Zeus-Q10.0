@@ -29,6 +29,9 @@
 #define SCHED_WARN_ON(x)	((void)(x))
 #endif
 
+extern unsigned int sched_capacity_margin_up[NR_CPUS];
+extern unsigned int sched_capacity_margin_down[NR_CPUS];
+
 struct rq;
 struct cpuidle_state;
 
