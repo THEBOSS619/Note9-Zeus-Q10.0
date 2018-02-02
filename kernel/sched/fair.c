@@ -157,8 +157,15 @@ unsigned int sysctl_sched_cfs_bandwidth_slice		= 5000UL;
  */
 unsigned int capacity_margin				= 1280;
 
-unsigned int sysctl_sched_capacity_margin_up = 1078; /* ~5% margin */
-unsigned int sysctl_sched_capacity_margin_down = 1205; /* ~15% margin */
+/* Migration margins */
+unsigned int sysctl_sched_capacity_margin_up[MAX_MARGIN_LEVELS] = {
+			[0 ... MAX_MARGIN_LEVELS-1] = 1078}; /* ~5% margin */
+unsigned int sysctl_sched_capacity_margin_down[MAX_MARGIN_LEVELS] = {
+			[0 ... MAX_MARGIN_LEVELS-1] = 1205}; /* ~15% margin */
+unsigned int sched_capacity_margin_up[NR_CPUS] = {
+			[0 ... NR_CPUS-1] = 1078}; /* ~5% margin */
+unsigned int sched_capacity_margin_down[NR_CPUS] = {
+			[0 ... NR_CPUS-1] = 1205}; /* ~15% margin */
 
 static unsigned int __maybe_unused sched_small_task_threshold = 102;
 
@@ -3839,9 +3846,9 @@ static inline int task_fits_capacity(struct task_struct *p,
 	unsigned int margin;
 
 	if (capacity_orig_of(task_cpu(p)) > capacity_orig_of(cpu))
-		margin = sysctl_sched_capacity_margin_down;
+		margin = sched_capacity_margin_down[task_cpu(p)];
 	else
-		margin = sysctl_sched_capacity_margin_up;
+		margin = sysctl_sched_capacity_margin_up[task_cpu(p)];
 
 	return capacity * 1024 > task_util_est(p) * margin;
 }
@@ -3856,7 +3863,7 @@ static inline void update_misfit_status(struct task_struct *p, struct rq *rq)
 		return;
 	}
 
-	if (task_fits_capacity(p, capacity_of(cpu_of(rq))), rq->cpu) {
+	if (task_fits_capacity(p, capacity_of(cpu_of(rq)), rq->cpu)) {
 		rq->misfit_task_load = 0;
 		return;
 	}
@@ -8920,7 +8927,7 @@ static int detach_tasks(struct lb_env *env)
 
 		case migrate_misfit:
 			/* This is not a misfit task */
-			if (task_fits_capacity(p, capacity_of(env->src_cpu)), env->src_cpu)
+			if (task_fits_capacity(p, capacity_of(env->src_cpu), env->src_cpu))
 				goto next;
 
 			env->imbalance = 0;
@@ -9911,7 +9918,7 @@ static inline void update_sg_wakeup_stats(struct sched_domain *sd,
 
 	/* Check if task fits in the group */
 	if (sd->flags & SD_ASYM_CPUCAPACITY &&
-	    !task_fits_capacity(p, group->sgc->max_capacity), cpu) {
+	    !task_fits_capacity(p, group->sgc->max_capacity, 0)) {
 		sgs->group_misfit_task_load = 1;
 	}
 
