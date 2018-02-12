@@ -27,14 +27,10 @@
 #include "ion_priv.h"
 #include <linux/sched.h>
 
-static void *ion_page_pool_alloc_pages(struct ion_page_pool *pool, bool zeroed)
+
+static inline struct page *ion_page_pool_alloc_pages(struct ion_page_pool *pool)
 {
-	gfp_t gfp_mask = pool->gfp_mask;
-
-	if (!zeroed)
-		gfp_mask &= ~__GFP_ZERO;
-
-	return alloc_pages(gfp_mask, pool->order);
+	return alloc_pages(pool->gfp_mask, pool->order);
 }
 
 static void ion_page_pool_free_pages(struct ion_page_pool *pool,
@@ -116,7 +112,7 @@ struct page *ion_page_pool_alloc(struct ion_page_pool *pool, bool zeroed)
 	spin_unlock(&pool->lock);
 
 	if (!page) {
-		page = ion_page_pool_alloc_pages(pool, zeroed);
+		page = ion_page_pool_alloc_pages(pool);
 		/*
 		 * PGMASK_PAGE_FROM_BUDDY should be cleared by the allocator of
 		 * the heap before providing the buffer to the client.
