@@ -6354,13 +6354,14 @@ schedtune_margin(unsigned long cap, unsigned long signal, long boost)
 	if (boost >= 0) {
 		margin  = cap - signal;
 		margin *= boost;
-	} else
+	} else {
 		margin = -signal * boost;
+	}
 
 	margin  = reciprocal_divide(margin, schedtune_spc_rdiv);
-
 	if (boost < 0)
 		margin *= -1;
+
 	return margin;
 }
 
