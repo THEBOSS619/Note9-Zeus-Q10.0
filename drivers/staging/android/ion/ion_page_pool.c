@@ -194,18 +194,7 @@ struct page *ion_page_pool_alloc(struct ion_page_pool *pool, bool zeroed)
 
 void ion_page_pool_free(struct ion_page_pool *pool, struct page *page)
 {
-	int ret;
-
-	/*
-	 * ION RBIN heap can utilize ion_page_pool_free() for pages which are
-	 * not compound pages. Thus, comment out the below line.
-	 *
-	 * BUG_ON(pool->order != compound_order(page));
-	 */
-
-	ret = ion_page_pool_add(pool, page);
-	if (ret)
-		ion_page_pool_free_pages(pool, page);
+	ion_page_pool_add(pool, page);
 }
 
 int ion_page_pool_total(struct ion_page_pool *pool, bool high)
