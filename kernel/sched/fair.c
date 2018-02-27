@@ -5344,6 +5344,17 @@ static void dequeue_task_fair(struct rq *rq, struct task_struct *p, int flags)
 	if (task_sleep && rq->nr_running == 1)
 		flags |= DEQUEUE_IDLE;
 
+#ifdef CONFIG_SMP
+	/*
+	 * Update SchedTune accounting
+	 *
+	 * We do it before updating the CPU capacity to ensure the
+	 * boost value of the current task is accounted for in the
+	 * selection of the OPP.
+	 */
+	schedtune_dequeue_task(p, cpu_of(rq));
+#endif
+
 	for_each_sched_entity(se) {
 		cfs_rq = cfs_rq_of(se);
 		dequeue_entity(cfs_rq, se, flags);
