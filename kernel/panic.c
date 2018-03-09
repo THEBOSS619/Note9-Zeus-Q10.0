@@ -649,7 +649,7 @@ __visible void __stack_chk_fail(void)
 #ifdef CONFIG_SEC_DEBUG
 	BUG();
 #else
-	panic("stack-protector: Kernel stack is corrupted in: %p\n",
+	panic("stack-protector: Kernel stack is corrupted in: %pB\n",
 		__builtin_return_address(0));
 #endif
 }
