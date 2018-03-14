@@ -128,9 +128,8 @@ struct rcu_work {
 	struct workqueue_struct *wq;
 };
 
-/*
- * A struct for workqueue attributes.  This can be used to change
- * attributes of an unbound workqueue.
+/**
+ * struct workqueue_attrs - A struct for workqueue attributes.
  *
  * Unlike other fields, ->no_numa isn't a property of a worker_pool.  It
  * only modifies how apply_workqueue_attrs() select pools and thus doesn't
