@@ -470,6 +470,15 @@ static int exynos_cpufreq_resume(struct cpufreq_policy *policy)
 	return __exynos_cpufreq_resume(domain);
 }
 
+static void exynos_cpufreq_ready(struct cpufreq_policy *policy)
+{
+}
+
+static int exynos_cpufreq_exit(struct cpufreq_policy *policy)
+{
+	return 0;
+}
+
 static int exynos_cpufreq_pm_notifier(struct notifier_block *notifier,
 				       unsigned long pm_event, void *v)
 {
@@ -503,6 +512,8 @@ static struct cpufreq_driver exynos_driver = {
 	.get		= exynos_cpufreq_get,
 	.suspend	= exynos_cpufreq_suspend,
 	.resume		= exynos_cpufreq_resume,
+	.ready		= exynos_cpufreq_ready,
+	.exit		= exynos_cpufreq_exit,
 	.attr		= cpufreq_generic_attr,
 };
 
