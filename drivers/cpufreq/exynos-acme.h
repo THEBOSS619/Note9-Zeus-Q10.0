@@ -78,6 +78,7 @@ struct exynos_cpufreq_domain {
 
 	/* list head of User cpuFreq Ctrl (UFC) */
 	struct list_head                ufc_list;
+	struct thermal_cooling_device *cdev;
 };
 
 /*
