@@ -6084,15 +6084,6 @@ inline int select_energy_cpu_idx(struct energy_env *eenv)
 	if (!sd)
 		return EAS_CPU_PRV;
 
-	cpumask_clear(&eenv->cpus_mask);
-	for (cpu_idx = EAS_CPU_PRV; cpu_idx < EAS_CPU_CNT; ++cpu_idx) {
-		int cpu = eenv->cpu[cpu_idx].cpu_id;
-
-		if (cpu < 0)
-			continue;
-		cpumask_set_cpu(cpu, &eenv->cpus_mask);
-	}
-
 	sg = sd->groups;
 	do {
 		/* Skip SGs which do not contains a candidate CPU */
@@ -7391,6 +7382,14 @@ int select_energy_cpu_brute(struct task_struct *p, int prev_cpu, int sync)
 			target_cpu = next_cpu;
 			goto unlock;
 		}
+
+		cpumask_clear(&eenv.cpus_mask);
+		if (prev_cpu >= 0)
+			cpumask_set_cpu(prev_cpu, &eenv.cpus_mask);
+		if (next_cpu >= 0)
+			cpumask_set_cpu(next_cpu, &eenv.cpus_mask);
+		if (backup_cpu >= 0)
+			cpumask_set_cpu(backup_cpu, &eenv.cpus_mask);
 
 		/* Check if EAS_CPU_NXT is a more energy efficient CPU */
 		if (select_energy_cpu_idx(&eenv) != EAS_CPU_PRV) {
