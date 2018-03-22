@@ -1013,4 +1013,4 @@ module_exit(ncm_exit)
 MODULE_LICENSE("GPL");
 MODULE_DESCRIPTION("Network Context Metadata Module:");
 
-// KNOX NPA - END
+/* END_OF_KNOX_NPA */
