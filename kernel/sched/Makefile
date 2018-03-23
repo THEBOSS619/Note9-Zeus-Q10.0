@@ -16,7 +16,7 @@ CFLAGS_core.o := $(PROFILING) -fno-omit-frame-pointer
 endif
 
 ifeq ($(CONFIG_SCHED_HMP),y)
-obj-y += core_hmp.o fair_hmp.o
+obj-y += core_hmp.o fair_hmp.o pcf.o
 else
 obj-y += core.o fair.o
 endif
