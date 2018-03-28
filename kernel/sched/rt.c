@@ -2437,8 +2437,6 @@ static void put_prev_task_rt(struct rq *rq, struct task_struct *p)
 
 	update_curr_rt(rq);
 
-	update_rt_rq_load_avg(rq_clock_task(rq), cpu_of(rq), &rq->rt, 1);
-
 	/*
 	 * The previous task needs to be made eligible for pushing
 	 * if it is still active
@@ -3738,7 +3736,6 @@ static void task_tick_rt(struct rq *rq, struct task_struct *p, int queued)
 	u64 now = rq_clock_task(rq);
 
 	update_curr_rt(rq);
-	update_rt_rq_load_avg(rq_clock_task(rq), cpu_of(rq), &rq->rt, 1);
 
 	for_each_sched_rt_entity(rt_se) {
 		struct rt_rq *rt_rq = rt_rq_of_se(rt_se);
