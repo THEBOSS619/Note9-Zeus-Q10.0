@@ -4310,11 +4310,11 @@ static const struct alg_test_desc alg_test_descs[] = {
 			.comp = {
 				.comp = {
 					.vecs = zstd_comp_tv_template,
-					.count = 2
+					.count = ZSTD_COMP_TEST_VECTORS
 				},
 				.decomp = {
 					.vecs = zstd_decomp_tv_template,
-					.count = 2
+					.count = ZSTD_DECOMP_TEST_VECTORS
 				}
 			}
 		}

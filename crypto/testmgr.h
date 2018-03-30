@@ -36031,6 +36031,9 @@ static struct comp_testvec lz4hc_decomp_tv_template[] = {
 	},
 };
 
+#define ZSTD_COMP_TEST_VECTORS 2
+#define ZSTD_DECOMP_TEST_VECTORS 2
+
 static struct comp_testvec zstd_comp_tv_template[] = {
 	{
 		.inlen	= 68,
