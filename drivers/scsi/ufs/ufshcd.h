@@ -729,6 +729,8 @@ struct ufs_hba {
 	u16 manufacturer_id;
 	u8 lifetime;
 	unsigned int lc_info;
+	/* sync b/w diff contexts */
+	struct rw_semaphore query_lock;
 
 	struct ufs_monitor monitor;
 
