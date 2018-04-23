@@ -1025,10 +1025,8 @@ static void sugov_stop(struct cpufreq_policy *policy)
 		cpufreq_remove_update_util_hook(cpu);
 	}
 
-	synchronize_sched();
 
 	if (!policy->fast_switch_enabled) {
-		irq_work_sync(&sg_policy->irq_work);
 		kthread_cancel_work_sync(&sg_policy->work);
 	}
 }
