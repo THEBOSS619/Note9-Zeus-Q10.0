@@ -16,6 +16,7 @@ struct target_nrg {
 
 int schedtune_cpu_boost(int cpu);
 int schedtune_task_boost(struct task_struct *tsk);
+int schedtune_task_boost_rcu_locked(struct task_struct *tsk);
 
 void schedtune_group_util_update(void);
 int schedtune_need_group_balance(struct task_struct *p);
