@@ -20,6 +20,7 @@
 #include <linux/exynos-ss.h>
 #include <linux/cpu_cooling.h>
 #include <linux/suspend.h>
+#include <linux/sched.h>
 
 #include <soc/samsung/cal-if.h>
 #include <soc/samsung/ect_parser.h>

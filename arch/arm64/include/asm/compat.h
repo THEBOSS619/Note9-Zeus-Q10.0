@@ -310,6 +310,7 @@ static inline int is_compat_thread(struct thread_info *thread)
 }
 
 #else /* !CONFIG_COMPAT */
+#include <asm/thread_info.h>
 
 static inline int is_compat_thread(struct thread_info *thread)
 {
