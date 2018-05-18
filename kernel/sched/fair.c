@@ -7375,16 +7375,6 @@ int select_energy_cpu_brute(struct task_struct *p, int prev_cpu)
 	schedstat_inc(p->se.statistics.nr_wakeups_secb_attempts);
 	schedstat_inc(this_rq()->eas_stats.secb_attempts);
 
-	if (sysctl_sched_sync_hint_enable) {
-		int cpu = smp_processor_id();
-
-		if (cpumask_test_cpu(cpu, tsk_cpus_allowed(p))) {
-			schedstat_inc(p->se.statistics.nr_wakeups_secb_sync);
-			schedstat_inc(this_rq()->eas_stats.secb_sync);
-			return cpu;
-		}
-	}
-
 #ifdef CONFIG_CGROUP_SCHEDTUNE
 	boosted = schedtune_task_boost(p) > 0;
 	prefer_idle = schedtune_prefer_idle(p) > 0;
