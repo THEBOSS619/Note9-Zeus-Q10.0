@@ -40,6 +40,9 @@
 #include <linux/kernel.h>
 #include <asm/unaligned.h>
 
+static const unsigned int dec32table[] = { 0, 1, 2, 1, 4, 4, 4, 4 };
+static const int dec64table[] = { 0, 0, 0, -1, 0, 1, 2, 3 };
+
 /*-*****************************
  *	Decompression functions
  *******************************/
@@ -88,8 +91,6 @@ static FORCE_INLINE int LZ4_decompress_generic(
 	BYTE *cpy;
 
 	const BYTE * const dictEnd = (const BYTE *)dictStart + dictSize;
-	static const unsigned int inc32table[8] = {0, 1, 2, 1, 0, 4, 4, 4};
-	static const int dec64table[8] = {0, 0, 0, -1, -4, 1, 2, 3};
 
 	const int safeDecode = (endOnInput == endOnInputSize);
 	const int checkOffset = ((safeDecode) && (dictSize < (int)(64 * KB)));
@@ -396,7 +397,7 @@ _copy_match:
 			op[1] = match[1];
 			op[2] = match[2];
 			op[3] = match[3];
-			match += inc32table[offset];
+			match += dec32table[offset];
 			memcpy(op + 4, match, 4);
 			match -= dec64table[offset];
 		} else {
