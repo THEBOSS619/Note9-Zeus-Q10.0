@@ -269,6 +269,9 @@ int main(int argc, char *argv[])
 			usage("unknown option");
 		}
 	}
+#if 1
+	if (!quiet) quiet++;
+#endif
 
     while (!quiet) {
         quiet++;
