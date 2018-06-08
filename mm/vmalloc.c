@@ -2284,6 +2284,7 @@ static void __vunmap(const void *addr, int deallocate_pages)
 
 	vm_remove_mappings(area, deallocate_pages);
 
+	remove_vm_area(addr);
 	if (deallocate_pages) {
 		int i;
 
