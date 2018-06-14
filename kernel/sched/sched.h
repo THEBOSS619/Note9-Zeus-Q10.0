@@ -821,6 +821,8 @@ struct root_domain {
 	 * CPUs of the rd. Protected by RCU.
 	 */
 	struct perf_domain *pd;
+	/* First cpu with mid capacity */
+	int mid_cap_orig_cpu;
 };
 
 extern struct root_domain def_root_domain;
