@@ -547,10 +547,10 @@ struct rt_rq {
 	} highest_prio;
 #endif
 #ifdef CONFIG_SMP
-	unsigned long rt_nr_migratory;
-	unsigned long rt_nr_total;
-	int overloaded;
-	struct plist_head pushable_tasks;
+	unsigned long		rt_nr_migratory;
+	unsigned long		rt_nr_total;
+	int			overloaded;
+	struct plist_head	pushable_tasks;
 	struct sched_rt_entity *curr;
 	atomic_long_t removed_util_avg;
 	atomic_long_t removed_load_avg;
@@ -816,10 +816,11 @@ struct rq {
 
 	struct list_head cfs_tasks;
 
-	u64 rt_avg;
-	u64 age_stamp;
-	u64 idle_stamp;
-	u64 avg_idle;
+	u64			rt_avg;
+	u64			age_stamp;
+	struct sched_avg	avg_rt;
+	u64			idle_stamp;
+	u64			avg_idle;
 
 	/* This is used to determine avg_idle's max value */
 	u64 max_idle_balance_cost;
@@ -2308,6 +2309,11 @@ walt_task_in_cum_window_demand(struct rq *rq, struct task_struct *p)
 #define perf_domain_span(pd) NULL
 #endif
 #endif
+
+static inline unsigned long cpu_util_rt(struct rq *rq)
+{
+	return rq->avg_rt.util_avg;
+}
 
 static inline bool energy_aware(void)
 {

@@ -15,6 +15,8 @@
 #include "tune.h"
 #include "sched-pelt.h"
 
+#include "pelt.h"
+
 int sched_rr_timeslice = RR_TIMESLICE;
 
 static int do_sched_rt_period_timer(struct rt_bandwidth *rt_b, int overrun);
@@ -2418,8 +2420,13 @@ pick_next_task_rt(struct rq *rq, struct task_struct *prev, struct rq_flags *rf)
 
 	queue_push_tasks(rq);
 
-	_update_rt_rq_load_avg(rq_clock_task(rq), cpu_of(rq), rt_rq,
-					rq->curr->sched_class == &rt_sched_class);
+	/*
+	 * If prev task was rt, put_prev_task() has already updated the
+	 * utilization. We only care of the case where we start to schedule a
+	 * rt task
+	 */
+	if (rq->curr->sched_class != &rt_sched_class)
+		update_rt_rq_load_avg(rq_clock_task(rq), rq, 0);
 
 
 	clear_victim_flag(p);
@@ -2434,6 +2441,8 @@ static void put_prev_task_rt(struct rq *rq, struct task_struct *p)
 	u64 now = rq_clock_task(rq_of_rt_rq(rt_rq));
 
 	update_curr_rt(rq);
+
+	update_rt_rq_load_avg(rq_clock_task(rq), rq, 1);
 
 	/*
 	 * The previous task needs to be made eligible for pushing
@@ -3734,6 +3743,7 @@ static void task_tick_rt(struct rq *rq, struct task_struct *p, int queued)
 	u64 now = rq_clock_task(rq);
 
 	update_curr_rt(rq);
+	update_rt_rq_load_avg(rq_clock_task(rq), rq, 1);
 
 	for_each_sched_rt_entity(rt_se) {
 		struct rt_rq *rt_rq = rt_rq_of_se(rt_se);

@@ -9044,6 +9044,14 @@ static void attach_tasks(struct lb_env *env)
 	raw_spin_unlock(&env->dst_rq->lock);
 }
 
+static inline bool rt_rq_has_blocked(struct rq *rq)
+{
+	if (READ_ONCE(rq->avg_rt.util_avg))
+		return true;
+
+	return false;
+}
+
 #ifdef CONFIG_FAIR_GROUP_SCHED
 static void update_blocked_averages(int cpu)
 {
@@ -9074,6 +9082,8 @@ static void update_blocked_averages(int cpu)
 			update_load_avg(cfs_rq_of(se), se, 0);
 
 	}
+	update_rt_rq_load_avg(rq_clock_task(rq), rq, 0);
+	/* Don't need periodic decay once load/util_avg are null */
 
 	raw_spin_unlock_irqrestore(&rq->lock, flags);
 }
@@ -9134,6 +9144,7 @@ static inline void update_blocked_averages(int cpu)
 	raw_spin_lock_irqsave(&rq->lock, flags);
 	update_rq_clock(rq);
 	update_cfs_rq_load_avg(cfs_rq_clock_task(cfs_rq), cfs_rq);
+	update_rt_rq_load_avg(rq_clock_task(rq), rq, 0);
 	raw_spin_unlock_irqrestore(&rq->lock, flags);
 }
 
