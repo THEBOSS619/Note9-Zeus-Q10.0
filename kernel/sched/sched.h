@@ -2417,7 +2417,7 @@ static inline bool energy_aware(void)
 
 static inline unsigned long cpu_util_rt(struct rq *rq)
 {
-	return rq->avg_rt.util_avg;
+	return READ_ONCE(rq->avg_rt.util_avg);
 }
 
 #if defined(CONFIG_IRQ_TIME_ACCOUNTING) || defined(CONFIG_PARAVIRT_TIME_ACCOUNTING)
