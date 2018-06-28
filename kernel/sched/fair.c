@@ -9260,22 +9260,31 @@ static inline int get_sd_load_idx(struct sched_domain *sd,
 static unsigned long scale_rt_capacity(int cpu)
 {
 	struct rq *rq = cpu_rq(cpu);
-	u64 used;
+	unsigned long max = arch_scale_cpu_capacity(NULL, cpu);
+	unsigned long used, free;
+#if defined(CONFIG_IRQ_TIME_ACCOUNTING) || defined(CONFIG_PARAVIRT_TIME_ACCOUNTING)
+	unsigned long irq;
+#endif
 
-	used = rq->rt.avg.util_avg;
+#if defined(CONFIG_IRQ_TIME_ACCOUNTING) || defined(CONFIG_PARAVIRT_TIME_ACCOUNTING)
+	irq = READ_ONCE(rq->avg_irq.util_avg);
 
-	/*
-	 * deadline bandwidth is defined at system level so we must
-	 * weight this bandwidth with the max capacity of the system.
-	 * As a reminder, avg_bw is 20bits width and
-	 * scale_cpu_capacity is 10 bits width
-	 */
-	used += div_u64(rq->dl.avg_bw, arch_scale_cpu_capacity(NULL, cpu));
+	if (unlikely(irq >= max))
+		return 1;
+#endif
 
-	if (likely(used < SCHED_CAPACITY_SCALE))
-		return SCHED_CAPACITY_SCALE - used;
+	used = READ_ONCE(rq->avg_rt.util_avg);
+	used += READ_ONCE(rq->avg_dl.util_avg);
 
-	return 1;
+	if (unlikely(used >= max))
+		return 1;
+
+	free = max - used;
+#if defined(CONFIG_IRQ_TIME_ACCOUNTING) || defined(CONFIG_PARAVIRT_TIME_ACCOUNTING)
+	free *= (max - irq);
+	free /= max;
+#endif
+	return free;
 }
 
 void init_max_cpu_capacity(struct max_cpu_capacity *mcc)
@@ -9294,7 +9303,7 @@ static void update_cpu_capacity(struct sched_domain *sd, int cpu)
 	int max_cap_cpu;
 	unsigned long flags;
 
-	cpu_rq(cpu)->cpu_capacity_orig = capacity;
+	cpu_rq(cpu)->cpu_capacity_orig = arch_scale_cpu_capacity(sd, cpu);
 	cpu_rq(cpu)->cpu_capacity_margin = capacity + (capacity >> 2);
 	ehmp_update_overutilized(cpu, capacity);
 
@@ -9322,8 +9331,6 @@ static void update_cpu_capacity(struct sched_domain *sd, int cpu)
 	raw_spin_unlock_irqrestore(&mcc->lock, flags);
 
 skip_unlock: __attribute__ ((unused));
-	capacity *= scale_rt_capacity(cpu);
-	capacity >>= SCHED_CAPACITY_SHIFT;
 
 	if (!capacity)
 		capacity = 1;
