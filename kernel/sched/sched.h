@@ -2432,9 +2432,14 @@ static inline unsigned long cpu_util_irq(struct rq *rq)
 }
 
 #endif
-static inline unsigned long cpu_util_dl(struct rq *rq)
+static inline unsigned long cpu_bw_dl(struct rq *rq)
 {
 	return (rq->dl.running_bw * SCHED_CAPACITY_SCALE) >> BW_SHIFT;
+}
+
+static inline unsigned long cpu_util_dl(struct rq *rq)
+{
+	return READ_ONCE(rq->avg_dl.util_avg);
 }
 
 static inline unsigned long cpu_util_cfs(struct rq *rq)
