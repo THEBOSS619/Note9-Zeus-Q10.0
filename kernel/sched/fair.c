@@ -10398,6 +10398,17 @@ static struct rq *find_busiest_queue(struct lb_env *env,
 		     task_util(rq->curr) < sched_small_task_threshold)))
 			continue;
 
+		/*
+		 * For ASYM_CPUCAPACITY domains, don't pick a CPU that could
+		 * eventually lead to active_balancing high->low capacity.
+		 * Higher per-CPU capacity is considered better than balancing
+		 * average load.
+		 */
+		if (env->sd->flags & SD_ASYM_CPUCAPACITY &&
+		    capacity_of(env->dst_cpu) < capacity &&
+		    rq->nr_running == 1)
+			continue;
+
 		wl = weighted_cpuload(rq);
 
 		/*
