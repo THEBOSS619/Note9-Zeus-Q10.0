@@ -9765,10 +9765,15 @@ group_type group_classify(struct sched_group *group,
 }
 
 #ifdef CONFIG_NO_HZ_COMMON
-/*
- * idle load balancing data
- *  - used by the nohz balance, but we want it available here
- *    so that we can see which CPUs have no tick.
+/**
+ * update_sg_lb_stats - Update sched_group's statistics for load balancing.
+ * @env: The load balancing environment.
+ * @group: sched_group whose statistics are to be updated.
+ * @load_idx: Load index of sched_domain of this_cpu for load calc.
+ * @local_group: Does group contain this_cpu.
+ * @sgs: variable to hold the statistics for this group.
+ * @overload: Indicate pullable load (e.g. >1 runnable task).
+ * @overutilized: Indicate overutilization for any CPU.
  */
 static struct {
 	cpumask_var_t idle_cpus_mask;
@@ -9858,8 +9863,10 @@ static inline void update_sg_lb_stats(struct lb_env *env,
 				*misfit_task = true;
 		}
 		if (env->sd->flags & SD_ASYM_CPUCAPACITY &&
-			sgs->group_misfit_task_load < rq->misfit_task_load)
+			sgs->group_misfit_task_load < rq->misfit_task_load) {
 				sgs->group_misfit_task_load = rq->misfit_task_load;
+				*overload = 1;
+		}
 	}
 
 	/* Adjust by relative CPU capacity of the group */
