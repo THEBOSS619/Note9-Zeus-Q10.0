@@ -56,12 +56,12 @@ int __tcf_hash_release(struct tc_action *p, bool bind, bool strict)
 
 	if (p) {
 		if (bind)
-			p->tcfa_bindcnt--;
-		else if (strict && p->tcfa_bindcnt > 0)
+			atomic_dec(&p->tcfa_bindcnt);
+		else if (strict && atomic_read(&p->tcfa_bindcnt) > 0)
 			return -EPERM;
 
-		p->tcfa_refcnt--;
-		if (p->tcfa_bindcnt <= 0 && p->tcfa_refcnt <= 0) {
+		if (atomic_read(&p->tcfa_bindcnt) <= 0 &&
+		    refcount_dec_and_test(&p->tcfa_refcnt)) {
 			if (p->ops->cleanup)
 				p->ops->cleanup(p, bind);
 			tcf_hash_destroy(p->hinfo, p);
@@ -227,8 +227,8 @@ bool tcf_hash_check(struct tc_action_net *tn, u32 index, struct tc_action **a,
 
 	if (index && (p = tcf_hash_lookup(index, hinfo)) != NULL) {
 		if (bind)
-			p->tcfa_bindcnt++;
-		p->tcfa_refcnt++;
+			atomic_inc(&p->tcfa_bindcnt);
+		refcount_inc(&p->tcfa_refcnt);
 		*a = p;
 		return true;
 	}
@@ -255,9 +255,9 @@ int tcf_hash_create(struct tc_action_net *tn, u32 index, struct nlattr *est,
 
 	if (unlikely(!p))
 		return -ENOMEM;
-	p->tcfa_refcnt = 1;
+	refcount_set(&p->tcfa_refcnt, 1);
 	if (bind)
-		p->tcfa_bindcnt = 1;
+		atomic_set(&p->tcfa_bindcnt, 1);
 
 	if (cpustats) {
 		p->cpu_bstats = netdev_alloc_pcpu_stats(struct gnet_stats_basic_cpu);
@@ -607,7 +607,7 @@ static void cleanup_a(struct list_head *actions, int ovr)
 		return;
 
 	list_for_each_entry(a, actions, list)
-		a->tcfa_refcnt--;
+		refcount_dec(&a->tcfa_refcnt);
 }
 
 int tcf_action_init(struct net *net, struct nlattr *nla, struct nlattr *est,
@@ -630,7 +630,7 @@ int tcf_action_init(struct net *net, struct nlattr *nla, struct nlattr *est,
 		}
 		act->order = i;
 		if (ovr)
-			act->tcfa_refcnt++;
+			refcount_inc(&act->tcfa_refcnt);
 		list_add_tail(&act->list, actions);
 	}
 

@@ -213,8 +213,8 @@ static int tcf_pedit_dump(struct sk_buff *skb, struct tc_action *a,
 	opt->nkeys = p->tcfp_nkeys;
 	opt->flags = p->tcfp_flags;
 	opt->action = p->tcf_action;
-	opt->refcnt = p->tcf_refcnt - ref;
-	opt->bindcnt = p->tcf_bindcnt - bind;
+	opt->refcnt = refcount_read(&p->tcf_refcnt) - ref;
+	opt->bindcnt = atomic_read(&p->tcf_bindcnt) - bind;
 
 	if (nla_put(skb, TCA_PEDIT_PARMS, s, opt))
 		goto nla_put_failure;
