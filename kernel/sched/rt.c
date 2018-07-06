@@ -2508,10 +2508,37 @@ static inline int weight_from_rtprio(int prio)
 }
 
 extern int exynos_select_cpu_rt(struct sched_domain *sd, struct task_struct *p, bool boost);
-extern unsigned long cpu_util_wake(int cpu, struct task_struct *p);
 extern unsigned long task_util(struct task_struct *p);
 
 unsigned int frt_boost_threshold;
+
+unsigned long frt_cpu_util_wake(int cpu, struct task_struct *p)
+{
+	struct cfs_rq *cfs_rq = &cpu_rq(cpu)->cfs;
+	struct rt_rq *rt_rq = &cpu_rq(cpu)->rt;
+	unsigned int util;
+
+	util = READ_ONCE(cfs_rq->avg.util_avg) + READ_ONCE(rt_rq->avg.util_avg);
+
+#ifdef CONFIG_SCHED_WALT
+	/*
+	 * WALT does not decay idle tasks in the same manner
+	 * as PELT, so it makes little sense to subtract task
+	 * utilization from cpu utilization. Instead just use
+	 * cpu_util for this case.
+	 */
+	if (!walt_disabled && sysctl_sched_use_walt_cpu_util)
+		return cpu_util(cpu);
+#endif
+	/* Task has no contribution or is new */
+	if (cpu != task_cpu(p) || !READ_ONCE(p->se.avg.last_update_time))
+		return util;
+
+	/* Discount task's blocked util from CPU's util */
+	util -= min_t(unsigned int, util, task_util(p));
+
+	return min_t(unsigned long, util, capacity_orig_of(cpu));
+}
 
 #define cpu_selected(cpu)	(cpu >= 0)
 
@@ -2621,10 +2648,10 @@ static int find_lowest_rq_fluid(struct task_struct *task)
 	do {
 		for_each_cpu_and(i, sched_group_cpus(sg), lowest_mask) {
 
-			cpu_load = cpu_util_wake(i, task) + task_util(task);
+			cpu_load = frt_cpu_util_wake(i, task) + task_util(task);
 
 			if (rt_task(cpu_rq(i)->curr)) {
-				rt_cpu_load = cpu_util_wake(i, task) + task_util(task);
+				rt_cpu_load = frt_cpu_util_wake(i, task) + task_util(task);
 
 				if (rt_cpu_load < rt_min_load ||
 					(rt_cpu_load == rt_min_load && i == prev_cpu)) {
