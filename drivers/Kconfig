@@ -243,4 +243,5 @@ source "drivers/mpsd/Kconfig"
 source "drivers/security/samsung/icdrv/Kconfig"
 source "drivers/cpuquiet/Kconfig"
 
+source "drivers/energy_model/Kconfig"
 endmenu
