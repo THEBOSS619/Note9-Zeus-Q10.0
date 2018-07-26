@@ -1226,6 +1226,15 @@ static int zswap_frontswap_store(unsigned type, pgoff_t offset,
 			goto reject;
 		} else
 			zswap_pool_reached_full = false;
+
+		/* A second zswap_is_full() check after
+		 * zswap_shrink() to make sure it's now
+		 * under the max_pool_percent
+		 */
+		if (zswap_is_full()) {
+			ret = -ENOMEM;
+			goto reject;
+		}
 	}
 
 	/* allocate entry */
