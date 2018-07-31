@@ -788,8 +788,7 @@ static unsigned long lowmem_scan(struct shrinker *s, struct shrink_control *sc)
 	int array_count = ARRAY_SIZE(lowmem_per_minfree_count);
 
 
-	if (!mutex_trylock(&scan_mutex))
-		return 0;
+	bool lock_required = true;
 
 	other_free = global_page_state(NR_FREE_PAGES) - totalreserve_pages;
 
@@ -819,6 +818,13 @@ static unsigned long lowmem_scan(struct shrinker *s, struct shrink_control *sc)
 		other_file -= nr_rbin_file;
 	}
 #endif
+
+	if (!get_nr_swap_pages() && (other_free <= lowmem_minfree[0] >> 1) &&
+	    (other_file <= lowmem_minfree[0] >> 1))
+		lock_required = false;
+
+	if (likely(lock_required) && !mutex_trylock(&scan_mutex))
+		return 0;
 
 	tune_lmk_param(&other_free, &other_file, sc);
 	scale_percent = get_minfree_scalefactor(sc->gfp_mask);
@@ -876,7 +882,8 @@ static unsigned long lowmem_scan(struct shrinker *s, struct shrink_control *sc)
 		trace_almk_shrink(0, ret, other_free, other_file, 0);
 		lowmem_print(5, "lowmem_scan %lu, %x, return 0\n",
 			     sc->nr_to_scan, sc->gfp_mask);
-		mutex_unlock(&scan_mutex);
+		if (lock_required)
+			mutex_unlock(&scan_mutex);
 		return SHRINK_STOP;
 	}
 
@@ -922,7 +929,8 @@ static unsigned long lowmem_scan(struct shrinker *s, struct shrink_control *sc)
 						lowmem_deathpending_timeout)) {
 					task_unlock(p);
 					rcu_read_unlock();
-					mutex_unlock(&scan_mutex);
+					if (lock_required)
+						mutex_unlock(&scan_mutex);
 					if (same_thread_group(current, tsk))
 						set_tsk_thread_flag(current,
 								    TIF_MEMDIE);
@@ -998,7 +1006,8 @@ exit_timeout:
 #else
 				rcu_read_unlock();
 #endif
-					mutex_unlock(&scan_mutex);
+					if (lock_required)
+						mutex_unlock(&scan_mutex);
 					if (same_thread_group(current, tsk))
 						set_tsk_thread_flag(current,
 								    TIF_MEMDIE);
@@ -1097,7 +1106,8 @@ exit_timeout:
 				     selected->comm,
 				     selected->pid);
 			rcu_read_unlock();
-			mutex_unlock(&scan_mutex);
+			if (lock_required)
+				mutex_unlock(&scan_mutex);
 			return 0;
 		}
 
@@ -1170,7 +1180,8 @@ exit_timeout:
 
 	lowmem_print(4, "lowmem_scan %lu, %x, return %lu\n",
 		     sc->nr_to_scan, sc->gfp_mask, rem);
-	mutex_unlock(&scan_mutex);
+	if (lock_required)
+		mutex_unlock(&scan_mutex);
 
 	if (!rem)
 		rem = SHRINK_STOP;
