@@ -266,7 +266,10 @@ static unsigned int get_next_freq(struct sugov_policy *sg_policy,
 
 	sg_policy->need_freq_update = false;
 	sg_policy->cached_raw_freq = freq;
-	return cpufreq_driver_resolve_freq(policy, freq);
+	freq = cpufreq_driver_resolve_freq(policy, freq);
+	trace_cpu_frequency_sugov(util, freq, policy->cpu);
+
+	return freq;
 }
 
 static inline bool use_pelt(void)
