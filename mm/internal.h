@@ -558,4 +558,13 @@ static inline void set_pcppage_migratetype(struct page *page, int migratetype)
 	page->index = migratetype;
 }
 
+
+#ifdef CONFIG_ANDROID_LOW_MEMORY_KILLER
+extern bool lmk_kill_possible(void);
+#else
+static inline bool lmk_kill_possible(void)
+{
+	return false;
+}
+#endif
 #endif	/* __MM_INTERNAL_H */
