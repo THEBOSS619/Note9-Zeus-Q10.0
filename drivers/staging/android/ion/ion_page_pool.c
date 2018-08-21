@@ -27,6 +27,7 @@
 #include <linux/mmzone.h>
 #include <asm/cacheflush.h>
 #include "ion_priv.h"
+#include <linux/sched/signal.h>
 
 static void *ion_page_pool_alloc_pages(struct ion_page_pool *pool, bool zeroed)
 {
@@ -91,6 +92,9 @@ void *ion_page_pool_only_alloc(struct ion_page_pool *pool)
 	struct page *page = NULL;
 
 	BUG_ON(!pool);
+
+	if (fatal_signal_pending(current))
+		return ERR_PTR(-EINTR);
 
 	if (!pool->high_count && !pool->low_count)
 		goto done;
