@@ -13,6 +13,9 @@ struct mem_section;
 struct memory_block;
 struct resource;
 
+/* Timeout for migration re-tries in seconds */
+#define MIGRATE_TIMEOUT_SEC		60
+
 #ifdef CONFIG_MEMORY_HOTPLUG
 
 /*
