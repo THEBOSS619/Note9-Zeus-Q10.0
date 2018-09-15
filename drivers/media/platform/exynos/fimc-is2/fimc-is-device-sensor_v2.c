@@ -850,7 +850,7 @@ static void fimc_is_sensor_dtp(unsigned long data)
 	FIMC_BUG_VOID(!device);
 
 	/* Don't need to dtp check */
-	if (((!device->force_stop && !device->dtp_check) || sysfs_debug.pattern_en) ||
+	if ((!device->force_stop && !device->dtp_check) || sysfs_debug.pattern_en ||
 		!test_bit(FIMC_IS_SENSOR_FRONT_START, &device->state))
 		return;
 
