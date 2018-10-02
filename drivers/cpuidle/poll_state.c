@@ -9,7 +9,6 @@
 #include <linux/sched/clock.h>
 #include <linux/sched/idle.h>
 
-#define POLL_IDLE_TIME_LIMIT	(TICK_NSEC / 16)
 #define POLL_IDLE_RELAX_COUNT	200
 
 static int __cpuidle poll_idle(struct cpuidle_device *dev,
@@ -19,6 +18,7 @@ static int __cpuidle poll_idle(struct cpuidle_device *dev,
 
 	local_irq_enable();
 	if (!current_set_polling_and_test()) {
+		u64 limit = (u64)drv->states[1].target_residency * NSEC_PER_USEC;
 		unsigned int loop_count = 0;
 
 		while (!need_resched()) {
@@ -27,7 +27,7 @@ static int __cpuidle poll_idle(struct cpuidle_device *dev,
 				continue;
 
 			loop_count = 0;
-			if (local_clock() - time_start > POLL_IDLE_TIME_LIMIT)
+			if (local_clock() - time_start > limit)
 				break;
 		}
 	}
