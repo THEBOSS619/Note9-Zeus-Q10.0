@@ -14,7 +14,7 @@
 
 struct binder_context {
 	struct binder_node *binder_context_mgr_node;
-	struct mutex context_mgr_node_lock;
+	struct rt_mutex context_mgr_node_lock;
 	kuid_t binder_context_mgr_uid;
 	const char *name;
 };
