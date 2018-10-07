@@ -34,7 +34,7 @@ struct list_lru binder_alloc_lru;
 
 extern int system_server_pid;
 
-static DEFINE_MUTEX(binder_alloc_mmap_lock);
+static DEFINE_RT_MUTEX(binder_alloc_mmap_lock);
 
 enum {
 	BINDER_DEBUG_OPEN_CLOSE             = 1U << 1,
@@ -179,9 +179,9 @@ struct binder_buffer *binder_alloc_prepare_to_free(struct binder_alloc *alloc,
 {
 	struct binder_buffer *buffer;
 
-	mutex_lock(&alloc->mutex);
+	rt_mutex_lock(&alloc->mutex);
 	buffer = binder_alloc_prepare_to_free_locked(alloc, user_ptr);
-	mutex_unlock(&alloc->mutex);
+	rt_mutex_unlock(&alloc->mutex);
 	return buffer;
 }
 
@@ -466,10 +466,10 @@ struct binder_buffer *binder_alloc_new_buf(struct binder_alloc *alloc,
 {
 	struct binder_buffer *buffer;
 
-	mutex_lock(&alloc->mutex);
+	rt_mutex_lock(&alloc->mutex);
 	buffer = binder_alloc_new_buf_locked(alloc, data_size, offsets_size,
 					     extra_buffers_size, is_async);
-	mutex_unlock(&alloc->mutex);
+	rt_mutex_unlock(&alloc->mutex);
 	return buffer;
 }
 
@@ -573,9 +573,9 @@ static void binder_free_buf_locked(struct binder_alloc *alloc,
 void binder_alloc_free_buf(struct binder_alloc *alloc,
 			    struct binder_buffer *buffer)
 {
-	mutex_lock(&alloc->mutex);
+	rt_mutex_lock(&alloc->mutex);
 	binder_free_buf_locked(alloc, buffer);
-	mutex_unlock(&alloc->mutex);
+	rt_mutex_unlock(&alloc->mutex);
 }
 
 /**
@@ -598,7 +598,7 @@ int binder_alloc_mmap_handler(struct binder_alloc *alloc,
 	const char *failure_string;
 	struct binder_buffer *buffer;
 
-	mutex_lock(&binder_alloc_mmap_lock);
+	rt_mutex_lock(&binder_alloc_mmap_lock);
 	if (alloc->buffer) {
 		ret = -EBUSY;
 		failure_string = "already mapped";
@@ -606,7 +606,7 @@ int binder_alloc_mmap_handler(struct binder_alloc *alloc,
 	}
 
 	alloc->buffer = (void __user *)vma->vm_start;
-	mutex_unlock(&binder_alloc_mmap_lock);
+	rt_mutex_unlock(&binder_alloc_mmap_lock);
 
 	alloc->pages = kcalloc((vma->vm_end - vma->vm_start) / PAGE_SIZE,
 			       sizeof(alloc->pages[0]),
@@ -642,10 +642,10 @@ err_alloc_buf_struct_failed:
 	kfree(alloc->pages);
 	alloc->pages = NULL;
 err_alloc_pages_failed:
-	mutex_lock(&binder_alloc_mmap_lock);
+	rt_mutex_lock(&binder_alloc_mmap_lock);
 	alloc->buffer = NULL;
 err_already_mapped:
-	mutex_unlock(&binder_alloc_mmap_lock);
+	rt_mutex_lock(&binder_alloc_mmap_lock);
 	return ret;
 }
 
@@ -659,7 +659,7 @@ void binder_alloc_deferred_release(struct binder_alloc *alloc)
 	BUG_ON(alloc->vma);
 
 	buffers = 0;
-	mutex_lock(&alloc->mutex);
+	rt_mutex_lock(&alloc->mutex);
 	while ((n = rb_first(&alloc->allocated_buffers))) {
 		buffer = rb_entry(n, struct binder_buffer, rb_node);
 
@@ -699,7 +699,7 @@ void binder_alloc_deferred_release(struct binder_alloc *alloc)
 		}
 		kfree(alloc->pages);
 	}
-	mutex_unlock(&alloc->mutex);
+	rt_mutex_unlock(&alloc->mutex);
 	if (alloc->vma_vm_mm)
 		mmdrop(alloc->vma_vm_mm);
 }
@@ -727,11 +727,11 @@ void binder_alloc_print_allocated(struct seq_file *m,
 {
 	struct rb_node *n;
 
-	mutex_lock(&alloc->mutex);
+	rt_mutex_lock(&alloc->mutex);
 	for (n = rb_first(&alloc->allocated_buffers); n != NULL; n = rb_next(n))
 		print_binder_buffer(m, "  buffer",
 				    rb_entry(n, struct binder_buffer, rb_node));
-	mutex_unlock(&alloc->mutex);
+	rt_mutex_unlock(&alloc->mutex);
 }
 
 /**
@@ -748,7 +748,7 @@ void binder_alloc_print_pages(struct seq_file *m,
 	int lru = 0;
 	int free = 0;
 
-	mutex_lock(&alloc->mutex);
+	rt_mutex_lock(&alloc->mutex);
 	for (i = 0; i < alloc->buffer_size / PAGE_SIZE; i++) {
 		page = &alloc->pages[i];
 		if (!page->page_ptr)
@@ -758,7 +758,7 @@ void binder_alloc_print_pages(struct seq_file *m,
 		else
 			lru++;
 	}
-	mutex_unlock(&alloc->mutex);
+	rt_mutex_unlock(&alloc->mutex);
 	seq_printf(m, "  pages: %d:%d:%d\n", active, lru, free);
 	seq_printf(m, "  pages high watermark: %zu\n", alloc->pages_high);
 }
@@ -774,10 +774,10 @@ int binder_alloc_get_allocated_count(struct binder_alloc *alloc)
 	struct rb_node *n;
 	int count = 0;
 
-	mutex_lock(&alloc->mutex);
+	rt_mutex_lock(&alloc->mutex);
 	for (n = rb_first(&alloc->allocated_buffers); n != NULL; n = rb_next(n))
 		count++;
-	mutex_unlock(&alloc->mutex);
+	rt_mutex_unlock(&alloc->mutex);
 	return count;
 }
 
@@ -819,7 +819,7 @@ enum lru_status binder_alloc_free_page(struct list_head *item,
 	struct vm_area_struct *vma;
 
 	alloc = page->alloc;
-	if (!mutex_trylock(&alloc->mutex))
+	if (!rt_mutex_trylock(&alloc->mutex))
 		goto err_get_alloc_mutex_failed;
 
 	if (!page->page_ptr)
@@ -851,14 +851,14 @@ enum lru_status binder_alloc_free_page(struct list_head *item,
 	page->page_ptr = NULL;
 
 	spin_lock(lock);
-	mutex_unlock(&alloc->mutex);
+	rt_mutex_unlock(&alloc->mutex);
 	return LRU_REMOVED_RETRY;
 
 err_down_write_mmap_sem_failed:
 	mmput_async(mm);
 err_mmget:
 err_page_already_freed:
-	mutex_unlock(&alloc->mutex);
+	rt_mutex_unlock(&alloc->mutex);
 err_get_alloc_mutex_failed:
 	return LRU_SKIP;
 }
@@ -896,7 +896,7 @@ static struct shrinker binder_shrinker = {
 void binder_alloc_init(struct binder_alloc *alloc)
 {
 	alloc->pid = current->group_leader->pid;
-	mutex_init(&alloc->mutex);
+	rt_mutex_init(&alloc->mutex);
 	INIT_LIST_HEAD(&alloc->buffers);
 }
 
