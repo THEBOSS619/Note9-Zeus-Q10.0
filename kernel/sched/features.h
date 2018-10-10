@@ -145,3 +145,9 @@ SCHED_FEAT(SCHEDTUNE_BOOST_HOLD_ALL, false)
  * restrictions.
  */
 SCHED_FEAT(MIN_CAPACITY_CAPPING, true)
+
+/*
+ * Use the Simplified Energy Model for EAS accounting only for
+ * active costs of CPUs.
+ */
+SCHED_FEAT(EAS_SIMPLIFIED_EM, true)
