@@ -3083,11 +3083,11 @@ void tcp_get_info(struct sock *sk, struct tcp_info *info)
 {
 	const struct tcp_sock *tp = tcp_sk(sk); /* iff sk_type == SOCK_STREAM */
 	const struct inet_connection_sock *icsk = inet_csk(sk);
+	unsigned long rate;
 	u32 now = tcp_jiffies32, intv;
 	unsigned int start;
 	int notsent_bytes;
 	u64 rate64;
-	u32 rate;
 
 	memset(info, 0, sizeof(*info));
 	if (sk->sk_type != SOCK_STREAM)
@@ -3152,11 +3152,11 @@ void tcp_get_info(struct sock *sk, struct tcp_info *info)
 	info->tcpi_total_retrans = tp->total_retrans;
 
 	rate = READ_ONCE(sk->sk_pacing_rate);
-	rate64 = rate != ~0U ? rate : ~0ULL;
+	rate64 = (rate != ~0UL) ? rate : ~0ULL;
 	put_unaligned(rate64, &info->tcpi_pacing_rate);
 
 	rate = READ_ONCE(sk->sk_max_pacing_rate);
-	rate64 = rate != ~0U ? rate : ~0ULL;
+	rate64 = (rate != ~0UL) ? rate : ~0ULL;
 	put_unaligned(rate64, &info->tcpi_max_pacing_rate);
 
 	do {
