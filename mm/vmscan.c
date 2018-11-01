@@ -450,7 +450,7 @@ static unsigned long do_shrink_slab(struct shrink_control *shrinkctl,
 static void shrink_slab_lmk(gfp_t gfp_mask, int nid,
 				 struct mem_cgroup *memcg,
 				 unsigned long nr_scanned,
-				 unsigned long nr_eligible)
+				 int priority)
 {
 	struct shrinker *shrinker;
 
@@ -468,7 +468,7 @@ static void shrink_slab_lmk(gfp_t gfp_mask, int nid,
 		if (!(shrinker->flags & SHRINKER_LMK))
 			continue;
 
-		do_shrink_slab(&sc, shrinker, nr_scanned, nr_eligible);
+		do_shrink_slab(&sc, shrinker, priority);
 	}
 
 	up_read(&shrinker_rwsem);
