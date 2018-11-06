@@ -3758,14 +3758,14 @@ static int binder_thread_write(struct binder_proc *proc,
 			if (IS_ERR_OR_NULL(buffer)) {
 				if (PTR_ERR(buffer) == -EPERM) {
 					binder_user_error(
-					"%d:%d BC_FREE_BUFFER u%016llx matched unreturned or currently freeing buffer\n",
-					proc->pid, thread->pid,
-					(u64)data_ptr);
+						"%d:%d BC_FREE_BUFFER u%016llx matched unreturned or currently freeing buffer\n",
+						proc->pid, thread->pid,
+						(u64)data_ptr);
 				} else {
 					binder_user_error(
-					"%d:%d BC_FREE_BUFFER u%016llx no match\n",
-					proc->pid, thread->pid,
-					(u64)data_ptr);
+						"%d:%d BC_FREE_BUFFER u%016llx no match\n",
+						proc->pid, thread->pid,
+						(u64)data_ptr);
 				}
 				break;
 			}
