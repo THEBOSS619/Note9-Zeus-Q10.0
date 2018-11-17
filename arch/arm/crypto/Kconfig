@@ -119,7 +119,7 @@ config CRYPTO_SPECK_NEON
 	select CRYPTO_SPECK
 
 config CRYPTO_CHACHA20_NEON
-	tristate "NEON accelerated ChaCha20 symmetric cipher"
+	tristate "NEON accelerated ChaCha20 stream cipher algorithms"
 	depends on KERNEL_MODE_NEON
 	select CRYPTO_BLKCIPHER
 	select CRYPTO_CHACHA20
