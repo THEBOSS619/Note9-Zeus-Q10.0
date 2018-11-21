@@ -31,6 +31,7 @@ struct map {
 		struct rb_node	rb_node;
 		struct list_head node;
 	};
+	struct rb_node          rb_node_name;
 	u64			start;
 	u64			end;
 	u8 /* enum map_type */	type;
@@ -61,6 +62,7 @@ struct kmap {
 
 struct maps {
 	struct rb_root	 entries;
+	struct rb_root	 names;
 	pthread_rwlock_t lock;
 };
 

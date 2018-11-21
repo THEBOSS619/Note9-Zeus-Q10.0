@@ -1565,11 +1565,22 @@ struct map *map_groups__find_by_name(struct map_groups *mg,
 {
 	struct maps *maps = &mg->maps[type];
 	struct map *map;
+	struct rb_node *node;
 
 	pthread_rwlock_rdlock(&maps->lock);
 
-	for (map = maps__first(maps); map; map = map__next(map)) {
-		if (map->dso && strcmp(map->dso->short_name, name) == 0)
+	for (node = maps->names.rb_node; node; ) {
+		int rc;
+
+		map = rb_entry(node, struct map, rb_node_name);
+
+		rc = strcmp(map->dso->short_name, name);
+		if (rc < 0)
+			node = node->rb_left;
+		else if (rc > 0)
+			node = node->rb_right;
+		else
+
 			goto out_unlock;
 	}
 
