@@ -679,7 +679,7 @@ void hid_dump_report(struct hid_device *hid, int type, u8 *data,
 	char *buf;
 	unsigned int i;
 
-	buf = kmalloc(sizeof(char) * HID_DEBUG_BUFSIZE, GFP_ATOMIC);
+	buf = kmalloc(HID_DEBUG_BUFSIZE, GFP_ATOMIC);
 
 	if (!buf)
 		return;
@@ -1086,8 +1086,8 @@ static int hid_debug_events_open(struct inode *inode, struct file *file)
 		goto out;
 	}
 
-	err = kfifo_alloc(&list->hid_debug_fifo, HID_DEBUG_FIFOSIZE, GFP_KERNEL);
-	if (err) {
+	if (!(list->hid_debug_buf = kzalloc(HID_DEBUG_BUFSIZE, GFP_KERNEL))) {
+		err = -ENOMEM;
 		kfree(list);
 		goto out;
 	}

@@ -1663,7 +1663,7 @@ static int crypt_alloc_tfms(struct crypt_config *cc, char *ciphermode)
 	unsigned i;
 	int err;
 
-	cc->tfms = kzalloc(cc->tfms_count * sizeof(struct crypto_skcipher *),
+	cc->tfms = kcalloc(cc->tfms_count, sizeof(struct crypto_skcipher *),
 			   GFP_KERNEL);
 	if (!cc->tfms)
 		return -ENOMEM;

@@ -812,3 +812,245 @@ const struct clk_ops clk_gfx3d_ops = {
 	.determine_rate = clk_gfx3d_determine_rate,
 };
 EXPORT_SYMBOL_GPL(clk_gfx3d_ops);
+<<<<<<< HEAD
+=======
+
+static int clk_esc_determine_rate(struct clk_hw *hw,
+				    struct clk_rate_request *req)
+{
+	struct clk_rcg2 *rcg = to_clk_rcg2(hw);
+	unsigned long parent_rate, div;
+	u32 mask = BIT(rcg->hid_width) - 1;
+	struct clk_hw *p;
+	unsigned long rate = req->rate;
+
+	if (rate == 0)
+		return -EINVAL;
+
+	p = req->best_parent_hw;
+	req->best_parent_rate = parent_rate = clk_hw_round_rate(p, rate);
+
+	div = ((2 * parent_rate) / rate) - 1;
+	div = min_t(u32, div, mask);
+
+	req->rate = clk_rcg2_calc_rate(parent_rate, 0, 0, 0, div);
+
+	return 0;
+}
+
+static int clk_esc_set_rate(struct clk_hw *hw, unsigned long rate,
+			 unsigned long parent_rate)
+{
+	struct clk_rcg2 *rcg = to_clk_rcg2(hw);
+	struct freq_tbl f = { 0 };
+	unsigned long div;
+	int i, num_parents = clk_hw_get_num_parents(hw);
+	u32 mask = BIT(rcg->hid_width) - 1;
+	u32 cfg;
+
+	div = ((2 * parent_rate) / rate) - 1;
+	div = min_t(u32, div, mask);
+
+	f.pre_div = div;
+
+	regmap_read(rcg->clkr.regmap, rcg->cmd_rcgr + CFG_REG, &cfg);
+	cfg &= CFG_SRC_SEL_MASK;
+	cfg >>= CFG_SRC_SEL_SHIFT;
+
+	for (i = 0; i < num_parents; i++) {
+		if (cfg == rcg->parent_map[i].cfg) {
+			f.src = rcg->parent_map[i].src;
+			return clk_rcg2_configure(rcg, &f);
+		}
+	}
+
+	return -EINVAL;
+}
+
+static int clk_esc_set_rate_and_parent(struct clk_hw *hw,
+		unsigned long rate, unsigned long parent_rate, u8 index)
+{
+	return clk_esc_set_rate(hw, rate, parent_rate);
+}
+
+const struct clk_ops clk_esc_ops = {
+	.is_enabled = clk_rcg2_is_enabled,
+	.get_parent = clk_rcg2_get_parent,
+	.set_parent = clk_rcg2_set_parent,
+	.recalc_rate = clk_rcg2_recalc_rate,
+	.determine_rate = clk_esc_determine_rate,
+	.set_rate = clk_esc_set_rate,
+	.set_rate_and_parent = clk_esc_set_rate_and_parent,
+	.list_registers = clk_rcg2_list_registers,
+};
+EXPORT_SYMBOL(clk_esc_ops);
+
+/* Common APIs to be used for DFS based RCGR */
+static u8 clk_parent_index_pre_div_and_mode(struct clk_hw *hw, u32 offset,
+		u32 *mode, u32 *pre_div)
+{
+	struct clk_rcg2 *rcg;
+	int num_parents;
+	u32 cfg, mask;
+	int i, ret;
+
+	if (!hw)
+		return -EINVAL;
+
+	num_parents = clk_hw_get_num_parents(hw);
+
+	rcg = to_clk_rcg2(hw);
+
+	ret = regmap_read(rcg->clkr.regmap, rcg->cmd_rcgr + offset, &cfg);
+	if (ret)
+		goto err;
+
+	mask = BIT(rcg->hid_width) - 1;
+	*pre_div = cfg & mask ? (cfg & mask) : 1;
+
+	*mode = cfg & CFG_MODE_MASK;
+	*mode >>= CFG_MODE_SHIFT;
+
+	cfg &= CFG_SRC_SEL_MASK;
+	cfg >>= CFG_SRC_SEL_SHIFT;
+
+	for (i = 0; i < num_parents; i++)
+		if (cfg == rcg->parent_map[i].cfg)
+			return i;
+err:
+	pr_debug("Clock %s has invalid parent, using default.\n",
+		 clk_hw_get_name(hw));
+	return 0;
+}
+
+static int calculate_m_and_n(struct clk_hw *hw, u32 m_offset, u32 n_offset,
+		u32 mode, u32 *m, u32 *n)
+{
+	struct clk_rcg2 *rcg = to_clk_rcg2(hw);
+	u32 val, mask;
+	int ret = 0;
+
+	if (!hw)
+		return -EINVAL;
+
+	*m = *n = 0;
+
+	if (mode) {
+		/* Calculate M & N values */
+		mask = BIT(rcg->mnd_width) - 1;
+		ret =  regmap_read(rcg->clkr.regmap, rcg->cmd_rcgr + m_offset,
+					&val);
+		if (ret) {
+			pr_err("Failed to read M offset register\n");
+			goto err;
+		}
+
+		val &= mask;
+		*m  = val;
+
+		ret =  regmap_read(rcg->clkr.regmap, rcg->cmd_rcgr + n_offset,
+					&val);
+		if (ret) {
+			pr_err("Failed to read N offset register\n");
+			goto err;
+		}
+
+		/* val ~(N-M) */
+		val = ~val;
+		val &= mask;
+		val += *m;
+		*n = val;
+	}
+err:
+	return ret;
+}
+
+int clk_rcg2_get_dfs_clock_rate(struct clk_rcg2 *clk, struct device *dev,
+						u8 rcg_flags)
+{
+	int i, j, index, ret = 0;
+	unsigned long calc_freq, prate;
+	u32 val, pre_div = 0, mode = 0, m = 0, n = 0;
+	struct freq_tbl *dfs_freq_tbl;
+	struct clk_hw *phw;
+
+	if (!clk)
+		return -EINVAL;
+
+	/* Check for DFS_EN */
+	ret = regmap_read(clk->clkr.regmap, clk->cmd_rcgr + SE_CMD_DFSR_OFFSET,
+						&val);
+	if (ret) {
+		dev_err(dev, "Failed to read DFS enable register\n");
+		return -EINVAL;
+	}
+
+	if (!(val & SE_CMD_DFS_EN))
+		return ret;
+
+	dfs_freq_tbl = devm_kcalloc(dev,
+				    MAX_PERF_LEVEL, sizeof(struct freq_tbl),
+				    GFP_KERNEL);
+	if (!dfs_freq_tbl)
+		return -ENOMEM;
+
+	/* Populate the Perf Level */
+	for (i = 0; i < MAX_PERF_LEVEL; i++) {
+		/* Get parent index and mode */
+		index = clk_parent_index_pre_div_and_mode(&clk->clkr.hw,
+							SE_PERF_DFSR(i), &mode,
+							&pre_div);
+		if (index < 0) {
+			pr_err("Failed to get parent index & mode %d\n", index);
+			return index;
+		}
+
+		/* clock pre_div */
+		dfs_freq_tbl[i].pre_div = pre_div;
+
+		/* Fill the parent src */
+		dfs_freq_tbl[i].src = clk->parent_map[index].src;
+
+		/* Get the parent clock and parent rate */
+		phw = clk_hw_get_parent_by_index(&clk->clkr.hw, index);
+		prate = clk_hw_get_rate(phw);
+
+		ret = calculate_m_and_n(&clk->clkr.hw, SE_PERF_M_DFSR(i),
+					SE_PERF_N_DFSR(i), mode, &m, &n);
+		if (ret)
+			goto err;
+
+		dfs_freq_tbl[i].m = m;
+		dfs_freq_tbl[i].n = n;
+
+		/* calculate the final frequency */
+		calc_freq = clk_rcg2_calc_rate(prate, dfs_freq_tbl[i].m,
+						dfs_freq_tbl[i].n, mode,
+						dfs_freq_tbl[i].pre_div);
+
+		/* Check for duplicate frequencies */
+		for (j = 0; j  < i; j++) {
+			if (dfs_freq_tbl[j].freq == calc_freq)
+				goto done;
+		}
+
+		dfs_freq_tbl[i].freq = calc_freq;
+	}
+done:
+	j = i;
+
+	for (i = 0; i < j; i++)
+		pr_debug("Index[%d]\tfreq_table.freq %ld\tfreq_table.src %d\t"
+		"freq_table.pre_div %d\tfreq_table.m %d\tfreq_table.n %d\t"
+		"RCG flags %x\n", i, dfs_freq_tbl[i].freq, dfs_freq_tbl[i].src,
+				dfs_freq_tbl[i].pre_div, dfs_freq_tbl[i].m,
+				dfs_freq_tbl[i].n, rcg_flags);
+	/* Skip the safe configuration if DFS has been enabled for the RCG. */
+	if (clk->enable_safe_config)
+		clk->enable_safe_config = false;
+	clk->flags |= rcg_flags;
+	clk->freq_tbl = dfs_freq_tbl;
+err:
+	return ret;
+}
+>>>>>>> 84066a267d81... Merge branch 'overflow'
