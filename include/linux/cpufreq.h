@@ -424,6 +424,7 @@ static inline void cpufreq_resume(void) {}
 #define CPUFREQ_CREATE_POLICY		(3)
 #define CPUFREQ_REMOVE_POLICY		(4)
 #define CPUFREQ_STOP			(5)
+#define CPUFREQ_INCOMPATIBLE		(6)
 
 #ifdef CONFIG_CPU_FREQ
 int cpufreq_register_notifier(struct notifier_block *nb, unsigned int list);
