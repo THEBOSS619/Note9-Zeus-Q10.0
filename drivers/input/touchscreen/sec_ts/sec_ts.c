@@ -708,11 +708,6 @@ int sec_ts_wait_for_ready(struct sec_ts_data *ts, unsigned int ack)
 		sec_ts_delay(20);
 	}
 
-	input_info(true, &ts->client->dev,
-			"%s: %02X, %02X, %02X, %02X, %02X, %02X, %02X, %02X [%d]\n",
-			__func__, tBuff[0], tBuff[1], tBuff[2], tBuff[3],
-			tBuff[4], tBuff[5], tBuff[6], tBuff[7], retry);
-
 	return rc;
 }
 
@@ -1593,9 +1588,6 @@ void sec_ts_set_grip_type(struct sec_ts_data *ts, u8 set_type)
 {
 	u8 mode = G_NONE;
 
-	input_info(true, &ts->client->dev, "%s: re-init grip(%d), edh:%d, edg:%d, lan:%d\n", __func__,
-			set_type, ts->grip_edgehandler_direction, ts->grip_edge_range, ts->grip_landscape_mode);
-
 	/* edge handler */
 	if (ts->grip_edgehandler_direction != 0)
 		mode |= G_SET_EDGE_HANDLER;
@@ -1622,8 +1614,6 @@ void sec_ts_set_grip_type(struct sec_ts_data *ts, u8 set_type)
 static int sec_ts_pinctrl_configure(struct sec_ts_data *ts, bool enable)
 {
 	struct pinctrl_state *state;
-
-	input_info(true, &ts->client->dev, "%s: %s\n", __func__, enable ? "ACTIVE" : "SUSPEND");
 
 	if (enable) {
 		state = pinctrl_lookup_state(ts->plat_data->pinctrl, "on_state");
