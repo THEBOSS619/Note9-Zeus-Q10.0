@@ -1442,9 +1442,6 @@ static irqreturn_t sec_ts_irq_thread(int irq, void *ptr)
 		wait_for_completion_interruptible_timeout(&ts->secure_interrupt,
 				msecs_to_jiffies(5 * MSEC_PER_SEC));
 
-		input_info(true, &ts->client->dev,
-				"%s: secure interrupt handled\n", __func__);
-
 		return IRQ_HANDLED;
 	}
 #endif
@@ -1507,9 +1504,6 @@ int sec_ts_glove_mode_enables(struct sec_ts_data *ts, int mode)
 		input_err(true, &ts->client->dev, "%s: Failed to send command", __func__);
 		goto glove_enable_err;
 	}
-
-	input_info(true, &ts->client->dev, "%s: glove:%d, status:%x\n", __func__,
-			mode, ts->touch_functions);
 
 	return 0;
 
@@ -2547,26 +2541,6 @@ void sec_ts_locked_release_all_finger(struct sec_ts_data *ts)
 				(ts->coord[i].action == SEC_TS_COORDINATE_ACTION_MOVE)) {
 
 			location_detect(ts, location, ts->coord[i].x, ts->coord[i].y);
-#if !defined(CONFIG_SAMSUNG_PRODUCT_SHIP)
-			input_info(true, &ts->client->dev,
-					"[RA] tID:%d p:%s dd:%d,%d mc:%d tc:%d lx:%d ly:%d p:%d noise:%x\n",
-					i, location,
-					ts->coord[i].x - ts->coord[i].p_x,
-					ts->coord[i].y - ts->coord[i].p_y,
-					ts->coord[i].mcount, ts->touch_count,
-					ts->coord[i].x, ts->coord[i].y,
-					ts->coord[i].palm_count,
-					ts->touch_noise_status);
-#else
-			input_info(true, &ts->client->dev,
-					"[RA] tID:%d p:%s dd:%d,%d mc:%d tc:%d p:%d noise:%x\n",
-					i, location,
-					ts->coord[i].x - ts->coord[i].p_x,
-					ts->coord[i].y - ts->coord[i].p_y,
-					ts->coord[i].mcount, ts->touch_count,
-					ts->coord[i].palm_count,
-					ts->touch_noise_status);
-#endif
 
 			ts->coord[i].action = SEC_TS_COORDINATE_ACTION_RELEASE;
 
