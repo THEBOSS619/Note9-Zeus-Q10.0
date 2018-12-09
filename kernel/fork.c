@@ -2207,7 +2207,6 @@ long _do_fork(unsigned long clone_flags,
 	devfreq_boost_kick_max(DEVFREQ_EXYNOS_MIF, 1250);
 }
 
-
 	/*
 	 * Determine whether and which event to report to ptracer.  When
 	 * called from kernel_thread or CLONE_UNTRACED is explicitly
