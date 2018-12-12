@@ -11,6 +11,7 @@
 #include <linux/input.h>
 #include <linux/moduleparam.h>
 #include <linux/slab.h>
+#include "../../kernel/sched/sched.h"
 
 unsigned long last_input_time;
 
@@ -63,7 +64,10 @@ static u32 get_input_boost_freq(struct cpufreq_policy *policy, u32 state)
 		if (cpumask_test_cpu(cpu, cpu_lp_mask))
 			return input_boost_freq_lp;
 
-		return input_boost_freq_hp;
+		if (cpu_rq(cpu)->nr_running > 1)
+			return input_boost_freq_hp;
+
+		return 0;
 	}
 
 	if (cpumask_test_cpu(policy->cpu, cpu_lp_mask))
@@ -71,7 +75,10 @@ static u32 get_input_boost_freq(struct cpufreq_policy *policy, u32 state)
 	else
 		freq = general_boost_freq_hp;
 
-	return min(freq, policy->max);
+	if (cpu_rq(cpu)->nr_running > 1)
+		return min(freq, policy->max);
+
+	return 0;
 }
 
 static u32 get_max_boost_freq(struct cpufreq_policy *policy)
