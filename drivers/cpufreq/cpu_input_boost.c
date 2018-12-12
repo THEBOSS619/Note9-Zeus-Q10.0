@@ -12,6 +12,7 @@
 #include <linux/moduleparam.h>
 #include <linux/slab.h>
 #include <linux/kthread.h>
+#include "../../kernel/sched/sched.h"
 
 #define ST_TA "top-app"
 #define ST_FG "foreground"
@@ -122,7 +123,10 @@ static u32 get_boost_freq(struct boost_drv *b, u32 cpu, u32 state)
 		if (cpumask_test_cpu(cpu, cpu_lp_mask))
 			return input_boost_freq_lp;
 
+	if (cpu_rq(cpu)->nr_running > 1)
 		return input_boost_freq_hp;
+	else
+		return 0;
 	}
 
 	if (cpumask_test_cpu(cpu, cpu_lp_mask))
