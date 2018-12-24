@@ -34,7 +34,6 @@
 #include <asm/ptrace.h>
 #include <asm/processor.h>
 #include <asm/thread_info.h>
-#include <asm/uaccess.h>
 #include <asm/asm-uaccess.h>
 #include <asm/unistd.h>
 #include <asm/kernel-pgtable.h>

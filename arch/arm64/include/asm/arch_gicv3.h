@@ -79,6 +79,7 @@
 
 #include <linux/stringify.h>
 #include <asm/barrier.h>
+#include <asm/cacheflush.h>
 
 #define read_gicreg			read_sysreg_s
 #define write_gicreg			write_sysreg_s
@@ -122,14 +123,9 @@ static inline u64 gic_read_iar_cavium_thunderx(void)
 {
 	u64 irqstat;
 
-	asm volatile(
-		"nop;nop;nop;nop\n\t"
-		"nop;nop;nop;nop");
-
+	nops(8);
 	irqstat = read_sysreg_s(ICC_IAR1_EL1);
-
-	asm volatile(
-		"nop;nop;nop;nop");
+	nops(4);
 	mb();
 
 	return irqstat;
@@ -175,6 +171,22 @@ static inline void gic_write_bpr1(u32 val)
 
 #define gic_read_typer(c)		readq_relaxed(c)
 #define gic_write_irouter(v, c)		writeq_relaxed(v, c)
+
+#define gic_flush_dcache_to_poc(a,l)	__flush_dcache_area((a), (l))
+
+#define gits_read_baser(c)		readq_relaxed(c)
+#define gits_write_baser(v, c)		writeq_relaxed(v, c)
+
+#define gits_read_cbaser(c)		readq_relaxed(c)
+#define gits_write_cbaser(v, c)		writeq_relaxed(v, c)
+
+#define gits_write_cwriter(v, c)	writeq_relaxed(v, c)
+
+#define gicr_read_propbaser(c)		readq_relaxed(c)
+#define gicr_write_propbaser(v, c)	writeq_relaxed(v, c)
+
+#define gicr_write_pendbaser(v, c)	writeq_relaxed(v, c)
+#define gicr_read_pendbaser(c)		readq_relaxed(c)
 
 #endif /* __ASSEMBLY__ */
 #endif /* __ASM_ARCH_GICV3_H */

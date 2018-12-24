@@ -54,6 +54,12 @@ $(warning LSE atomics not supported by binutils)
   endif
 endif
 
+brokengasinst := $(call as-instr,1:\n.inst 0\n.rept . - 1b\n\nnop\n.endr\n,,-DCONFIG_BROKEN_GAS_INST=1)
+
+ifneq ($(brokengasinst),)
+$(warning Detected assembler with broken .inst; disassembly will be unreliable)
+endif
+
 ifeq ($(cc-name),clang)
 # This is a workaround for https://bugs.llvm.org/show_bug.cgi?id=30792.
 # TODO: revert when this is fixed in LLVM.
@@ -61,11 +67,11 @@ KBUILD_CFLAGS	+= -mno-implicit-float
 else
 KBUILD_CFLAGS	+= -mgeneral-regs-only
 endif
-KBUILD_CFLAGS	+= $(lseinstr)
+KBUILD_CFLAGS += $(lseinstr) $(brokengasinst)
 KBUILD_CFLAGS	+= -fno-asynchronous-unwind-tables
 KBUILD_CFLAGS	+= $(call cc-option, -mpc-relative-literal-loads)
 KBUILD_CFLAGS	+= -fno-pic
-KBUILD_AFLAGS	+= $(lseinstr)
+KBUILD_AFLAGS += $(lseinstr) $(brokengasinst)
 KBUILD_CFLAGS	+= $(call cc-option, -march=armv8-a+crypto+crc,)
 ifeq ($(CONFIG_SOC_EXYNOS9810), y)
 KBUILD_CFLAGS	+= $(call cc-option, -mcpu=cortex-a55+crypto+crc,)
