@@ -505,6 +505,15 @@ enum tsq_flags {
 	TCPF_MTU_REDUCED_DEFERRED	= (1UL << TCP_MTU_REDUCED_DEFERRED),
 };
 
+enum tsq_flags {
+	TSQF_THROTTLED			= (1UL << TSQ_THROTTLED),
+	TSQF_QUEUED			= (1UL << TSQ_QUEUED),
+	TCPF_TSQ_DEFERRED		= (1UL << TCP_TSQ_DEFERRED),
+	TCPF_WRITE_TIMER_DEFERRED	= (1UL << TCP_WRITE_TIMER_DEFERRED),
+	TCPF_DELACK_TIMER_DEFERRED	= (1UL << TCP_DELACK_TIMER_DEFERRED),
+	TCPF_MTU_REDUCED_DEFERRED	= (1UL << TCP_MTU_REDUCED_DEFERRED),
+};
+
 static inline struct tcp_sock *tcp_sk(const struct sock *sk)
 {
 	return (struct tcp_sock *)sk;
