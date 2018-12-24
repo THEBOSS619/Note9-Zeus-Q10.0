@@ -43,7 +43,7 @@
 #include <linux/slab.h>
 #include <linux/random.h>
 #include <linux/err.h>
-#include <asm/uaccess.h>
+#include <linux/uaccess.h>
 #include <linux/freezer.h>
 
 
