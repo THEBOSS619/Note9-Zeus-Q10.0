@@ -28,6 +28,7 @@
 #include <linux/kthread.h>
 #include <asm/tlbflush.h>
 #include <linux/sched.h>
+#include <linux/module.h>
 #include "ion.h"
 #include "ion_priv.h"
 
@@ -229,6 +230,9 @@ free_pages:
 	return -ENOMEM;
 }
 
+static int max_page_pool_size = INT_MAX;
+module_param(max_page_pool_size, int, 0600);
+
 static void ion_system_heap_free(struct ion_buffer *buffer)
 {
 	struct ion_system_heap *sys_heap = container_of(buffer->heap,
@@ -236,7 +240,16 @@ static void ion_system_heap_free(struct ion_buffer *buffer)
 							heap);
 	struct sg_table *table = buffer->sg_table;
 	struct scatterlist *sg;
+	unsigned int count = 0;
 	int i;
+
+	for (i = 0; i < NUM_ORDERS; i++) {
+		count += ion_page_pool_total(sys_heap->cached_pools[i], true);
+		count += ion_page_pool_total(sys_heap->uncached_pools[i], true);
+	}
+
+	if (count > max_page_pool_size)
+		buffer->private_flags |= ION_PRIV_FLAG_SHRINKER_FREE;
 
 	/* zero the buffer before goto page pool */
 	if (!(buffer->private_flags & ION_PRIV_FLAG_SHRINKER_FREE))
