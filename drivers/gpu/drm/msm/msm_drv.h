@@ -70,10 +70,334 @@ enum msm_mdp_plane_property {
 	PLANE_PROP_MAX_NUM
 };
 
+<<<<<<< HEAD
 struct msm_vblank_ctrl {
 	struct work_struct work;
 	struct list_head event_list;
 	spinlock_t lock;
+=======
+#define MAX_H_TILES_PER_DISPLAY 2
+
+/**
+ * enum msm_display_compression_type - compression method used for pixel stream
+ * @MSM_DISPLAY_COMPRESSION_NONE:     Pixel data is not compressed
+ * @MSM_DISPLAY_COMPRESSION_DSC:      DSC compresison is used
+ */
+enum msm_display_compression_type {
+	MSM_DISPLAY_COMPRESSION_NONE,
+	MSM_DISPLAY_COMPRESSION_DSC,
+};
+
+/**
+ * enum msm_display_caps - features/capabilities supported by displays
+ * @MSM_DISPLAY_CAP_VID_MODE:           Video or "active" mode supported
+ * @MSM_DISPLAY_CAP_CMD_MODE:           Command mode supported
+ * @MSM_DISPLAY_CAP_HOT_PLUG:           Hot plug detection supported
+ * @MSM_DISPLAY_CAP_EDID:               EDID supported
+ * @MSM_DISPLAY_ESD_ENABLED:            ESD feature enabled
+ */
+enum msm_display_caps {
+	MSM_DISPLAY_CAP_VID_MODE	= BIT(0),
+	MSM_DISPLAY_CAP_CMD_MODE	= BIT(1),
+	MSM_DISPLAY_CAP_HOT_PLUG	= BIT(2),
+	MSM_DISPLAY_CAP_EDID		= BIT(3),
+	MSM_DISPLAY_ESD_ENABLED		= BIT(4),
+};
+
+/**
+ * enum msm_event_wait - type of HW events to wait for
+ * @MSM_ENC_COMMIT_DONE - wait for the driver to flush the registers to HW
+ * @MSM_ENC_TX_COMPLETE - wait for the HW to transfer the frame to panel
+ * @MSM_ENC_VBLANK - wait for the HW VBLANK event (for driver-internal waiters)
+ * @MSM_ENC_ACTIVE_REGION - wait for the TG to be in active pixel region
+ */
+enum msm_event_wait {
+	MSM_ENC_COMMIT_DONE = 0,
+	MSM_ENC_TX_COMPLETE,
+	MSM_ENC_VBLANK,
+	MSM_ENC_ACTIVE_REGION,
+};
+
+/**
+ * struct msm_roi_alignment - region of interest alignment restrictions
+ * @xstart_pix_align: left x offset alignment restriction
+ * @width_pix_align: width alignment restriction
+ * @ystart_pix_align: top y offset alignment restriction
+ * @height_pix_align: height alignment restriction
+ * @min_width: minimum width restriction
+ * @min_height: minimum height restriction
+ */
+struct msm_roi_alignment {
+	uint32_t xstart_pix_align;
+	uint32_t width_pix_align;
+	uint32_t ystart_pix_align;
+	uint32_t height_pix_align;
+	uint32_t min_width;
+	uint32_t min_height;
+};
+
+/**
+ * struct msm_roi_caps - display's region of interest capabilities
+ * @enabled: true if some region of interest is supported
+ * @merge_rois: merge rois before sending to display
+ * @num_roi: maximum number of rois supported
+ * @align: roi alignment restrictions
+ */
+struct msm_roi_caps {
+	bool enabled;
+	bool merge_rois;
+	uint32_t num_roi;
+	struct msm_roi_alignment align;
+};
+
+/**
+ * struct msm_display_dsc_info - defines dsc configuration
+ * @version:                 DSC version.
+ * @scr_rev:                 DSC revision.
+ * @pic_height:              Picture height in pixels.
+ * @pic_width:               Picture width in pixels.
+ * @initial_lines:           Number of initial lines stored in encoder.
+ * @pkt_per_line:            Number of packets per line.
+ * @bytes_in_slice:          Number of bytes in slice.
+ * @eol_byte_num:            Valid bytes at the end of line.
+ * @pclk_per_line:           Compressed width.
+ * @full_frame_slices:       Number of slice per interface.
+ * @slice_height:            Slice height in pixels.
+ * @slice_width:             Slice width in pixels.
+ * @chunk_size:              Chunk size in bytes for slice multiplexing.
+ * @slice_last_group_size:   Size of last group in pixels.
+ * @bpp:                     Target bits per pixel.
+ * @bpc:                     Number of bits per component.
+ * @line_buf_depth:          Line buffer bit depth.
+ * @block_pred_enable:       Block prediction enabled/disabled.
+ * @vbr_enable:              VBR mode.
+ * @enable_422:              Indicates if input uses 4:2:2 sampling.
+ * @convert_rgb:             DSC color space conversion.
+ * @input_10_bits:           10 bit per component input.
+ * @slice_per_pkt:           Number of slices per packet.
+ * @initial_dec_delay:       Initial decoding delay.
+ * @initial_xmit_delay:      Initial transmission delay.
+ * @initial_scale_value:     Scale factor value at the beginning of a slice.
+ * @scale_decrement_interval: Scale set up at the beginning of a slice.
+ * @scale_increment_interval: Scale set up at the end of a slice.
+ * @first_line_bpg_offset:   Extra bits allocated on the first line of a slice.
+ * @nfl_bpg_offset:          Slice specific settings.
+ * @slice_bpg_offset:        Slice specific settings.
+ * @initial_offset:          Initial offset at the start of a slice.
+ * @final_offset:            Maximum end-of-slice value.
+ * @rc_model_size:           Number of bits in RC model.
+ * @det_thresh_flatness:     Flatness threshold.
+ * @max_qp_flatness:         Maximum QP for flatness adjustment.
+ * @min_qp_flatness:         Minimum QP for flatness adjustment.
+ * @edge_factor:             Ratio to detect presence of edge.
+ * @quant_incr_limit0:       QP threshold.
+ * @quant_incr_limit1:       QP threshold.
+ * @tgt_offset_hi:           Upper end of variability range.
+ * @tgt_offset_lo:           Lower end of variability range.
+ * @buf_thresh:              Thresholds in RC model
+ * @range_min_qp:            Min QP allowed.
+ * @range_max_qp:            Max QP allowed.
+ * @range_bpg_offset:        Bits per group adjustment.
+ */
+struct msm_display_dsc_info {
+	u8 version;
+	u8 scr_rev;
+
+	int pic_height;
+	int pic_width;
+	int slice_height;
+	int slice_width;
+
+	int initial_lines;
+	int pkt_per_line;
+	int bytes_in_slice;
+	int bytes_per_pkt;
+	int eol_byte_num;
+	int pclk_per_line;
+	int full_frame_slices;
+	int slice_last_group_size;
+	int bpp;
+	int bpc;
+	int line_buf_depth;
+
+	int slice_per_pkt;
+	int chunk_size;
+	bool block_pred_enable;
+	int vbr_enable;
+	int enable_422;
+	int convert_rgb;
+	int input_10_bits;
+
+	int initial_dec_delay;
+	int initial_xmit_delay;
+	int initial_scale_value;
+	int scale_decrement_interval;
+	int scale_increment_interval;
+	int first_line_bpg_offset;
+	int nfl_bpg_offset;
+	int slice_bpg_offset;
+	int initial_offset;
+	int final_offset;
+
+	int rc_model_size;
+	int det_thresh_flatness;
+	int max_qp_flatness;
+	int min_qp_flatness;
+	int edge_factor;
+	int quant_incr_limit0;
+	int quant_incr_limit1;
+	int tgt_offset_hi;
+	int tgt_offset_lo;
+
+	u32 *buf_thresh;
+	char *range_min_qp;
+	char *range_max_qp;
+	char *range_bpg_offset;
+};
+
+/**
+ * struct msm_compression_info - defined panel compression
+ * @comp_type:        type of compression supported
+ * @dsc_info:         dsc configuration if the compression
+ *                    supported is DSC
+ */
+struct msm_compression_info {
+	enum msm_display_compression_type comp_type;
+
+	union{
+		struct msm_display_dsc_info dsc_info;
+	};
+};
+
+/**
+ * struct msm_display_topology - defines a display topology pipeline
+ * @num_lm:       number of layer mixers used
+ * @num_enc:      number of compression encoder blocks used
+ * @num_intf:     number of interfaces the panel is mounted on
+ */
+struct msm_display_topology {
+	u32 num_lm;
+	u32 num_enc;
+	u32 num_intf;
+};
+
+/**
+ * struct msm_mode_info - defines all msm custom mode info
+ * @frame_rate:      frame_rate of the mode
+ * @vtotal:          vtotal calculated for the mode
+ * @prefill_lines:   prefill lines based on porches.
+ * @jitter_numer:	display panel jitter numerator configuration
+ * @jitter_denom:	display panel jitter denominator configuration
+ * @clk_rate:	     DSI bit clock per lane in HZ.
+ * @topology:        supported topology for the mode
+ * @comp_info:       compression info supported
+ * @roi_caps:        panel roi capabilities
+ */
+struct msm_mode_info {
+	uint32_t frame_rate;
+	uint32_t vtotal;
+	uint32_t prefill_lines;
+	uint32_t jitter_numer;
+	uint32_t jitter_denom;
+	uint64_t clk_rate;
+	struct msm_display_topology topology;
+	struct msm_compression_info comp_info;
+	struct msm_roi_caps roi_caps;
+};
+
+/**
+ * struct msm_display_info - defines display properties
+ * @intf_type:          DRM_MODE_CONNECTOR_ display type
+ * @capabilities:       Bitmask of display flags
+ * @num_of_h_tiles:     Number of horizontal tiles in case of split interface
+ * @h_tile_instance:    Controller instance used per tile. Number of elements is
+ *                      based on num_of_h_tiles
+ * @is_connected:       Set to true if display is connected
+ * @width_mm:           Physical width
+ * @height_mm:          Physical height
+ * @max_width:          Max width of display. In case of hot pluggable display
+ *                      this is max width supported by controller
+ * @max_height:         Max height of display. In case of hot pluggable display
+ *                      this is max height supported by controller
+ * @clk_rate:           DSI bit clock per lane in HZ.
+ * @is_primary:         Set to true if display is primary display
+ * @is_te_using_watchdog_timer:  Boolean to indicate watchdog TE is
+ *				 used instead of panel TE in cmd mode panels
+ * @roi_caps:           Region of interest capability info
+ */
+struct msm_display_info {
+	int intf_type;
+	uint32_t capabilities;
+
+	uint32_t num_of_h_tiles;
+	uint32_t h_tile_instance[MAX_H_TILES_PER_DISPLAY];
+
+	bool is_connected;
+
+	unsigned int width_mm;
+	unsigned int height_mm;
+
+	uint32_t max_width;
+	uint32_t max_height;
+	uint64_t clk_rate;
+
+	bool is_primary;
+	bool is_te_using_watchdog_timer;
+	struct msm_roi_caps roi_caps;
+};
+
+#define MSM_MAX_ROI	4
+
+/**
+ * struct msm_roi_list - list of regions of interest for a drm object
+ * @num_rects: number of valid rectangles in the roi array
+ * @roi: list of roi rectangles
+ */
+struct msm_roi_list {
+	uint32_t num_rects;
+	struct drm_clip_rect roi[MSM_MAX_ROI];
+};
+
+/**
+ * struct - msm_display_kickoff_params - info for display features at kickoff
+ * @rois: Regions of interest structure for mapping CRTC to Connector output
+ */
+struct msm_display_kickoff_params {
+	struct msm_roi_list *rois;
+	struct drm_msm_ext_hdr_metadata *hdr_meta;
+};
+
+/**
+ * struct msm_drm_event - defines custom event notification struct
+ * @base: base object required for event notification by DRM framework.
+ * @event: event object required for event notification by DRM framework.
+ * @info: contains information of DRM object for which events has been
+ *        requested.
+ * @data: memory location which contains response payload for event.
+ */
+struct msm_drm_event {
+	struct drm_pending_event base;
+	struct drm_event event;
+	struct drm_msm_event_req info;
+	u8 data[];
+};
+
+/* Commit/Event thread specific structure */
+struct msm_drm_thread {
+	struct drm_device *dev;
+	struct task_struct *thread;
+	unsigned int crtc_id;
+	struct kthread_worker worker;
+};
+
+struct msm_idle {
+	u32 timeout_ms;
+	u32 encoder_mask;
+	u32 active_mask;
+
+	spinlock_t lock;
+	struct delayed_work work;
+>>>>>>> b0c3bbac1b16... Merge branch 'freak07-caf'
 };
 
 struct msm_drm_private {
@@ -155,8 +479,6 @@ struct msm_drm_private {
 
 	struct notifier_block vmap_notifier;
 	struct shrinker shrinker;
-
-	struct msm_vblank_ctrl vblank_ctrl;
 
 	/* task holding struct_mutex.. currently only used in submit path
 	 * to detect and reject faults from copy_from_user() for submit
