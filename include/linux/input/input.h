@@ -5,9 +5,7 @@
 #include <linux/pm_qos.h>
 #include <linux/of.h>
 
-#ifdef CONFIG_SCHED_HMP
-#define USE_HMP_BOOST
-#elif defined CONFIG_SCHED_EHMP
+#ifdef CONFIG_SCHED_EHMP
 #define USE_EHMP_BOOST
 #endif
 

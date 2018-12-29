@@ -389,8 +389,6 @@ int argos_hmpboost_apply(int dev_num, bool enable)
 #ifdef CONFIG_SCHED_EHMP
 			/* set global boost */
 			gb_qos_update_request(&gb_req, 100);
-#elif defined(CONFIG_SCHED_HMP)
-			set_hmp_boost(true);
 #endif
 			*hmpboost_enable = true;
 			pr_info("%s: hmp boost enable [%d]\n", __func__, dev_num);
@@ -401,8 +399,6 @@ int argos_hmpboost_apply(int dev_num, bool enable)
 #ifdef CONFIG_SCHED_EHMP
 			/* unset global boost */
 			gb_qos_update_request(&gb_req, 0);
-#elif defined(CONFIG_SCHED_HMP)
-			set_hmp_boost(false);
 #endif
 			*hmpboost_enable = false;
 			pr_info("%s: hmp boost disable [%d]\n", __func__, dev_num);

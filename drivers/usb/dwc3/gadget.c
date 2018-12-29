@@ -65,18 +65,10 @@ static void dwc3_gadget_cable_connect(struct dwc3 *dwc, bool connect)
 extern int argos_irq_affinity_setup_label(unsigned int irq, const char *label,
 		struct cpumask *affinity_cpu_mask,
 		struct cpumask *default_cpu_mask);
-#ifdef CONFIG_SCHED_HMP
-extern struct cpumask hmp_slow_cpu_mask;
-static inline struct cpumask *get_default_cpu_mask(void)
-{
-	return &hmp_slow_cpu_mask;
-}
-#else
 static inline struct cpumask *get_default_cpu_mask(void)
 {
 	return cpu_all_mask;
 }
-#endif
 cpumask_var_t affinity_cpu_mask;
 cpumask_var_t default_cpu_mask;
 #endif

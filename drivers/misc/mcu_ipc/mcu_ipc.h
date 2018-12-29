@@ -64,20 +64,10 @@ static inline u32 mcu_ipc_readl(enum mcu_ipc_region id, long reg)
 #ifdef CONFIG_ARGOS
 /* kernel team needs to provide argos header file. !!!
  * As of now, there's nothing to use. */
-#ifdef CONFIG_SCHED_HMP
-extern struct cpumask hmp_slow_cpu_mask;
-extern struct cpumask hmp_fast_cpu_mask;
-
-static inline struct cpumask *get_default_cpu_mask(void)
-{
-	return &hmp_slow_cpu_mask;
-}
-#else
 static inline struct cpumask *get_default_cpu_mask(void)
 {
 	return cpu_all_mask;
 }
-#endif
 
 struct mcu_argos_info {
 	int irq;

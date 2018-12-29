@@ -15,11 +15,7 @@ ifneq ($(CONFIG_SCHED_OMIT_FRAME_POINTER),y)
 CFLAGS_core.o := $(PROFILING) -fno-omit-frame-pointer
 endif
 
-ifeq ($(CONFIG_SCHED_HMP),y)
-obj-y += core_hmp.o fair_hmp.o pcf.o global_boost.o
-else
 obj-y += core.o fair.o
-endif
 CFLAGS_fair.o := -Wno-array-bounds
 obj-y += loadavg.o clock.o cputime.o
 obj-y += idle_task.o rt.o deadline.o stop_task.o

@@ -799,12 +799,6 @@ struct rq {
 	/* This is used to determine avg_idle's max value */
 	u64 max_idle_balance_cost;
 
-#ifdef CONFIG_SCHED_HMP
-	struct task_struct *migrate_task;
-	u64 hmp_last_up_migration;
-	u64 hmp_last_down_migration;
-#endif
-
 #endif
 
 #ifdef CONFIG_SCHED_WALT
@@ -1231,14 +1225,6 @@ static inline void unregister_sched_domain_sysctl(void)
 }
 #endif
 
-#ifdef CONFIG_SCHED_HMP
-#define MOVETASK_ONEPATH
-
-static LIST_HEAD(hmp_domains);
-DECLARE_PER_CPU(struct hmp_domain *, hmp_cpu_domain);
-#define hmp_cpu_domain(cpu)	(per_cpu(hmp_cpu_domain, (cpu)))
-#endif /* CONFIG_SCHED_HMP */
-
 #else
 
 static inline void sched_ttwu_pending(void) { }
@@ -1633,12 +1619,7 @@ extern const struct sched_class idle_sched_class;
 extern void init_max_cpu_capacity(struct max_cpu_capacity *mcc);
 extern void update_group_capacity(struct sched_domain *sd, int cpu);
 
-#ifdef CONFIG_SCHED_HMP
-extern void trigger_load_balance(struct rq *rq, int cpu);
-#else
 extern void trigger_load_balance(struct rq *rq);
-#endif
-
 
 extern void set_cpus_allowed_common(struct task_struct *p, const struct cpumask *new_mask);
 

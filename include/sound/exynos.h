@@ -38,23 +38,6 @@ enum {
 	AUD_PWR_AFTR,
 };
 
-#ifdef CONFIG_SCHED_HMP
-#define USE_EXYNOS_AUD_SCHED
-enum {
-	AUD_MODE_DEFAULT = 0,
-	AUD_MODE_NORM,
-	AUD_MODE_UHQA,
-};
-
-extern void lpass_set_sched(pid_t pid, int mode);
-#endif
-
-#if defined(CONFIG_SCHED_HMP) && defined(CONFIG_EXYNOS5_DYNAMIC_CPU_HOTPLUG)
-#define USE_EXYNOS_AUD_CPU_HOTPLUG
-extern void lpass_get_cpu_hotplug(void);
-extern void lpass_put_cpu_hotplug(void);
-#endif
-
 #ifdef CONFIG_SND_SAMSUNG_AUDSS
 extern int exynos_check_aud_pwr(void);
 #else

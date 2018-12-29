@@ -3795,9 +3795,6 @@ static void abox_change_hmp_boost_work_func(struct work_struct *work)
 		dev_info(dev, "request hmp boost: %d\n", on);
 
 		data->hmp_boost = on;
-#ifdef CONFIG_SCHED_HMP
-		set_hmp_boost(on);
-#endif
 	}
 }
 
