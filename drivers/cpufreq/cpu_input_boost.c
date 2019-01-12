@@ -19,6 +19,8 @@ static __read_mostly unsigned int input_boost_freq_lp = CONFIG_INPUT_BOOST_FREQ_
 static __read_mostly unsigned int input_boost_freq_hp = CONFIG_INPUT_BOOST_FREQ_PERF;
 static __read_mostly unsigned int input_boost_return_freq_lp = CONFIG_REMOVE_INPUT_BOOST_FREQ_LP;
 static __read_mostly unsigned int input_boost_return_freq_hp = CONFIG_REMOVE_INPUT_BOOST_FREQ_PERF;
+static __read_mostly unsigned int input_boost_awake_return_freq_lp = CONFIG_AWAKE_REMOVE_INPUT_BOOST_FREQ_LP;
+static __read_mostly unsigned int input_boost_awake_return_freq_hp = CONFIG_AWAKE_REMOVE_INPUT_BOOST_FREQ_PERF;
 static __read_mostly unsigned int general_boost_freq_lp = CONFIG_GENERAL_BOOST_FREQ_LP;
 static __read_mostly unsigned int general_boost_freq_hp = CONFIG_GENERAL_BOOST_FREQ_PERF;
 static __read_mostly unsigned short input_boost_duration = CONFIG_INPUT_BOOST_DURATION_MS;
@@ -27,6 +29,8 @@ module_param(input_boost_freq_lp, uint, 0644);
 module_param(input_boost_freq_hp, uint, 0644);
 module_param(input_boost_return_freq_lp, uint, 0644);
 module_param(input_boost_return_freq_hp, uint, 0644);
+module_param(input_boost_awake_return_freq_lp, uint, 0644);
+module_param(input_boost_awake_return_freq_hp, uint, 0644);
 module_param(general_boost_freq_lp, uint, 0644);
 module_param(general_boost_freq_hp, uint, 0644);
 module_param(input_boost_duration, short, 0644);
@@ -115,8 +119,15 @@ static u32 get_max_boost_freq(struct cpufreq_policy *policy)
 	return min(freq, policy->max);
 }
 
-static u32 get_min_freq(struct boost_drv *b, u32 cpu)
+static u32 get_min_freq(struct boost_drv *b, u32 cpu, u32 state)
 {
+	if (state & SCREEN_AWAKE) {
+		if (cpumask_test_cpu(cpu, cpu_lp_mask))
+			return input_boost_awake_return_freq_lp;
+
+		return input_boost_awake_return_freq_hp;
+	}
+
 	if (cpumask_test_cpu(cpu, cpu_lp_mask))
 		return input_boost_return_freq_lp;
 
@@ -391,7 +402,7 @@ static int cpu_notifier_cb(struct notifier_block *nb,
 		policy->min = get_input_boost_freq(policy, state);
 	}
 	else
-		min_freq = get_min_freq(b, policy->cpu);
+		min_freq = get_min_freq(b, policy->cpu, state);
 		policy->min = max(policy->cpuinfo.min_freq, min_freq);
 	}
 	return NOTIFY_OK;
