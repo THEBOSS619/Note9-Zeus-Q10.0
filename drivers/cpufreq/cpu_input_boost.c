@@ -160,7 +160,7 @@ static void update_online_cpu_policy(void)
 	put_online_cpus();
 }
 
-static void set_stune_boost(struct boost_drv *b, u32 state, u32 bit, int level,
+static void update_stune_boost(struct boost_drv *b, u32 state, u32 bit, int level,
 			    int *slot)
 {
 	if (level && !(state & bit)) {
@@ -296,7 +296,7 @@ static void input_boost_worker(struct work_struct *work)
 	queue_delayed_work(b->wq, &b->input_unboost,
 			   msecs_to_jiffies(input_boost_duration));
 
-	set_stune_boost(b, state, INPUT_STUNE_BOOST, input_stune_boost,
+	update_stune_boost(b, state, INPUT_STUNE_BOOST, input_stune_boost,
 		&b->input_stune_slot);
 }
 
@@ -325,7 +325,7 @@ static void max_boost_worker(struct work_struct *work)
 	queue_delayed_work(b->wq, &b->max_unboost,
 		msecs_to_jiffies(atomic_read(&b->max_boost_dur)));
 
-	set_stune_boost(b, state, MAX_STUNE_BOOST, max_stune_boost,
+	update_stune_boost(b, state, MAX_STUNE_BOOST, max_stune_boost,
 		&b->max_stune_slot);
 }
 
@@ -354,7 +354,7 @@ static void general_boost_worker(struct work_struct *work)
 	queue_delayed_work(b->wq, &b->general_unboost,
 		msecs_to_jiffies(atomic_read(&b->general_boost_dur)));
 
-	set_stune_boost(b, state, GENERAL_STUNE_BOOST, general_stune_boost,
+	update_stune_boost(b, state, GENERAL_STUNE_BOOST, general_stune_boost,
 		&b->general_stune_slot);
 }
 
@@ -422,7 +422,7 @@ static int fb_notifier_cb(struct notifier_block *nb,
 	if (*blank == FB_BLANK_UNBLANK) {
 		set_boost_bit(b, SCREEN_AWAKE);
 		__cpu_input_boost_kick_max(b, CONFIG_WAKE_BOOST_DURATION_MS);
-		set_stune_boost(b, state, DISPLAY_STUNE_BOOST, display_stune_boost,
+		update_stune_boost(b, state, DISPLAY_STUNE_BOOST, display_stune_boost,
 			        &b->display_stune_slot);
 	} else {
 		clear_boost_bit(b, SCREEN_AWAKE);
