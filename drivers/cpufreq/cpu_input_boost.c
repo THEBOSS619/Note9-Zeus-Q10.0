@@ -13,6 +13,11 @@
 #include <linux/slab.h>
 #include "../../kernel/sched/sched.h"
 
+#define ST_TA "top-app"
+#define ST_FG "foreground"
+#define ST_BG "background"
+#define ST_ROOT "/"
+
 unsigned long last_input_time;
 
 static __read_mostly unsigned int input_boost_freq_lp = CONFIG_INPUT_BOOST_FREQ_LP;
@@ -40,11 +45,21 @@ static __read_mostly int input_stune_boost = CONFIG_INPUT_BOOST_STUNE_LEVEL;
 static __read_mostly int max_stune_boost = CONFIG_MAX_BOOST_STUNE_LEVEL;
 static __read_mostly int general_stune_boost = CONFIG_GENERAL_BOOST_STUNE_LEVEL;
 static __read_mostly int display_stune_boost = CONFIG_DISPLAY_BOOST_STUNE_LEVEL;
+static __read_mostly int display_bg_stune_boost = CONFIG_BG_DISPLAY_BOOST_STUNE_LEVEL;
+static __read_mostly int suspend_ta_stune_boost = CONFIG_SUSPEND_BOOST_STUNE_LEVEL;
+static __read_mostly int suspend_fg_stune_boost = CONFIG_SUSPEND_BOOST_STUNE_LEVEL;
+static __read_mostly int suspend_bg_stune_boost = CONFIG_SUSPEND_BOOST_STUNE_LEVEL;
+static __read_mostly int suspend_root_stune_boost = CONFIG_ROOT_SUSPEND_BOOST_STUNE_LEVEL;
 
 module_param_named(dynamic_stune_boost, input_stune_boost, int, 0644);
 module_param(max_stune_boost, int, 0644);
 module_param(general_stune_boost, int, 0644);
 module_param(display_stune_boost, int, 0644);
+module_param(display_bg_stune_boost, int, 0644);
+module_param(suspend_ta_stune_boost, int, 0644);
+module_param(suspend_fg_stune_boost, int, 0644);
+module_param(suspend_bg_stune_boost, int, 0644);
+module_param(suspend_root_stune_boost, int, 0644);
 #endif
 
 /* Available bits for boost_drv state */
@@ -56,6 +71,7 @@ module_param(display_stune_boost, int, 0644);
 #define MAX_STUNE_BOOST		BIT(5)
 #define GENERAL_STUNE_BOOST	BIT(6)
 #define DISPLAY_STUNE_BOOST	BIT(7)
+#define DISPLAY_BG_STUNE_BOOST	BIT(8)
 
 struct boost_drv {
 	struct workqueue_struct *wq;
@@ -76,6 +92,12 @@ struct boost_drv {
 	int max_stune_slot;
 	int general_stune_slot;
 	int display_stune_slot;
+	int display_bg_stune_slot;
+	int ta_stune_boost_default;
+	int fg_stune_boost_default;
+	int bg_stune_boost_default;
+	int root_stune_boost_default;
+	bool bg_stune_default_set;
 };
 
 static struct boost_drv *boost_drv_g __read_mostly;
@@ -160,19 +182,20 @@ static void update_online_cpu_policy(void)
 	put_online_cpus();
 }
 
-static void update_stune_boost(struct boost_drv *b, u32 state, u32 bit, int level,
-			    int *slot)
+static void update_stune_boost(struct boost_drv *b, u32 state, u32 bit, char *st,
+			    int level, int *slot)
 {
 	if (level && !(state & bit)) {
-		if (!do_stune_boost("top-app", level, slot))
+		if (!do_stune_boost(st, level, slot))
 			set_boost_bit(b, bit);
 	}
 }
 
-static void clear_stune_boost(struct boost_drv *b, u32 state, u32 bit, int slot)
+static void clear_stune_boost(struct boost_drv *b, u32 state, u32 bit, char *st,
+			      int slot)
 {
 	if (state & bit) {
-		reset_stune_boost("top-app", slot);
+		reset_stune_boost(st, slot);
 		clear_boost_bit(b, bit);
 	}
 }
@@ -188,9 +211,9 @@ static void unboost_all_cpus(struct boost_drv *b)
 	clear_boost_bit(b, INPUT_BOOST | MAX_BOOST | GENERAL_BOOST);
 	update_online_cpu_policy();
 
-	clear_stune_boost(b, state, INPUT_STUNE_BOOST, b->input_stune_slot);
-	clear_stune_boost(b, state, MAX_STUNE_BOOST, b->max_stune_slot);
-	clear_stune_boost(b, state, GENERAL_STUNE_BOOST, b->general_stune_slot);
+	clear_stune_boost(b, state, INPUT_STUNE_BOOST, ST_TA, b->input_stune_slot);
+	clear_stune_boost(b, state, MAX_STUNE_BOOST, ST_TA, b->max_stune_slot);
+	clear_stune_boost(b, state, GENERAL_STUNE_BOOST, ST_TA, b->general_stune_slot);
 }
 
 static void __cpu_input_boost_kick(struct boost_drv *b)
@@ -296,7 +319,7 @@ static void input_boost_worker(struct work_struct *work)
 	queue_delayed_work(b->wq, &b->input_unboost,
 			   msecs_to_jiffies(input_boost_duration));
 
-	update_stune_boost(b, state, INPUT_STUNE_BOOST, input_stune_boost,
+	update_stune_boost(b, state, INPUT_STUNE_BOOST, ST_TA, input_stune_boost,
 		&b->input_stune_slot);
 }
 
@@ -309,7 +332,7 @@ static void input_unboost_worker(struct work_struct *work)
 	clear_boost_bit(b, INPUT_BOOST);
 	update_online_cpu_policy();
 
-	clear_stune_boost(b, state, INPUT_STUNE_BOOST, b->input_stune_slot);
+	clear_stune_boost(b, state, INPUT_STUNE_BOOST, ST_TA, b->input_stune_slot);
 }
 
 static void max_boost_worker(struct work_struct *work)
@@ -325,7 +348,7 @@ static void max_boost_worker(struct work_struct *work)
 	queue_delayed_work(b->wq, &b->max_unboost,
 		msecs_to_jiffies(atomic_read(&b->max_boost_dur)));
 
-	update_stune_boost(b, state, MAX_STUNE_BOOST, max_stune_boost,
+	update_stune_boost(b, state, MAX_STUNE_BOOST, ST_TA, max_stune_boost,
 		&b->max_stune_slot);
 }
 
@@ -338,7 +361,7 @@ static void max_unboost_worker(struct work_struct *work)
 	clear_boost_bit(b, MAX_BOOST);
 	update_online_cpu_policy();
 
-	clear_stune_boost(b, state, MAX_STUNE_BOOST, b->max_stune_slot);
+	clear_stune_boost(b, state, MAX_STUNE_BOOST, ST_TA, b->max_stune_slot);
 }
 
 static void general_boost_worker(struct work_struct *work)
@@ -354,7 +377,7 @@ static void general_boost_worker(struct work_struct *work)
 	queue_delayed_work(b->wq, &b->general_unboost,
 		msecs_to_jiffies(atomic_read(&b->general_boost_dur)));
 
-	update_stune_boost(b, state, GENERAL_STUNE_BOOST, general_stune_boost,
+	update_stune_boost(b, state, GENERAL_STUNE_BOOST, ST_TA, general_stune_boost,
 		&b->general_stune_slot);
 }
 
@@ -367,7 +390,7 @@ static void general_unboost_worker(struct work_struct *work)
 	clear_boost_bit(b, GENERAL_BOOST);
 	update_online_cpu_policy();
 
-	clear_stune_boost(b, state, GENERAL_STUNE_BOOST, b->general_stune_slot);
+	clear_stune_boost(b, state, GENERAL_STUNE_BOOST, ST_TA, b->general_stune_slot);
 }
 
 static int cpu_notifier_cb(struct notifier_block *nb,
@@ -422,13 +445,35 @@ static int fb_notifier_cb(struct notifier_block *nb,
 	if (*blank == FB_BLANK_UNBLANK) {
 		set_boost_bit(b, SCREEN_AWAKE);
 		__cpu_input_boost_kick_max(b, CONFIG_WAKE_BOOST_DURATION_MS);
-		update_stune_boost(b, state, DISPLAY_STUNE_BOOST, display_stune_boost,
-			        &b->display_stune_slot);
+		if (b->ta_stune_boost_default != INT_MIN)
+			set_stune_boost(ST_TA, b->ta_stune_boost_default, NULL);
+		if (b->fg_stune_boost_default != INT_MIN)
+			set_stune_boost(ST_FG, b->fg_stune_boost_default, NULL);
+		if (!b->bg_stune_default_set) {
+			set_stune_boost(ST_BG, suspend_bg_stune_boost, NULL);
+			b->bg_stune_default_set = true;
+		}
+		if (b->root_stune_boost_default != INT_MIN)
+			set_stune_boost(ST_ROOT, b->root_stune_boost_default, NULL);
+
+		update_stune_boost(b, state, DISPLAY_STUNE_BOOST, ST_TA,
+			           display_stune_boost, &b->display_stune_slot);
+		update_stune_boost(b, state, DISPLAY_BG_STUNE_BOOST, ST_BG,
+			           display_bg_stune_boost, &b->display_bg_stune_slot);
 	} else {
 		clear_boost_bit(b, SCREEN_AWAKE);
-		clear_stune_boost(b, state, DISPLAY_STUNE_BOOST,
+		clear_stune_boost(b, state, DISPLAY_STUNE_BOOST, ST_TA,
 				  b->display_stune_slot);
+		clear_stune_boost(b, state, DISPLAY_BG_STUNE_BOOST, ST_BG,
+				  b->display_bg_stune_slot);
 		unboost_all_cpus(b);
+
+		set_stune_boost(ST_TA, suspend_ta_stune_boost,
+				&b->ta_stune_boost_default);
+		set_stune_boost(ST_FG, suspend_fg_stune_boost,
+				&b->fg_stune_boost_default);
+		set_stune_boost(ST_ROOT, suspend_root_stune_boost,
+				&b->root_stune_boost_default);
 	}
 
 	return NOTIFY_OK;
@@ -541,6 +586,11 @@ static int __init cpu_input_boost_init(void)
 	INIT_WORK(&b->general_boost, general_boost_worker);
 	INIT_DELAYED_WORK(&b->general_unboost, general_unboost_worker);
 	atomic_set(&b->state, 0);
+	b->ta_stune_boost_default = INT_MIN;
+	b->fg_stune_boost_default = INT_MIN;
+	b->bg_stune_boost_default = INT_MIN;
+	b->root_stune_boost_default = INT_MIN;
+	b->bg_stune_default_set = false;
 
 	b->cpu_notif.notifier_call = cpu_notifier_cb;
 	ret = cpufreq_register_notifier(&b->cpu_notif, CPUFREQ_POLICY_NOTIFIER);
