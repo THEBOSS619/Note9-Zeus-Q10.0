@@ -681,7 +681,7 @@ static int __init cpu_input_boost_init(void)
 	INIT_DELAYED_WORK(&b->max_unboost, max_unboost_worker);
 	kthread_init_work(&b->general_boost, general_boost_worker);
 	INIT_DELAYED_WORK(&b->general_unboost, general_unboost_worker);
-	atomic_set(&b->state, 0);
+	atomic_set(&b->state, SCREEN_AWAKE);
 	b->ta_stune_boost_default = INT_MIN;
 	b->fg_stune_boost_default = INT_MIN;
 	b->bg_stune_boost_default = INT_MIN;
