@@ -17,9 +17,7 @@ static void sec_cmd_store_function(struct sec_cmd_data *data);
 
 void sec_cmd_set_cmd_exit(struct sec_cmd_data *data)
 {
-	mutex_lock(&data->cmd_lock);
-	data->cmd_is_running = false;
-	mutex_unlock(&data->cmd_lock);
+	atomic_set(&data->cmd_is_running, 0);
 
 #ifdef USE_SEC_CMD_QUEUE
 	mutex_lock(&data->fifo_lock);
@@ -28,10 +26,7 @@ void sec_cmd_set_cmd_exit(struct sec_cmd_data *data)
 			(int)(kfifo_len(&data->cmd_queue) / sizeof(struct command)));
 		mutex_unlock(&data->fifo_lock);
 
-		/* check lock	*/
-		mutex_lock(&data->cmd_lock);
-		data->cmd_is_running = true;
-		mutex_unlock(&data->cmd_lock);
+		atomic_set(&data->cmd_is_running, 1);
 
 		data->cmd_state = SEC_CMD_STATUS_RUNNING;
 		schedule_work(&data->cmd_work.work);
@@ -113,15 +108,10 @@ static ssize_t sec_cmd_store(struct device *dev,
 		return -EINVAL;
 	}
 
-	if (data->cmd_is_running == true) {
+	if (atomic_cmpxchg(&data->cmd_is_running, 0 , 1)) {
 		pr_err("%s %s: other cmd is running.\n", SECLOG, __func__);
 		return -EBUSY;
 	}
-
-	/* check lock   */
-	mutex_lock(&data->cmd_lock);
-	data->cmd_is_running = true;
-	mutex_unlock(&data->cmd_lock);
 
 	data->cmd_state = SEC_CMD_STATUS_RUNNING;
 	for (i = 0; i < ARRAY_SIZE(data->cmd_param); i++)
@@ -347,25 +337,20 @@ static ssize_t sec_cmd_store(struct device *dev, struct device_attribute *devatt
 		pr_err("%s %s: cmd_queue is reset!!\n", SECLOG, __func__);
 		mutex_unlock(&data->fifo_lock);
 
-		mutex_lock(&data->cmd_lock);
-		data->cmd_is_running = false;
-		mutex_unlock(&data->cmd_lock);
+		atomic_set(&data->cmd_is_running, 0);
 
 		return -ENOSPC;
 	}
 
-	if (data->cmd_is_running == true) {
+	if (atomic_cmpxchg(&data->cmd_is_running, 0 , 1)) {
 		pr_err("%s %s: other cmd is running. Wait until previous cmd is done[%d]\n",
 			SECLOG, __func__, (int)(kfifo_len(&data->cmd_queue) / sizeof(struct command)));
 		mutex_unlock(&data->fifo_lock);
+
 		return -EBUSY;
 	}
-	mutex_unlock(&data->fifo_lock);
 
-	/* check lock   */
-	mutex_lock(&data->cmd_lock);
-	data->cmd_is_running = true;
-	mutex_unlock(&data->cmd_lock);
+	mutex_unlock(&data->fifo_lock);
 
 	data->cmd_state = SEC_CMD_STATUS_RUNNING;
 	sec_cmd_store_function(data);
@@ -536,11 +521,7 @@ int sec_cmd_init(struct sec_cmd_data *data, struct sec_cmd *cmds,
 			data->cmd_buffer_size += strlen(cmds[i].cmd_name) + 1;
 	}
 
-	mutex_init(&data->cmd_lock);
-
-	mutex_lock(&data->cmd_lock);
-	data->cmd_is_running = false;
-	mutex_unlock(&data->cmd_lock);
+	atomic_set(&data->cmd_is_running, 0);
 
 #ifdef USE_SEC_CMD_QUEUE
 	if (kfifo_alloc(&data->cmd_queue,
@@ -600,7 +581,6 @@ err_get_dev_name:
 	kfifo_free(&data->cmd_queue);
 err_alloc_queue:
 #endif
-	mutex_destroy(&data->cmd_lock);
 	list_del(&data->cmd_list_head);
 	return -ENODEV;
 }
@@ -636,7 +616,6 @@ void sec_cmd_exit(struct sec_cmd_data *data, int devt)
 	cancel_delayed_work_sync(&data->cmd_work);
 	flush_delayed_work(&data->cmd_work);
 #endif
-	mutex_destroy(&data->cmd_lock);
 	list_del(&data->cmd_list_head);
 }
 
