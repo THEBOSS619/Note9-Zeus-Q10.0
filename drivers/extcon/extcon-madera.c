@@ -65,6 +65,7 @@ static const unsigned int madera_cable[] = {
 	EXTCON_MECHANICAL,
 	EXTCON_JACK_MICROPHONE,
 	EXTCON_JACK_HEADPHONE,
+	EXTCON_JACK_LINE_OUT,
 	EXTCON_NONE,
 };
 
@@ -592,6 +593,11 @@ inline void madera_extcon_report(struct madera_extcon *info,
 		case EXTCON_JACK_MICROPHONE:
 			input_report_switch(info->input,
 					    SW_MICROPHONE_INSERT,
+					    attached);
+			break;
+		case EXTCON_JACK_LINE_OUT:
+			input_report_switch(info->input,
+					    SW_LINEOUT_INSERT,
 					    attached);
 			break;
 		}
@@ -1808,6 +1814,12 @@ int madera_hpdet_reading(struct madera_extcon *info, int val)
 		return val;
 
 	madera_set_headphone_imp(info, val);
+
+	/* Report high impedence cables as line outputs */
+       if(val>= 5000)
+	    madera_extcon_report(info, EXTCON_JACK_LINE_OUT, true);
+	 else
+	    madera_extcon_report(info, EXTCON_JACK_HEADPHONE, true);
 
 	if (info->have_mic)
 		madera_extcon_report(info, EXTCON_JACK_MICROPHONE, true);
@@ -3570,6 +3582,9 @@ static int madera_extcon_probe(struct platform_device *pdev)
 		input_set_capability(info->input,
 				     EV_SW,
 				     SW_JACK_PHYSICAL_INSERT);
+		input_set_capability(info->input,
+				     EV_SW,
+				     SW_LINEOUT_INSERT);
 	}
 
 	ret = input_register_device(info->input);
