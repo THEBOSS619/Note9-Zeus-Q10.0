@@ -37,8 +37,15 @@ module_param(input_boost_duration, short, 0644);
 #define GENERAL_BOOST		BIT(3)
 
 #ifdef CONFIG_DYNAMIC_STUNE_BOOST
-static int dynamic_stune_boost;
-module_param(dynamic_stune_boost, uint, 0644);
+static bool input_stune_boost_active;
+static bool max_stune_boost_active;
+static bool general_stune_boost_active;
+static int input_dynamic_stune_boost;
+module_param(input_dynamic_stune_boost, uint, 0644);
+static int general_dynamic_stune_boost;
+module_param(general_dynamic_stune_boost, uint, 0644);
+static int max_dynamic_stune_boost;
+module_param(max_dynamic_stune_boost, uint, 0644);
 #endif /* CONFIG_DYNAMIC_STUNE_BOOST */
 
 struct boost_drv {
@@ -197,8 +204,18 @@ static void input_boost_worker(struct work_struct *work)
 	}
 
 #ifdef CONFIG_DYNAMIC_STUNE_BOOST
-	/* Set dynamic stune boost value */
-	do_stune_boost("top-app", dynamic_stune_boost);
+	/* Set input dynamic stune boost value only
+	if max_dynamic_stune_boost is inactive */
+	if (!max_stune_boost_active) {
+		reset_stune_boost("top-app");
+		if (input_dynamic_stune_boost > general_dynamic_stune_boost) {
+			do_stune_boost("top-app", input_dynamic_stune_boost);
+		}
+		else {
+			do_stune_boost("top-app", general_dynamic_stune_boost);
+		}
+		input_stune_boost_active = true;			
+	}	
 #endif /* CONFIG_DYNAMIC_STUNE_BOOST */
 
 	queue_delayed_work(b->wq, &b->input_unboost,
@@ -213,8 +230,12 @@ static void input_unboost_worker(struct work_struct *work)
 	clear_boost_bit(b, INPUT_BOOST);
 
 #ifdef CONFIG_DYNAMIC_STUNE_BOOST
-	/* Reset dynamic stune boost value to the default value */
-	reset_stune_boost("top-app");
+	/* Reset dynamic stune boost value to the default value
+	only if the boost active is input_dynamic_stune_boost */
+	if (input_stune_boost_active) {
+		reset_stune_boost("top-app");
+		input_stune_boost_active = false;
+	}
 #endif /* CONFIG_DYNAMIC_STUNE_BOOST */
 
 	update_online_cpu_policy();
@@ -231,8 +252,15 @@ static void max_boost_worker(struct work_struct *work)
 	}
 
 #ifdef CONFIG_DYNAMIC_STUNE_BOOST
-	/* Set dynamic stune boost value */
-	do_stune_boost("top-app", dynamic_stune_boost);
+	/* Set max dynamic stune boost value */
+	reset_stune_boost("top-app");
+	if (max_dynamic_stune_boost > general_dynamic_stune_boost) {
+		do_stune_boost("top-app", max_dynamic_stune_boost);
+	}
+	else {
+		do_stune_boost("top-app", general_dynamic_stune_boost);
+	}	
+	max_stune_boost_active = true;
 #endif /* CONFIG_DYNAMIC_STUNE_BOOST */	
 
 	queue_delayed_work(b->wq, &b->max_unboost,
@@ -247,8 +275,12 @@ static void max_unboost_worker(struct work_struct *work)
 	clear_boost_bit(b, MAX_BOOST);
 
 #ifdef CONFIG_DYNAMIC_STUNE_BOOST
-	/* Reset dynamic stune boost value to the default value */
-	reset_stune_boost("top-app");
+	/* Reset dynamic stune boost value to the default value
+	only if the boost active is max_dynamic_stune_boost */
+	if (max_stune_boost_active) {
+		reset_stune_boost("top-app");
+		max_stune_boost_active = false;
+	}
 #endif /* CONFIG_DYNAMIC_STUNE_BOOST */
 
 	update_online_cpu_policy();
@@ -265,8 +297,13 @@ static void general_boost_worker(struct work_struct *work)
 	}
 
 #ifdef CONFIG_DYNAMIC_STUNE_BOOST
-	/* Set dynamic stune boost value */
-	do_stune_boost("top-app", dynamic_stune_boost);
+	/* Set general dynamic stune boost value only
+	if no other boosts are active at the moment */
+	if (!input_stune_boost_active && !max_stune_boost_active) {
+		reset_stune_boost("top-app");
+		do_stune_boost("top-app", general_dynamic_stune_boost);
+		general_stune_boost_active = true;
+	}	
 #endif /* CONFIG_DYNAMIC_STUNE_BOOST */	
 
 	queue_delayed_work(b->wq, &b->general_unboost,
@@ -281,8 +318,12 @@ static void general_unboost_worker(struct work_struct *work)
 	clear_boost_bit(b, GENERAL_BOOST);
 
 #ifdef CONFIG_DYNAMIC_STUNE_BOOST
-	/* Reset dynamic stune boost value to the default value */
-	reset_stune_boost("top-app");
+	/* Reset dynamic stune boost value to the default value 
+	only if the boost active is general_dynamic_stune_boost */
+	if (general_stune_boost_active) {
+		reset_stune_boost("top-app");
+		general_stune_boost_active = false;
+	}
 #endif /* CONFIG_DYNAMIC_STUNE_BOOST */
 
 	update_online_cpu_policy();
