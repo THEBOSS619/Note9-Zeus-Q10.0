@@ -242,14 +242,14 @@ int parse_dek_packet(char *data,
 			return -EINVAL;
 		crypt_stat->sdp_dek.type = sdp_dek_type;
 		(*packet_size) += 4;
-		
+
 		sdp_dek_len = get_unaligned_be32(data + *packet_size);
 		if(sdp_dek_len <= 0 || sdp_dek_len > DEK_MAXLEN)
 			return -EFAULT;
 		crypt_stat->sdp_dek.len = sdp_dek_len;
 		(*packet_size) += 4;
-		
-		
+
+
 		memcpy(crypt_stat->sdp_dek.buf, &data[*packet_size], crypt_stat->sdp_dek.len);
 		(*packet_size) += crypt_stat->sdp_dek.len;
 	}
