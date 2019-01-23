@@ -5135,7 +5135,6 @@ static inline void hrtick_update(struct rq *rq)
 #endif
 
 #ifdef CONFIG_SMP
-static unsigned long capacity_orig_of(int cpu);
 static unsigned long cpu_util(int cpu);
 unsigned long boosted_cpu_util(int cpu);
 
