@@ -2424,7 +2424,7 @@ pick_next_task_rt(struct rq *rq, struct task_struct *prev, struct rq_flags *rf)
 	 * rt task
 	 */
 	if (rq->curr->sched_class != &rt_sched_class)
-		update_rt_rq_load_avg(rq_clock_task(rq), rq, 0);
+		update_rt_rq_load_avg(rq_clock_pelt(rq), rq, 0);
 
 
 	clear_victim_flag(p);
@@ -2440,7 +2440,7 @@ static void put_prev_task_rt(struct rq *rq, struct task_struct *p)
 
 	update_curr_rt(rq);
 
-	update_rt_rq_load_avg(rq_clock_task(rq), rq, 1);
+	update_rt_rq_load_avg(rq_clock_pelt(rq), rq, 1);
 
 	/*
 	 * The previous task needs to be made eligible for pushing
@@ -3741,7 +3741,7 @@ static void task_tick_rt(struct rq *rq, struct task_struct *p, int queued)
 	u64 now = rq_clock_task(rq);
 
 	update_curr_rt(rq);
-	update_rt_rq_load_avg(rq_clock_task(rq), rq, 1);
+	update_rt_rq_load_avg(rq_clock_pelt(rq), rq, 1);
 
 	for_each_sched_rt_entity(rt_se) {
 		struct rt_rq *rt_rq = rt_rq_of_se(rt_se);
