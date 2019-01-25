@@ -1126,8 +1126,8 @@ static ssize_t enable_read(struct file *file, char __user *buf, size_t count, lo
 
 static ssize_t enable_write(struct file *file, char const __user *buf, size_t count, loff_t *offset)
 {
-    unsigned long val;
-    int retval;
+    unsigned long val = 0;
+    int retval = 0;
 
     if (*offset)
         return -EINVAL;
