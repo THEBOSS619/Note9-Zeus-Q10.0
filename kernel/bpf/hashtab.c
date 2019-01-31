@@ -448,7 +448,7 @@ static void free_htab_elem(struct bpf_htab *htab, struct htab_elem *l)
 	}
 
 	if (!(htab->map.map_flags & BPF_F_NO_PREALLOC)) {
-		pcpu_freelist_push(&htab->freelist, &l->fnode);
+		__pcpu_freelist_push(&htab->freelist, &l->fnode);
 	} else {
 		atomic_dec(&htab->count);
 		l->htab = htab;
@@ -470,7 +470,7 @@ static struct htab_elem *alloc_htab_elem(struct bpf_htab *htab, void *key,
 	if (prealloc) {
 		struct pcpu_freelist_node *l;
 
-		l = pcpu_freelist_pop(&htab->freelist);
+		l = __pcpu_freelist_pop(&htab->freelist);
 		if (!l)
 			err = -E2BIG;
 		else
