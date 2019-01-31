@@ -1042,6 +1042,13 @@ __weak struct cpufreq_governor *cpufreq_default_governor(void)
 	return NULL;
 }
 
+static void policy_copy_user_min_max(struct cpufreq_policy *to,
+				     struct cpufreq_policy *from)
+{
+	to->min = from->user_policy.min;
+	to->max = from->user_policy.max;
+}
+
 static int cpufreq_init_policy(struct cpufreq_policy *policy)
 {
 	struct cpufreq_governor *gov = NULL;
@@ -1052,6 +1059,7 @@ static int cpufreq_init_policy(struct cpufreq_policy *policy)
 	/* Update governor of new_policy to the governor used before hotplug */
 	gov = find_governor(policy->last_governor);
 	if (gov) {
+		policy_copy_user_min_max(&new_policy, policy);
 		pr_debug("Restoring governor %s for cpu %d\n",
 				policy->governor->name, policy->cpu);
 	} else {
@@ -1064,11 +1072,13 @@ static int cpufreq_init_policy(struct cpufreq_policy *policy)
 
 	/* Use the default policy if there is no last_policy. */
 	if (cpufreq_driver->setpolicy) {
-		if (policy->last_policy)
+		if (policy->last_policy) {
 			new_policy.policy = policy->last_policy;
-		else
+			policy_copy_user_min_max(&new_policy, policy);
+		} else {
 			cpufreq_parse_governor(gov->name, &new_policy.policy,
 					       NULL);
+		}
 	}
 	/* set default policy */
 	return cpufreq_set_policy(policy, &new_policy);
@@ -2391,8 +2401,7 @@ int cpufreq_update_policy(unsigned int cpu)
 
 	pr_debug("updating policy for CPU %u\n", cpu);
 	memcpy(&new_policy, policy, sizeof(*policy));
-	new_policy.min = policy->user_policy.min;
-	new_policy.max = policy->user_policy.max;
+	policy_copy_user_min_max(&new_policy, policy);
 
 	/*
 	 * BIOS might change freq behind our back
