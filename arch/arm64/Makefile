@@ -66,10 +66,17 @@ KBUILD_CFLAGS	+= -fno-asynchronous-unwind-tables
 KBUILD_CFLAGS	+= $(call cc-option, -mpc-relative-literal-loads)
 KBUILD_CFLAGS	+= -fno-pic
 KBUILD_AFLAGS	+= $(lseinstr)
-KBUILD_CFLAGS	+= $(call cc-option, -march=armv8-a+crypto+crc,)
+ARM64_OPTIMIZATION_FLAGS := -march=armv8-a+crypto+crc
+KBUILD_CFLAGS	+= $(call cc-option, $(ARM64_OPTIMIZATION_FLAGS),)
+ifeq ($(CONFIG_LTO_CLANG),y)
+LDFLAGS += $(call ld-option, $(ARM64_OPTIMIZATION_FLAGS),)
+endif
 ifeq ($(CONFIG_SOC_EXYNOS9810), y)
-KBUILD_CFLAGS	+= $(call cc-option, -mcpu=cortex-a55+crypto+crc,)
-KBUILD_CFLAGS	+= $(call cc-option, -mtune=exynos-m3+crypto+crc,)
+EXYNOS9810_OPTIMIZATION_FLAGS := -mcpu=cortex-a55+crypto+crc -mtune=exynos-m3+crypto+crc
+KBUILD_CFLAGS	+= $(call cc-option, $(EXYNOS9810_OPTIMIZATION_FLAGS),)
+ifeq ($(CONFIG_LTO_CLANG),y)
+LDFLAGS += $(call ld-option, $(EXYNOS9810_OPTIMIZATION_FLAGS),)
+endif
 endif
 
 ifeq ($(CONFIG_CPU_BIG_ENDIAN), y)
