@@ -276,7 +276,7 @@ struct net *get_net_ns_by_id(struct net *net, int id)
 static __net_init int setup_net(struct net *net, struct user_namespace *user_ns)
 {
 	/* Must be called with net_mutex held */
-	const struct pernet_operations *ops, *saved_ops;
+	struct pernet_operations *ops, *saved_ops;
 	int error = 0;
 	LIST_HEAD(net_exit_list);
 
@@ -427,7 +427,7 @@ static LIST_HEAD(cleanup_list);  /* Must hold cleanup_list_lock to touch */
 
 static void cleanup_net(struct work_struct *work)
 {
-	const struct pernet_operations *ops;
+	struct pernet_operations *ops;
 	struct net *net, *tmp;
 	struct list_head net_kill_list;
 	LIST_HEAD(net_exit_list);

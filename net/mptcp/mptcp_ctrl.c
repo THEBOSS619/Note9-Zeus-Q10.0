@@ -187,7 +187,7 @@ static spinlock_t mptcp_tk_hashlock;
 static bool mptcp_reqsk_find_tk(const u32 token)
 {
 	const u32 hash = mptcp_hash_tk(token);
-	const struct mptcp_request_sock *mtreqsk;
+	struct mptcp_request_sock *mtreqsk;
 	const struct hlist_nulls_node *node;
 
 begin:
@@ -240,7 +240,7 @@ static void __mptcp_hash_insert(struct tcp_sock *meta_tp, const u32 token)
 static bool mptcp_find_token(u32 token)
 {
 	const u32 hash = mptcp_hash_tk(token);
-	const struct tcp_sock *meta_tp;
+	struct tcp_sock *meta_tp;
 	const struct hlist_nulls_node *node;
 
 begin:
@@ -495,7 +495,7 @@ void mptcp_connect_init(struct sock *sk)
 struct sock *mptcp_hash_find(const struct net *net, const u32 token)
 {
 	const u32 hash = mptcp_hash_tk(token);
-	const struct tcp_sock *meta_tp;
+	struct tcp_sock *meta_tp;
 	struct sock *meta_sk = NULL;
 	const struct hlist_nulls_node *node;
 

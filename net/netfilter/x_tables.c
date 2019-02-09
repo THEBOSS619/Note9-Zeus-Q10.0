@@ -269,7 +269,7 @@ EXPORT_SYMBOL_GPL(xt_request_find_target);
 
 static int match_revfn(u8 af, const char *name, u8 revision, int *bestp)
 {
-	const struct xt_match *m;
+	struct xt_match *m;
 	int have_rev = 0;
 
 	list_for_each_entry(m, &xt[af].match, list) {
@@ -289,7 +289,7 @@ static int match_revfn(u8 af, const char *name, u8 revision, int *bestp)
 
 static int target_revfn(u8 af, const char *name, u8 revision, int *bestp)
 {
-	const struct xt_target *t;
+	struct xt_target *t;
 	int have_rev = 0;
 
 	list_for_each_entry(t, &xt[af].target, list) {

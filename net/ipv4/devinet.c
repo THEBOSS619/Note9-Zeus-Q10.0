@@ -1201,7 +1201,7 @@ out:
 	return done;
 }
 
-__be32 inet_select_addr(const struct net_device *dev, __be32 dst, int scope)
+__be32 inet_select_addr(struct net_device *dev, __be32 dst, int scope)
 {
 	__be32 addr = 0;
 	struct in_device *in_dev;

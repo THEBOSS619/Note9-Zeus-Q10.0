@@ -31,7 +31,7 @@
 int inet6_csk_bind_conflict(const struct sock *sk,
 			    const struct inet_bind_bucket *tb, bool relax)
 {
-	const struct sock *sk2;
+	struct sock *sk2;
 	int reuse = sk->sk_reuse;
 	int reuseport = sk->sk_reuseport;
 	kuid_t uid = sock_i_uid((struct sock *)sk);

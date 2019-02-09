@@ -166,7 +166,7 @@ int inet_addr_onlink(struct in_device *in_dev, __be32 a, __be32 b);
 int devinet_ioctl(struct net *net, unsigned int cmd, void __user *);
 void devinet_init(void);
 struct in_device *inetdev_by_index(struct net *, int);
-__be32 inet_select_addr(const struct net_device *dev, __be32 dst, int scope);
+__be32 inet_select_addr(struct net_device *dev, __be32 dst, int scope);
 __be32 inet_confirm_addr(struct net *net, struct in_device *in_dev, __be32 dst,
 			 __be32 local, int scope);
 struct in_ifaddr *inet_ifa_byprefix(struct in_device *in_dev, __be32 prefix,
