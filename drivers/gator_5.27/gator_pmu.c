@@ -56,7 +56,7 @@ static ulong gator_cluster_ids[GATOR_CLUSTER_COUNT];
 
 static const struct gator_cpu *gator_find_cpu_by_cpuid(const u32 cpuid)
 {
-    const struct gator_cpu *gator_cpu;
+    struct gator_cpu *gator_cpu;
 
     list_for_each_entry(gator_cpu, &gator_cpus, list) {
         if (gator_cpu->cpuid == cpuid)
@@ -72,7 +72,7 @@ static const char NEW_PMU_PREFIX[] = "ARMv7_Cortex_";
 __maybe_unused
 static const struct gator_cpu *gator_find_cpu_by_pmu_name(const char *const name)
 {
-    const struct gator_cpu *gator_cpu;
+    struct gator_cpu *gator_cpu;
 
     list_for_each_entry(gator_cpu, &gator_cpus, list) {
         if (gator_cpu->pmnc_name != NULL &&
@@ -91,7 +91,7 @@ static const struct gator_cpu *gator_find_cpu_by_pmu_name(const char *const name
 __maybe_unused
 static const struct uncore_pmu *gator_find_uncore_pmu(const char *const name)
 {
-    const struct uncore_pmu *uncore_pmu;
+    struct uncore_pmu *uncore_pmu;
 
     list_for_each_entry(uncore_pmu, &uncore_pmus, list) {
         if (uncore_pmu->pmnc_name != NULL && strcasecmp(uncore_pmu->pmnc_name, name) == 0)

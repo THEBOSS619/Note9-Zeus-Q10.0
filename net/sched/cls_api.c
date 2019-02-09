@@ -40,7 +40,7 @@ static DEFINE_RWLOCK(cls_mod_lock);
 
 static const struct tcf_proto_ops *tcf_proto_lookup_ops(struct nlattr *kind)
 {
-	const struct tcf_proto_ops *t, *res = NULL;
+	struct tcf_proto_ops *t, *res = NULL;
 
 	if (kind) {
 		read_lock(&cls_mod_lock);

@@ -594,7 +594,7 @@ late_initcall(genpd_poweroff_unused);
  */
 static bool pm_genpd_present(const struct generic_pm_domain *genpd)
 {
-	const struct generic_pm_domain *gpd;
+	struct generic_pm_domain *gpd;
 
 	if (IS_ERR_OR_NULL(genpd))
 		return false;

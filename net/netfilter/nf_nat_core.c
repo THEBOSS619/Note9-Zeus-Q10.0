@@ -198,7 +198,7 @@ find_appropriate_src(struct net *net,
 		     const struct nf_nat_range *range)
 {
 	unsigned int h = hash_by_src(net, tuple);
-	const struct nf_conn *ct;
+	struct nf_conn *ct;
 
 	hlist_for_each_entry_rcu(ct, &nf_nat_bysource[h], nat_bysource) {
 		if (same_src(ct, tuple) &&

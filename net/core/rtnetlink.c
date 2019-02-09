@@ -301,7 +301,7 @@ static LIST_HEAD(link_ops);
 
 static const struct rtnl_link_ops *rtnl_link_ops_get(const char *kind)
 {
-	const struct rtnl_link_ops *ops;
+	struct rtnl_link_ops *ops;
 
 	list_for_each_entry(ops, &link_ops, list) {
 		if (!strcmp(ops->kind, kind))
@@ -472,7 +472,7 @@ static LIST_HEAD(rtnl_af_ops);
 
 static const struct rtnl_af_ops *rtnl_af_lookup(const int family)
 {
-	const struct rtnl_af_ops *ops;
+	struct rtnl_af_ops *ops;
 
 	list_for_each_entry(ops, &rtnl_af_ops, list) {
 		if (ops->family == family)

@@ -1654,8 +1654,8 @@ static int astc_compute_buffer_size(struct astc_ctx *ctx,
 		size_t tmp_num_blocks = 0;
 		size_t tmp_bytes_without_header = 0;
 		const struct hwASTC_img_info *img_info = &task->user_task.info_cap;
-		const typeof(img_info->width) img_width  = img_info->width;
-		const typeof(img_info->height) img_height = img_info->height;
+		typeof(img_info->width) img_width  = img_info->width;
+		typeof(img_info->height) img_height = img_info->height;
 
 		int res = compute_num_blocks(ctx->astc_dev
 					     , task->user_task.enc_config.encodeBlockSize

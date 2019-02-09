@@ -25,7 +25,7 @@
 unsigned int
 nf_nat_masquerade_ipv4(struct sk_buff *skb, unsigned int hooknum,
 		       const struct nf_nat_range *range,
-		       const struct net_device *out)
+		       struct net_device *out)
 {
 	struct nf_conn *ct;
 	struct nf_conn_nat *nat;
