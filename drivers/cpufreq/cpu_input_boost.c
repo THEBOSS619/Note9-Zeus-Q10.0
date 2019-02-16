@@ -202,6 +202,7 @@ static void input_unboost_worker(struct work_struct *work)
 
 	clear_boost_bit(b, INPUT_BOOST);
 	update_online_cpu_policy();
+	cpu_input_boost_kick_general(64);
 }
 
 static void max_boost_worker(struct work_struct *work)
@@ -223,7 +224,9 @@ static void max_unboost_worker(struct work_struct *work)
 		container_of(to_delayed_work(work), typeof(*b), max_unboost);
 
 	clear_boost_bit(b, MAX_BOOST);
+	
 	update_online_cpu_policy();
+	cpu_input_boost_kick_general(64);
 }
 
 static void general_boost_worker(struct work_struct *work)
