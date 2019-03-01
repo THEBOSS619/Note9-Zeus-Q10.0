@@ -200,9 +200,6 @@ static int uid_time_in_state_seq_show(struct seq_file *m, void *v)
 				continue;
 			last_freqs = freqs;
 			for (i = 0; i < freqs->max_state; i++) {
-				if (freqs->freq_table[i] ==
-				    CPUFREQ_ENTRY_INVALID)
-					continue;
 				seq_put_decimal_ull(m, " ",
 						    freqs->freq_table[i]);
 			}
@@ -218,10 +215,8 @@ static int uid_time_in_state_seq_show(struct seq_file *m, void *v)
 			seq_putc(m, ':');
 		}
 		for (i = 0; i < uid_entry->max_state; ++i) {
-			u64 time;
-			if (freq_index_invalid(i))
-				continue;
-			time = cputime_to_clock_t(uid_entry->time_in_state[i]);
+			u64 time =
+				cputime_to_clock_t(uid_entry->time_in_state[i]);
 			seq_put_decimal_ull(m, " ", time);
 		}
 		if (uid_entry->max_state)
@@ -553,7 +548,7 @@ void cpufreq_times_record_transition(struct cpufreq_policy *policy,
 	if (!freqs)
 		return;
 
-	index = cpufreq_frequency_table_get_index(policy, new_freq);
+	index = cpufreq_times_get_index(freqs, new_freq);
 	if (index >= 0)
 		WRITE_ONCE(freqs->last_index, index);
 }
