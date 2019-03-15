@@ -2015,8 +2015,8 @@ static void kcompactd_do_work(pg_data_t *pgdat)
 							cc.classzone_idx);
 	count_vm_event(KCOMPACTD_WAKE);
 
-	devfreq_boost_kick_max(DEVFREQ_EXYNOS_MIF, 250);
-	cpu_input_boost_kick_max(250);
+	devfreq_boost_kick_max(DEVFREQ_EXYNOS_MIF, 500);
+	cpu_input_boost_kick_max(500);
 
 	for (zoneid = 0; zoneid <= cc.classzone_idx; zoneid++) {
 		int status;
