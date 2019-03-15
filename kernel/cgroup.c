@@ -64,6 +64,10 @@
 #include <linux/file.h>
 #include <linux/psi.h>
 #include <net/sock.h>
+#include <linux/state_notifier.h>
+#include <linux/binfmts.h>
+#include <linux/cpu_input_boost.h>
+#include <linux/devfreq_boost.h>
 
 #define CREATE_TRACE_POINTS
 #include <trace/events/cgroup.h>
@@ -2931,6 +2935,16 @@ static ssize_t __cgroup_procs_write(struct kernfs_open_file *of, char *buf,
 	ret = cgroup_procs_write_permission(tsk, cgrp, of);
 	if (!ret)
 		ret = cgroup_attach_task(cgrp, tsk, threadgroup);
+
+	/* Boost CPU to the max for 750ms & general 250ms when it becomes a top app */
+	if (!ret && !threadgroup && !state_suspended &&
+		!strcmp(of->kn->parent->name, "top-app") &&
+		task_is_zygote(tsk->parent)) {
+		cpu_input_boost_kick_max(750);
+		devfreq_boost_kick_max(DEVFREQ_EXYNOS_MIF, 750);
+		cpu_input_boost_kick_general(250);
+	}
+
 
 	put_task_struct(tsk);
 	goto out_unlock_threadgroup;
