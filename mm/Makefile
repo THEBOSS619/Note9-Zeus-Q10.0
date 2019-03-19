@@ -106,7 +106,6 @@ obj-$(CONFIG_IDLE_PAGE_TRACKING) += page_idle.o
 obj-$(CONFIG_FRAME_VECTOR) += frame_vector.o
 obj-$(CONFIG_DEBUG_PAGE_REF) += debug_page_ref.o
 obj-$(CONFIG_HARDENED_USERCOPY) += usercopy.o
-obj-$(CONFIG_PROCESS_RECLAIM)	+= process_reclaim.o
 obj-$(CONFIG_FORCE_RECLAIM)	+= force_reclaim.o
 obj-$(CONFIG_OOM_SCORE_NOTIFIER) += oom_score_notifier.o
 obj-$(CONFIG_PAGE_BOOST_RECORDING) += io_record.o
