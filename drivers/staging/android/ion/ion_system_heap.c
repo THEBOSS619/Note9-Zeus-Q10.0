@@ -31,6 +31,8 @@
 
 #define NUM_ORDERS ARRAY_SIZE(orders)
 
+static gfp_t high_order_gfp_flags = (GFP_HIGHUSER | __GFP_ZERO | __GFP_NOWARN |
+				     __GFP_NORETRY) & ~__GFP_RECLAIM;
 static gfp_t low_order_gfp_flags  = (GFP_HIGHUSER | __GFP_ZERO);
 static const unsigned int orders[] = {8, 4, 0};
 static struct ion_system_heap *system_heap;
