@@ -7583,8 +7583,7 @@ cpu_is_in_target_set(struct task_struct *p, int cpu)
 	return cpu >= next_usable_cpu || next_usable_cpu >= nr_cpu_ids;
 }
 
-int select_energy_cpu_brute(struct task_struct *p, int prev_cpu,
-				   int sync_boost)
+int select_energy_cpu_brute(struct task_struct *p, int prev_cpu)
 {
 	bool boosted, prefer_idle;
 	struct sched_domain *sd;
@@ -7611,8 +7610,7 @@ int select_energy_cpu_brute(struct task_struct *p, int prev_cpu,
 	sync_entity_load_avg(&p->se);
 
 	/* Find a cpu with sufficient capacity */
-	next_cpu = find_best_target(p, &backup_cpu, boosted || sync_boost,
-				    prefer_idle);
+	next_cpu = find_best_target(p, &backup_cpu, boosted, prefer_idle);
 	if (next_cpu == -1) {
 		target_cpu = prev_cpu;
 		goto out;
@@ -7809,7 +7807,7 @@ compute_energy_simple(struct task_struct *p, int dst_cpu, struct perf_domain *pd
  * let's keep things simple by re-using the existing slow path.
  */
 
-static int find_energy_efficient_cpu(struct task_struct *p, int prev_cpu, int sync_boost)
+static int find_energy_efficient_cpu(struct task_struct *p, int prev_cpu)
 {
 	unsigned long prev_energy = ULONG_MAX, best_energy = ULONG_MAX;
 	int highest_spare_cap_cpu = prev_cpu, best_idle_cpu = -1;
@@ -7994,8 +7992,7 @@ select_task_rq_fair(struct task_struct *p, int prev_cpu, int sd_flag, int wake_f
 		 * that the selection algorithm for a boosted task
 		 * should be used.
 		 */
-		bool sync_boost = sync && cpu >= start_cpu(true);
-		new_cpu = find_energy_efficient_cpu(p, prev_cpu, sync_boost);
+		new_cpu = find_energy_efficient_cpu(p, prev_cpu);
 		if (new_cpu >= 0)
 			return new_cpu;
 		new_cpu = prev_cpu;
