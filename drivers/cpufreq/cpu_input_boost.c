@@ -114,6 +114,7 @@ struct boost_drv {
 	int bg_stune_boost_default;
 	int root_stune_boost_default;
 	bool bg_stune_default_set;
+	unsigned long last_input_jiffies;
 };
 
 static struct boost_drv *boost_drv_g __read_mostly;
@@ -191,6 +192,17 @@ static void update_stune_boost(struct boost_drv *b, u32 state, u32 bit, char *st
 		if (!do_stune_boost(st, level, slot))
 			set_boost_bit(b, bit);
 	}
+}
+
+bool cpu_input_boost_within_input(unsigned long timeout_ms)
+{
+	struct boost_drv *b = boost_drv_g;
+
+	if (!b)
+		return true;
+
+	return time_before(jiffies, b->last_input_jiffies +
+			   msecs_to_jiffies(timeout_ms));
 }
 
 static void clear_stune_boost(struct boost_drv *b, u32 state, u32 bit, char *st,
@@ -546,6 +558,8 @@ static void cpu_input_boost_input_event(struct input_handle *handle,
 	struct boost_drv *b = handle->handler->private;
 	last_input_time = jiffies;
 	__cpu_input_boost_kick(b);
+
+	b->last_input_jiffies = jiffies;
 }
 
 static int cpu_input_boost_input_connect(struct input_handler *handler,
@@ -673,6 +687,7 @@ static int __init cpu_input_boost_init(void)
 	b->bg_stune_boost_default = INT_MIN;
 	b->root_stune_boost_default = INT_MIN;
 	b->bg_stune_default_set = false;
+	b->last_input_jiffies = jiffies;
 
 	b->cpu_notif.notifier_call = cpu_notifier_cb;
 	b->cpu_notif.priority = INT_MAX - 2;
