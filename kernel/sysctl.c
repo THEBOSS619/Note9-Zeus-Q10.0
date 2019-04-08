@@ -295,7 +295,9 @@ static struct ctl_table kern_table[] = {
 		.data		= &sysctl_sched_child_runs_first,
 		.maxlen		= sizeof(unsigned int),
 		.mode		= 0644,
+#ifdef CONFIG_PROFILING
 		.proc_handler	= tracepoint_printk_sysctl,
+#endif
 	},
 #ifdef CONFIG_SCHED_DEBUG
 	{
