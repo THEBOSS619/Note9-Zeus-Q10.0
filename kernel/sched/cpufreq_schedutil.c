@@ -989,6 +989,12 @@ static void sugov_limits(struct cpufreq_policy *policy)
 		mutex_lock(&sg_policy->work_lock);
 		cpufreq_policy_apply_limits(policy);
 		mutex_unlock(&sg_policy->work_lock);
+	} else {
+		raw_spin_lock_irqsave(&sg_policy->update_lock, flags);
+		sugov_track_cycles(sg_policy, sg_policy->policy->cur,
+				   ktime_get_ns());
+		cpufreq_policy_apply_limits_fast(policy);
+		raw_spin_unlock_irqrestore(&sg_policy->update_lock, flags);
 	}
 
 	sugov_update_min(policy);
