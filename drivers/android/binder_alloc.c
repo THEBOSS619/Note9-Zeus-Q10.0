@@ -832,7 +832,7 @@ enum lru_status binder_alloc_free_page(struct list_head *item,
 	if (!mmget_not_zero(mm))
 		goto err_mmget;
 	if (!down_read_trylock(&mm->mmap_sem))
-		goto err_down_write_mmap_sem_failed;
+		goto err_down_read_mmap_sem_failed;
 	vma = alloc->vma;
 	
 	list_lru_isolate(lru, item);
@@ -854,7 +854,7 @@ enum lru_status binder_alloc_free_page(struct list_head *item,
 	mutex_unlock(&alloc->mutex);
 	return LRU_REMOVED_RETRY;
 
-err_down_write_mmap_sem_failed:
+err_down_read_mmap_sem_failed:
 	mmput_async(mm);
 err_mmget:
 err_page_already_freed:
