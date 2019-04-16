@@ -7009,10 +7009,16 @@ int cpu_util_wake(int cpu, struct task_struct *p)
 	return min(util, capacity_orig_of(cpu));
 }
 
+static int start_cpu(bool boosted)
+{
+	struct root_domain *rd = cpu_rq(smp_processor_id())->rd;
+
+	return boosted ? rd->max_cap_orig_cpu : rd->min_cap_orig_cpu;
+}
+
 static inline int find_best_target(struct task_struct *p, int *backup_cpu,
 				   bool boosted, bool prefer_idle)
 {
-	struct root_domain *rd = cpu_rq(smp_processor_id())->rd;
 	unsigned long min_util = boosted_task_util(p);
 	unsigned long target_capacity = ULONG_MAX;
 	unsigned long min_wake_util = ULONG_MAX;
@@ -7045,13 +7051,8 @@ static inline int find_best_target(struct task_struct *p, int *backup_cpu,
 	if (prefer_idle && boosted)
 		target_capacity = 0;
 
-	/*
-	 * Start from the first maximum capacity CPU.
-	 * This will increase the chances to select a reserved CPU for
-	 * prefer_idle and boosted tasks while not impacting the selection
-	 * of the most energy efficient CPUs in the other cases.
-	 */
-	cpu = rd->max_cap_orig_cpu;
+	/* Find start CPU based on boost value */
+	cpu = start_cpu(boosted);
 	if (cpu < 0) {
 		schedstat_inc(p->se.statistics.nr_wakeups_fbt_no_cpu);
 		schedstat_inc(this_rq()->eas_stats.fbt_no_cpu);
@@ -7650,7 +7651,7 @@ compute_energy_simple(struct task_struct *p, int dst_cpu, struct perf_domain *pd
  * let's keep things simple by re-using the existing slow path.
  */
 
-static int find_energy_efficient_cpu(struct task_struct *p, int prev_cpu)
+static int find_energy_efficient_cpu(struct task_struct *p, int prev_cpu, int sync_boost)
 {
 	unsigned long prev_energy = ULONG_MAX, best_energy = ULONG_MAX;
 	int highest_spare_cap_cpu = prev_cpu, best_idle_cpu = -1;
@@ -11058,8 +11059,6 @@ void nohz_balance_enter_idle(int cpu)
 	set_bit(NOHZ_TICK_STOPPED, nohz_flags(cpu));
 }
 #endif
-
-static inline void nohz_balancer_kick(bool only_update) {}
 
 static DEFINE_SPINLOCK(balancing);
 
