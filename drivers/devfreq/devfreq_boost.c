@@ -91,23 +91,9 @@ void devfreq_boost_kick_max(enum df_device device, unsigned int duration_ms)
 	__devfreq_boost_kick_max(d->devices + device, duration_ms);
 }
 
-static void __devfreq_boost_kick_wake(struct boost_dev *b)
-{
-	__devfreq_boost_kick_max(b,
-				 CONFIG_DEVFREQ_WAKE_BOOST_DURATION_MS);
-}
-
 void devfreq_boost_kick_wake(enum df_device device)
 {
-	struct df_boost_drv *d = df_boost_drv_g;
-
-	if (!d)
-		return;
-
-	if (atomic_read(&d->screen_awake))
-		return;
-
-	__devfreq_boost_kick_wake(d->devices + device);
+	devfreq_boost_kick_max(device, CONFIG_DEVFREQ_WAKE_BOOST_DURATION_MS);
 }
 
 void devfreq_register_boost_device(enum df_device device, struct devfreq *df)
@@ -270,7 +256,8 @@ static int fb_notifier_cb(struct notifier_block *nb,
 		int i;
 
 		for (i = 0; i < DEVFREQ_MAX; i++)
-			__devfreq_boost_kick_wake(d->devices + i);
+			__devfreq_boost_kick_max(d->devices + i,
+				CONFIG_DEVFREQ_WAKE_BOOST_DURATION_MS);
 	} else {
 		devfreq_unboost_all(d);
 	}
