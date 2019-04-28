@@ -54,3 +54,5 @@ obj-$(CONFIG_SEC_PM_DEBUG)		+= sec_pm_debug.o
 
 # Samsung HQM device feature
 obj-$(CONFIG_SEC_HQM_DEVICE)		+= sec_hqm_device.o
+
+subdir-ccflags-y += -Wno-stringop-overflow

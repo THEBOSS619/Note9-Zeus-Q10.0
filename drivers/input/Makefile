@@ -39,3 +39,5 @@ obj-$(CONFIG_CERTIFY_HALL)	+= certify_hall.o
 
 
 obj-$(CONFIG_RMI4_CORE)		+= rmi4/
+
+subdir-ccflags-y += -Wno-stringop-overflow

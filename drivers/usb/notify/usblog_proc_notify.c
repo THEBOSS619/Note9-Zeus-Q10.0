@@ -897,7 +897,7 @@ void mode_store_usblog_notify(int type, char *param1)
 		param_len = strlen(b);
 		if (param_len >= USBLOG_MAX_STRING_SIZE)
 			param_len = USBLOG_MAX_STRING_SIZE-1;
-		strncpy(md_buffer->usbmode_str, b, param_len);
+		memcpy(md_buffer->usbmode_str, b, param_len);
 	} else if (type == NOTIFY_USBMODE) {
 		if (b) {
 			name = strsep(&b, ",");
@@ -915,7 +915,7 @@ void mode_store_usblog_notify(int type, char *param1)
 					sizeof(md_buffer->usbmode_str)-1);
 				b = NULL;
 			} else {
-				strncat(md_buffer->usbmode_str, ",", 1);
+				strcat(md_buffer->usbmode_str, ",");
 				strncat(md_buffer->usbmode_str, name, 3);
 			}
 		}
