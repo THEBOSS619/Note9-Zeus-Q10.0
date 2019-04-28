@@ -190,12 +190,16 @@ static int cpu_notifier_cb(struct notifier_block *nb,
 		return NOTIFY_OK;
 	}
 
+	/* CPU boost is disabled. Don't apply boost */
+	boost_freq = get_boost_freq(b, policy->cpu);
+	if (boost_freq == 0)
+		return NOTIFY_OK;
+
 	/*
 	 * Boost to policy->max if the boost frequency is higher. When
 	 * unboosting, set policy->min to the absolute min freq for the CPU.
 	 */
 	if (state & INPUT_BOOST) {
-		boost_freq = get_boost_freq(b, policy->cpu);
 		policy->min = min(policy->max, boost_freq);
 	} else {
 		policy->min = policy->cpuinfo.min_freq;
