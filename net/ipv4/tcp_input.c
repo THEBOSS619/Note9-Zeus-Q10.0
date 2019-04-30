@@ -567,6 +567,9 @@ static int __tcp_grow_window(const struct sock *sk, const struct sk_buff *skb)
 static void tcp_grow_window(struct sock *sk, const struct sk_buff *skb)
 {
 	struct tcp_sock *tp = tcp_sk(sk);
+	int room;
+
+	room = min_t(int, tp->window_clamp, tcp_space(sk)) - tp->rcv_ssthresh;
 #ifdef CONFIG_MPTCP
 	struct sock *meta_sk = mptcp(tp) ? mptcp_meta_sk(sk) : sk;
 	struct tcp_sock *meta_tp = tcp_sk(meta_sk);
@@ -577,11 +580,11 @@ static void tcp_grow_window(struct sock *sk, const struct sk_buff *skb)
 	/* Check #1 */
 #ifdef CONFIG_MPTCP
 	if (meta_tp->rcv_ssthresh < meta_tp->window_clamp &&
-	    (int)meta_tp->rcv_ssthresh < tcp_space(meta_sk) &&
+	    (int)meta_tp->rcv_ssthresh < tcp_space(meta_sk) && room > 0 &&
 	    !tcp_under_memory_pressure(sk)) {
 #else
 	if (tp->rcv_ssthresh < tp->window_clamp &&
-	    (int)tp->rcv_ssthresh < tcp_space(sk) &&
+	    (int)tp->rcv_ssthresh < tcp_space(sk) && room > 0 &&
 	    !tcp_under_memory_pressure(sk)) {
 #endif
 		int incr;
@@ -602,11 +605,9 @@ static void tcp_grow_window(struct sock *sk, const struct sk_buff *skb)
 		if (incr) {
 			incr = max_t(int, incr, 2 * skb->len);
 #ifdef CONFIG_MPTCP
-			meta_tp->rcv_ssthresh = min(meta_tp->rcv_ssthresh + incr,
-						    meta_tp->window_clamp);
+			meta_tp->rcv_ssthresh += min(room, incr);
 #else
-			tp->rcv_ssthresh = min(tp->rcv_ssthresh + incr,
-					       tp->window_clamp);
+			tp->rcv_ssthresh += min(room, incr);
 #endif
 			inet_csk(sk)->icsk_ack.quick |= 1;
 		}
