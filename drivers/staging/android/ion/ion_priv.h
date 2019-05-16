@@ -599,6 +599,7 @@ void ion_hpa_heap_destroy(struct ion_heap *);
 struct ion_page_pool {
 	int high_count;
 	int low_count;
+	atomic_t count;
 	bool cached;
 	struct list_head high_items;
 	struct list_head low_items;
@@ -606,10 +607,12 @@ struct ion_page_pool {
 	gfp_t gfp_mask;
 	unsigned int order;
 	struct plist_node list;
+	struct ion_heap heap;
 };
 
 struct ion_page_pool *ion_page_pool_create(gfp_t gfp_mask, unsigned int order,
 					   bool cached);
+void ion_page_pool_refill(struct ion_page_pool *pool);
 int ion_page_pool_total(struct ion_page_pool *pool, bool high);
 
 void ion_page_pool_destroy(struct ion_page_pool *);
@@ -659,6 +662,26 @@ int ion_handle_put_nolock(struct ion_handle *handle);
 int ion_handle_put(struct ion_client *client, struct ion_handle *handle);
 
 int ion_query_heaps(struct ion_client *client, struct ion_heap_query *query);
+
+static __always_inline int get_pool_fillmark(struct ion_page_pool *pool)
+{
+	return ION_POOL_FILL_MARK / (PAGE_SIZE << pool->order);
+}
+
+static __always_inline int get_pool_lowmark(struct ion_page_pool *pool)
+{
+	return ION_POOL_LOW_MARK / (PAGE_SIZE << pool->order);
+}
+
+static __always_inline bool pool_count_below_lowmark(struct ion_page_pool *pool)
+{
+	return atomic_read(&pool->count) < get_pool_lowmark(pool);
+}
+
+static __always_inline bool pool_fillmark_reached(struct ion_page_pool *pool)
+{
+	return atomic_read(&pool->count) >= get_pool_fillmark(pool);
+}
 
 int ion_share_dma_buf_fd_nolock(struct ion_client *client,
 				struct ion_handle *handle);

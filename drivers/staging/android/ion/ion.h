@@ -18,6 +18,8 @@
 #define _LINUX_ION_H
 
 #include <linux/types.h>
+#include <linux/kthread.h>
+#include <linux/vmstat.h>
 
 #include <uapi/linux/ion.h>
 
@@ -35,6 +37,16 @@ struct ion_buffer;
  * do not accept phys_addr_t's that would have to
  */
 #define ion_phys_addr_t unsigned long
+
+/* ION page pool marks in bytes */
+#ifdef CONFIG_ION_POOL_AUTO_REFILL
+#define ION_POOL_FILL_MARK (CONFIG_ION_POOL_FILL_MARK * SZ_1M)
+#define POOL_LOW_MARK_PERCENT	40UL
+#define ION_POOL_LOW_MARK ((ION_POOL_FILL_MARK * POOL_LOW_MARK_PERCENT) / 100)
+#else
+#define ION_POOL_FILL_MARK 0UL
+#define ION_POOL_LOW_MARK 0UL
+#endif
 
 /**
  * struct ion_platform_heap - defines a heap in the given platform
@@ -195,6 +207,19 @@ int ion_cached_needsync_dmabuf(struct dma_buf *dmabuf);
 /**
  * ion_may_hwrender_dmabuf() - check if a dmabuf set ION_FLAG_MAY_HWRENDER
  * @dmabuf: a pointer to dma_buf
+ * struct ion_page_pool - pagepool struct
+ * @high_count:		number of highmem items in the pool
+ * @low_count:		number of lowmem items in the pool
+ * @count:		total number of pages/items in the pool
+ * @high_items:		list of highmem items
+ * @low_items:		list of lowmem items
+ * @mutex:		lock protecting this struct and especially the count
+ *			item list
+ * @gfp_mask:		gfp_mask to use from alloc
+ * @order:		order of pages in the pool
+ * @list:		plist node for list of pools
+ * @cached:		it's cached pool or not
+ * @heap:		ion heap associated to this pool
  *
  * Given a dma-buf that is exported by ION, check if the buffer is allocated
  * with ION_FLAG_MAY_HWRENDER. If the flags are set the function returns true.
