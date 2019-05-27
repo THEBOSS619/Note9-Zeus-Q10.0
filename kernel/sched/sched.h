@@ -45,12 +45,6 @@ extern void calc_global_load_tick(struct rq *this_rq);
 extern long calc_load_fold_active(struct rq *this_rq, long adjust);
 extern void set_rq_online(struct rq *rq);
 
-#ifdef CONFIG_SMP
-extern void cpu_load_update_active(struct rq *this_rq);
-#else
-static inline void cpu_load_update_active(struct rq *this_rq) { }
-#endif
-
 /*
  * Helpers for converting nanosecond timing to jiffy resolution
  */
