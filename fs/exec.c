@@ -101,6 +101,14 @@ bool task_is_lmkd(struct task_struct *p)
 	return p->signal == lmkd_sig;
 }
 
+#define SFF "/system/bin/surfaceflinger"
+static struct signal_struct *sff_sig;
+
+bool task_is_sff(struct task_struct *p)
+{
+	return p->signal == sff_sig;
+}
+
 void __register_binfmt(struct linux_binfmt * fmt, int insert)
 {
 	BUG_ON(!fmt);
@@ -2055,6 +2063,11 @@ static int do_execveat_common(int fd, struct filename *filename,
 			zygote64_sig = current->signal;
 		else if (unlikely(!strcmp(filename->name, LMKD_BIN)))
 			lmkd_sig = current->signal;
+	}
+
+	if (is_global_init(current->parent)) {
+		if (unlikely(!strcmp(filename->name, SFF)))
+			sff_sig = current->signal;
 	}
 
 	/* execve succeeded */
