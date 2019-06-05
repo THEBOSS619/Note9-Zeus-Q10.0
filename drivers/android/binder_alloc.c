@@ -909,7 +909,6 @@ enum lru_status binder_alloc_free_page(struct list_head *item,
 		goto err_mmget;
 	if (!down_write_trylock(&mm->mmap_sem))
 		goto err_down_write_mmap_sem_failed;
-
 	vma = alloc->vma;
 	
 	list_lru_isolate(lru, item);
