@@ -242,8 +242,9 @@ static int kthread(void *_create)
 	schedule();
 
 	ret = -EINTR;
+
 	if (!test_bit(KTHREAD_SHOULD_STOP, &self->flags)) {
-                cgroup_kthread_ready();
+		cgroup_kthread_ready();
 		__kthread_parkme(self);
 		ret = threadfn(data);
 	}
