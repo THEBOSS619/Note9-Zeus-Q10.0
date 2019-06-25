@@ -603,6 +603,7 @@ struct ion_page_pool {
 	bool cached;
 	struct list_head high_items;
 	struct list_head low_items;
+	ktime_t last_low_watermark_ktime;
 	spinlock_t lock;
 	gfp_t gfp_mask;
 	unsigned int order;
