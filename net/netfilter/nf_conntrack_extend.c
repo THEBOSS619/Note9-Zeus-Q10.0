@@ -105,6 +105,8 @@ void *__nf_ct_ext_add_length(struct nf_conn *ct, enum nf_ct_ext_id id,
 	if (!new)
 		return NULL;
 
+	kmemleak_not_leak(new);
+
 	if (new != old) {
 		kfree_rcu(old, rcu);
 		rcu_assign_pointer(ct->ext, new);
