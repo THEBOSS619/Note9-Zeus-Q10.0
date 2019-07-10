@@ -227,6 +227,7 @@ static int multi_cpu_stop(void *data)
                        sev();
 	       }
 #endif
+	       rcu_momentary_dyntick_idle();
 	} while (curstate != MULTI_STOP_EXIT);
 
 	local_irq_restore(flags);
