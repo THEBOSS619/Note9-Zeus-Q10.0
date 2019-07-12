@@ -309,9 +309,10 @@ static bool workqueue_freezing;		/* PL: have wqs started freezing? */
 /* PL: allowable cpus for unbound wqs and work items */
 static cpumask_var_t wq_unbound_cpumask;
 
+#if 0
 /* CPU where unbound work was last round robin scheduled from this CPU */
 static DEFINE_PER_CPU(int, wq_rr_cpu_last);
-
+#endif
 /*
  * Local execution of unbound work items is no longer guaranteed.  The
  * following always forces round-robin CPU selection on unbound work items
@@ -1355,6 +1356,7 @@ static bool is_chained_work(struct workqueue_struct *wq)
  * by wq_unbound_cpumask.  Otherwise, round robin among the allowed ones to
  * avoid perturbing sensitive tasks.
  */
+#if 0
 static int wq_select_unbound_cpu(int cpu)
 {
 	static bool printed_dbg_warning;
@@ -1382,6 +1384,7 @@ static int wq_select_unbound_cpu(int cpu)
 
 	return new_cpu;
 }
+#endif
 
 static void __queue_work(int cpu, struct workqueue_struct *wq,
 			 struct work_struct *work)
@@ -1406,10 +1409,9 @@ static void __queue_work(int cpu, struct workqueue_struct *wq,
 	if (unlikely(wq->flags & __WQ_DRAINING) &&
 	    WARN_ON_ONCE(!is_chained_work(wq)))
 		return;
-retry:
 	if (req_cpu == WORK_CPU_UNBOUND)
-		cpu = wq_select_unbound_cpu(raw_smp_processor_id());
-
+		cpu = 0;
+retry:
 	/* pwq which will be used unless @work is executing elsewhere */
 	if (!(wq->flags & WQ_UNBOUND))
 		pwq = per_cpu_ptr(wq->cpu_pwqs, cpu);
@@ -1556,7 +1558,7 @@ static void __queue_delayed_work(int cpu, struct workqueue_struct *wq,
 	if (unlikely(cpu != WORK_CPU_UNBOUND))
 		add_timer_on(timer, cpu);
 	else
-		add_timer(timer);
+		add_timer_on(timer, 0);
 }
 
 /**
@@ -3221,6 +3223,7 @@ void free_workqueue_attrs(struct workqueue_attrs *attrs)
 struct workqueue_attrs *alloc_workqueue_attrs(gfp_t gfp_mask)
 {
 	struct workqueue_attrs *attrs;
+	const unsigned long allowed_cpus = 0x3;
 
 	attrs = kzalloc(sizeof(*attrs), gfp_mask);
 	if (!attrs)
@@ -3228,7 +3231,7 @@ struct workqueue_attrs *alloc_workqueue_attrs(gfp_t gfp_mask)
 	if (!alloc_cpumask_var(&attrs->cpumask, gfp_mask))
 		goto fail;
 
-	cpumask_copy(attrs->cpumask, cpu_possible_mask);
+	cpumask_copy(attrs->cpumask, to_cpumask(&allowed_cpus));
 	return attrs;
 fail:
 	free_workqueue_attrs(attrs);
@@ -4302,7 +4305,7 @@ bool workqueue_congested(int cpu, struct workqueue_struct *wq)
 	rcu_read_lock_sched();
 
 	if (cpu == WORK_CPU_UNBOUND)
-		cpu = smp_processor_id();
+		cpu = 0;
 
 	if (!(wq->flags & WQ_UNBOUND))
 		pwq = per_cpu_ptr(wq->cpu_pwqs, cpu);
