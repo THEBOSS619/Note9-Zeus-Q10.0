@@ -93,7 +93,7 @@ extern struct nsproxy init_nsproxy;
 extern struct group_info init_groups;
 
 #define INIT_STRUCT_PID {						\
-	.count 		= ATOMIC_INIT(1),				\
+	.count 		= REFCOUNT_INIT(1),				\
 	.tasks		= {						\
 		{ .first = NULL },					\
 		{ .first = NULL },					\
