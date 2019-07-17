@@ -1315,6 +1315,9 @@ int cpu_down(unsigned int cpu)
 	if ((1U << cpu) & blocked_cpus)
 		return -EINVAL;
 
+	if (cpu == 0)
+		return -EINVAL;
+
 	return do_cpu_down(cpu, CPUHP_OFFLINE);
 }
 EXPORT_SYMBOL(cpu_down);
