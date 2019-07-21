@@ -66,16 +66,30 @@ config CPU_QUIET_DEFAULT_GOV_RQBALANCE
 	 Use the CPUQuiet governor 'rqbalance' as default.
 endchoice
 
+choice
+	prompt "CPUQuiet platform"
+	help
+	 This option choose CPU platform for CPUQuiet Framework.
+
 config CPU_QUIET_MSM
 	bool "MSM CPUquiet Driver"
 	depends on HOTPLUG_CPU && ARCH_QCOM
-	default n
 	help
 	 This is the CPUquiet driver for MSM SoCs. It supports
 	 automatic hotplugging of CPU cores using the CPUquiet
 	 governor.
 
 	 If unsure, say N.
+
+config CPU_QUIET_EXYNOS
+	bool "EXYNOS CPUquiet Driver"
+	depends on HOTPLUG_CPU && ARCH_EXYNOS
+	help
+	 This is the CPUquiet driver platform info for Exynos SoCs.
+
+	 If unsure, say N.
+endchoice
+
 endif
 
 endmenu
