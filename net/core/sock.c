@@ -146,7 +146,6 @@
 #include <net/tcp.h>
 #include <net/busy_poll.h>
 
-
 static DEFINE_MUTEX(proto_list_mutex);
 static LIST_HEAD(proto_list);
 
@@ -680,7 +679,6 @@ int sock_setsockopt(struct socket *sock, int level, int optname,
 
 	if (optname == SO_BINDTODEVICE)
 		return sock_setbindtodevice(sk, optval, optlen);
-
 
 	if (optlen < sizeof(int))
 		return -EINVAL;
@@ -1437,12 +1435,9 @@ struct sock *sk_alloc(struct net *net, int family, gfp_t priority,
 		      struct proto *prot, int kern)
 {
 	struct sock *sk;
-
-
 	sk = sk_prot_alloc(prot, priority | __GFP_ZERO, family);
 	if (sk) {
 		sk->sk_family = family;
-
 		/*
 		 * See comment in struct sock definition to understand
 		 * why we need sk_prot_creator -acme
