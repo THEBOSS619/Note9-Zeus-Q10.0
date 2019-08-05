@@ -545,8 +545,8 @@ void sugov_update_rate_limit_us(struct cpufreq_policy *policy,
 	if (!tunables)
 		return;
 
-	tunables->up_rate_limit_us = (unsigned int)(up_rate_limit_ms * USEC_PER_MSEC);
-	tunables->down_rate_limit_us = (unsigned int)(down_rate_limit_ms * USEC_PER_MSEC);
+	tunables->up_rate_limit_us = CONFIG_SCHEDUTIL_UP_RATE_LIMIT;
+	tunables->down_rate_limit_us = CONFIG_SCHEDUTIL_UP_RATE_LIMIT;
 
 	sg_policy->up_rate_delay_ns = up_rate_limit_ms * NSEC_PER_MSEC;
 	sg_policy->down_rate_delay_ns = down_rate_limit_ms * NSEC_PER_MSEC;
@@ -826,13 +826,13 @@ static int sugov_init(struct cpufreq_policy *policy)
 	}
 
 	if (policy->up_transition_delay_us && policy->down_transition_delay_us) {
-		tunables->up_rate_limit_us = policy->up_transition_delay_us;
-		tunables->down_rate_limit_us = policy->down_transition_delay_us;
+		tunables->up_rate_limit_us = CONFIG_SCHEDUTIL_UP_RATE_LIMIT;
+		tunables->down_rate_limit_us = CONFIG_SCHEDUTIL_DOWN_RATE_LIMIT;
 	} else {
 		unsigned int lat;
 
-                tunables->up_rate_limit_us = 150;
-                tunables->down_rate_limit_us = 150;
+                tunables->up_rate_limit_us = CONFIG_SCHEDUTIL_UP_RATE_LIMIT;
+                tunables->down_rate_limit_us = CONFIG_SCHEDUTIL_UP_RATE_LIMIT;
 		lat = policy->cpuinfo.transition_latency / NSEC_PER_USEC;
 		if (lat) {
                         tunables->up_rate_limit_us *= lat;
@@ -929,10 +929,8 @@ static int sugov_start(struct cpufreq_policy *policy)
 	struct sugov_policy *sg_policy = policy->governor_data;
 	unsigned int cpu;
 
-	sg_policy->up_rate_delay_ns =
-		sg_policy->tunables->up_rate_limit_us * NSEC_PER_USEC;
-	sg_policy->down_rate_delay_ns =
-		sg_policy->tunables->down_rate_limit_us * NSEC_PER_USEC;
+	sg_policy->up_rate_delay_ns = CONFIG_SCHEDUTIL_UP_RATE_LIMIT;
+	sg_policy->down_rate_delay_ns = CONFIG_SCHEDUTIL_UP_RATE_LIMIT;
 	update_min_rate_limit_us(sg_policy);
 	sg_policy->last_freq_update_time = 0;
 	sg_policy->next_freq = UINT_MAX;
