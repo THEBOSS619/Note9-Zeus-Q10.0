@@ -855,6 +855,8 @@ static struct config_item_type ecm_func_type = {
 	.ct_owner	= THIS_MODULE,
 };
 
+extern struct device *create_function_device(char *name);
+
 static void ecm_free_inst(struct usb_function_instance *f)
 {
 	struct f_ecm_opts *opts;
@@ -870,11 +872,20 @@ static void ecm_free_inst(struct usb_function_instance *f)
 static struct usb_function_instance *ecm_alloc_inst(void)
 {
 	struct f_ecm_opts *opts;
+	struct device *dev;
 
 	opts = kzalloc(sizeof(*opts), GFP_KERNEL);
 	if (!opts)
 		return ERR_PTR(-ENOMEM);
+
 	mutex_init(&opts->lock);
+
+	dev = create_function_device("f_ecm");
+	if (IS_ERR(dev)) {
+		pr_err("%s: failed to create android gadget device\n", __func__);
+		return ERR_PTR(-ENODEV);
+	}
+
 	opts->func_inst.free_func_inst = ecm_free_inst;
 	opts->net = gether_setup_default();
 	if (IS_ERR(opts->net)) {
@@ -942,7 +953,7 @@ static struct usb_function *ecm_alloc(struct usb_function_instance *fi)
 	mutex_unlock(&opts->lock);
 	ecm->port.cdc_filter = DEFAULT_FILTER;
 
-	ecm->port.func.name = "cdc_ethernet";
+	ecm->port.func.name = "ecm";
 	/* descriptors are per-instance copies */
 	ecm->port.func.bind = ecm_bind;
 	ecm->port.func.unbind = ecm_unbind;
