@@ -463,7 +463,6 @@ bool ssp_check_buffer(struct ssp_data *data)
 
 void ssp_batch_resume_check(struct ssp_data *data)
 {
-	u64 acc_offset = 0, uncal_mag_offset = 0, press_offset = 0, grv_offset = 0, proxi_offset = 0;
 	//if suspend -> wakeup case. calc. FIFO last timestamp
 	if (data->bIsResumed) {
 		u8 sensor_type = 0;
