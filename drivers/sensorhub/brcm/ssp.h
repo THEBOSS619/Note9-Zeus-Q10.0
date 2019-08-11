@@ -66,40 +66,44 @@
 #undef CONFIG_HAS_EARLYSUSPEND
 #endif
 
-#define SSP_DBG		1
-
-#define SUCCESS		1
-#define FAIL		0
-#define ERROR		-1
+#define SUCCESS			1
+#define FAIL			0
+#define ERROR			-1
 
 #define FACTORY_DATA_MAX	99
 
-#if SSP_DBG
-#define SSP_FUNC_DBG 1
-#define SSP_DATA_DBG 0
-
 /* ssp mcu device ID */
-#define DEVICE_ID			0x55
+#define DEVICE_ID		0x55
+
+#define SSP_DBG			0
+
+#if SSP_DBG
 
 #define ssp_dbg(format, ...) \
 	pr_info(format, ##__VA_ARGS__)
 #else
-#define ssp_dbg(format, ...)
-#endif
+#define ssp_dbg(format, ...) \
+	do { } while (0)
+#endif /* SSP_DBG */
+
+#define SSP_FUNC_DBG 		0
 
 #if SSP_FUNC_DBG
 #define func_dbg() \
 	pr_info("[SSP]: %s\n", __func__)
 #else
-#define func_dbg()
-#endif
+#define func_dbg() \
+	do { } while (0)
+#endif /* SSP_FUNC_DBG */
 
+#define SSP_DATA_DBG 		0
 #if SSP_DATA_DBG
 #define data_dbg(format, ...) \
 	pr_info(format, ##__VA_ARGS__)
 #else
-#define data_dbg(format, ...)
-#endif
+#define data_dbg(format, ...) \
+	do { } while (0)
+#endif /* SSP_DATA_DBG */
 
 #define SSP_SW_RESET_TIME	3000
 #define DEFAULT_POLLING_DELAY	(200 * NSEC_PER_MSEC)
