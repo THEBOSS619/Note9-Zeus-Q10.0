@@ -17,4 +17,4 @@ endif
 
 soundcore-objs  := sound_core.o
 
-subdir-ccflags-y := -Os
+subdir-ccflags-y := -Os -g0
