@@ -702,7 +702,7 @@ struct rq {
 	unsigned long last_sched_tick;
 #endif
 
-#ifdef CONFIG_CPU_QUIET
+#ifdef CONFIG_CPU_QUIET_GOVERNOR_RUNNABLE
 	/* time-based average load */
 	u64 nr_last_stamp;
 	u64 nr_running_integral;
@@ -1708,7 +1708,7 @@ static inline void __sub_nr_running(struct rq *rq, unsigned count)
 	sched_update_tick_dependency(rq);
 }
 
-#ifdef CONFIG_CPU_QUIET
+#ifdef CONFIG_CPU_QUIET_GOVERNOR_RUNNABLE
 #define NR_AVE_SCALE(x)		((x) << FSHIFT)
 static inline u64 do_nr_running_integral(struct rq *rq)
 {

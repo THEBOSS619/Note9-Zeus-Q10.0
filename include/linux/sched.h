@@ -152,7 +152,7 @@ extern int register_hmp_task_migration_notifier(struct notifier_block *nb);
 #define HMP_UP_MIGRATION       0
 #define HMP_DOWN_MIGRATION     1
 #endif
-#ifdef CONFIG_CPU_QUIET
+#ifdef CONFIG_CPU_QUIET_GOVERNOR_RUNNABLE
 extern u64 nr_running_integral(unsigned int cpu);
 #endif
 
