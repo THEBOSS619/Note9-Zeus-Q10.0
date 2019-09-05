@@ -3019,7 +3019,7 @@ unsigned long nr_iowait_cpu(int cpu)
 	return atomic_read(&this->nr_iowait);
 }
 
-#ifdef CONFIG_CPU_QUIET
+#ifdef CONFIG_CPU_QUIET_GOVERNOR_RUNNABLE
 u64 nr_running_integral(unsigned int cpu)
 {
 	unsigned int seqcnt;
