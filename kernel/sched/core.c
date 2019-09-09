@@ -1035,9 +1035,13 @@ static struct rq *move_queued_task(struct rq *rq, struct task_struct *p, int new
 
 	p->on_rq = TASK_ON_RQ_MIGRATING;
 	dequeue_task(rq, p, 0);
+#ifdef CONFIG_SCHED_WALT
 	double_lock_balance(rq, cpu_rq(new_cpu));
+#endif
 	set_task_cpu(p, new_cpu);
+#ifdef CONFIG_SCHED_WALT
 	double_unlock_balance(rq, cpu_rq(new_cpu));
+#endif
 	raw_spin_unlock(&rq->lock);
 
 	rq = cpu_rq(new_cpu);
@@ -2106,8 +2110,10 @@ try_to_wake_up(struct task_struct *p, unsigned int state, int wake_flags,
 	unsigned long flags;
 	int cpu, src_cpu, success = 0;
 #ifdef CONFIG_SMP
+#ifdef CONFIG_SCHED_WALT
 	struct rq *rq;
 	u64 wallclock;
+#endif
 #endif
 
 	/*
@@ -2184,6 +2190,7 @@ try_to_wake_up(struct task_struct *p, unsigned int state, int wake_flags,
 	 */
 	smp_cond_load_acquire(&p->on_cpu, !VAL);
 
+#ifdef CONFIG_SCHED_WALT
 	rq = cpu_rq(task_cpu(p));
 
 	raw_spin_lock(&rq->lock);
@@ -2191,6 +2198,7 @@ try_to_wake_up(struct task_struct *p, unsigned int state, int wake_flags,
 	walt_update_task_ravg(rq->curr, rq, TASK_UPDATE, wallclock, 0);
 	walt_update_task_ravg(p, rq, TASK_WAKE, wallclock, 0);
 	raw_spin_unlock(&rq->lock);
+#endif
 
 	p->sched_contributes_to_load = !!task_contributes_to_load(p);
 	p->state = TASK_WAKING;
