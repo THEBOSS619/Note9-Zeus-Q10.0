@@ -1209,7 +1209,7 @@ static int zswap_frontswap_store(unsigned type, pgoff_t offset,
 #ifdef CONFIG_ZSWAP_MIGRATION_SUPPORT
 	gfp_t gfp = __GFP_NORETRY | __GFP_NOWARN | __GFP_KSWAPD_RECLAIM | __GFP_HIGHMEM | __GFP_MOVABLE;
 #else
-	gfp_t gfp = __GFP_NORETRY | __GFP_NOWARN | __GFP_KSWAPD_RECLAIM | __GFP_HIGHMEM;
+	gfp_t gfp = __GFP_NORETRY | __GFP_NOWARN | __GFP_KSWAPD_RECLAIM;
 #endif
 
 	/* THP isn't supported */
@@ -1326,6 +1326,8 @@ static int zswap_frontswap_store(unsigned type, pgoff_t offset,
 #ifdef CONFIG_ZSWAP_ENABLE_WRITEBACK
 	len += sizeof(struct zswap_header);
 #endif
+	if (zpool_malloc_support_movable(entry->pool->zpool))
+		gfp |= __GFP_HIGHMEM | __GFP_MOVABLE;
 	ret = zpool_malloc(entry->pool->zpool, len, gfp, &handle);
 	if (ret == -ENOSPC) {
 		zswap_reject_compress_poor++;
