@@ -2344,5 +2344,5 @@ walt_task_in_cum_window_demand(struct rq *rq, struct task_struct *p)
 
 static inline bool energy_aware(void)
 {
-	return sched_feat(ENERGY_AWARE);
+	return sysctl_sched_energy_aware;
 }
