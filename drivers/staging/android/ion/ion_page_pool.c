@@ -23,6 +23,8 @@
 #include <linux/init.h>
 #include <linux/slab.h>
 #include <linux/swap.h>
+#include <linux/vmstat.h>
+#include <linux/mmzone.h>
 #include <asm/cacheflush.h>
 #include "ion_priv.h"
 
@@ -44,6 +46,7 @@ static void ion_page_pool_free_pages(struct ion_page_pool *pool,
 
 static int ion_page_pool_add(struct ion_page_pool *pool, struct page *page)
 {
+	int page_count = 1 << pool->order;
 	spin_lock(&pool->lock);
 	if (PageHighMem(page)) {
 		list_add_tail(&page->lru, &pool->high_items);
@@ -52,6 +55,8 @@ static int ion_page_pool_add(struct ion_page_pool *pool, struct page *page)
 		list_add_tail(&page->lru, &pool->low_items);
 		pool->low_count++;
 	}
+	mod_zone_page_state(page_zone(page), NR_FILE_PAGES, page_count);
+	mod_zone_page_state(page_zone(page), NR_INACTIVE_FILE, page_count);
 	spin_unlock(&pool->lock);
 	return 0;
 }
@@ -59,6 +64,7 @@ static int ion_page_pool_add(struct ion_page_pool *pool, struct page *page)
 struct page *ion_page_pool_remove(struct ion_page_pool *pool, bool high)
 {
 	struct page *page;
+	int page_count = 1 << pool->order;
 
 	if (high) {
 		BUG_ON(!pool->high_count);
@@ -71,6 +77,8 @@ struct page *ion_page_pool_remove(struct ion_page_pool *pool, bool high)
 	}
 
 	list_del(&page->lru);
+	mod_zone_page_state(page_zone(page), NR_INACTIVE_FILE, -page_count);
+	mod_zone_page_state(page_zone(page), NR_FILE_PAGES, -page_count);
 	return page;
 }
 
