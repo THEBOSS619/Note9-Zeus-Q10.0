@@ -348,17 +348,31 @@ static ssize_t show_state_##_name(struct cpuidle_state *state, \
 	return sprintf(buf, "%s\n", state->_name);\
 }
 
-define_show_state_function(exit_latency)
-define_show_state_function(target_residency)
+#define define_show_state_time_function(_name) \
+static ssize_t show_state_##_name(struct cpuidle_state *state, \
+				  struct cpuidle_state_usage *state_usage, \
+				  char *buf) \
+{ \
+	return sprintf(buf, "%llu\n", ktime_to_us(state->_name##_ns)); \
+}
+
+define_show_state_time_function(exit_latency)
+define_show_state_time_function(target_residency)
 define_show_state_function(power_usage)
 define_show_state_ull_function(usage)
-define_show_state_ull_function(time)
 define_show_state_str_function(name)
 define_show_state_str_function(desc)
 define_show_state_ull_function(disable)
 define_store_state_ull_function(disable)
 define_show_state_ull_function(above)
 define_show_state_ull_function(below)
+
+static ssize_t show_state_time(struct cpuidle_state *state,
+			       struct cpuidle_state_usage *state_usage,
+			       char *buf)
+{
+	return sprintf(buf, "%llu\n", ktime_to_us(state_usage->time_ns));
+}
 
 define_one_state_ro(name, show_state_name);
 define_one_state_ro(desc, show_state_desc);
