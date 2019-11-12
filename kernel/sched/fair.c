@@ -9270,13 +9270,17 @@ static void update_cpu_capacity(struct sched_domain *sd, int cpu)
 	unsigned long max_capacity;
 	int max_cap_cpu;
 	unsigned long flags;
+	bool update = false;
 
 	cpu_rq(cpu)->cpu_capacity_orig = capacity;
 
 	capacity *= arch_scale_max_freq_capacity(sd, cpu);
 	capacity >>= SCHED_CAPACITY_SHIFT;
 
-	cpu_rq(cpu)->cpu_capacity_margin = capacity + (capacity >> 2);
+	if (cpu_rq(cpu)->cpu_capacity_orig != capacity + (capacity >> 2)) {
+		cpu_rq(cpu)->cpu_capacity_orig = capacity + (capacity >> 2);
+		update = true;
+	}
 	ehmp_update_overutilized(cpu, capacity);
 
 	mcc = &cpu_rq(cpu)->rd->max_cpu_capacity;
@@ -9304,7 +9308,13 @@ skip_unlock: __attribute__ ((unused));
 	if (!capacity)
 		capacity = 1;
 
-	cpu_rq(cpu)->cpu_capacity = capacity;
+	if (cpu_rq(cpu)->cpu_capacity != capacity) {
+		cpu_rq(cpu)->cpu_capacity = capacity;
+		update = true;
+	}
+	if (update)
+		trace_sched_capacity_update(cpu);
+
 	sdg->sgc->capacity = capacity;
 	sdg->sgc->min_capacity = capacity;
 	sdg->sgc->max_capacity = capacity;
