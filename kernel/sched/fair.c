@@ -6632,7 +6632,7 @@ static int select_idle_cpu(struct task_struct *p, struct sched_domain *sd, int t
 	for_each_cpu_wrap(cpu, cpus, target) {
 		if (!--nr)
 			return -1;
-		if (idle_cpu(cpu))
+		if (idle_cpu(cpu)) || sched_idle_cpu(cpu)
 			break;
 	}
 
