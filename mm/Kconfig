@@ -562,6 +562,7 @@ config ZSWAP
 	select CRYPTO_LZO
 	select CRYPTO_LZ4
 	select ZPOOL
+	select BTREE
 	default n
 	help
 	  A lightweight compressed cache for swap pages.  It takes
