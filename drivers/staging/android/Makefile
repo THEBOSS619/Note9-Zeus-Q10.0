@@ -9,3 +9,7 @@ obj-$(CONFIG_ANDROID_SWITCH)           += switch/
 obj-$(CONFIG_ANDROID_VSOC)		+= vsoc.o
 obj-$(CONFIG_SAMSUNG_FREECESS)		+= freecess.o
 obj-$(CONFIG_SAMSUNG_FREECESS)		+= freecess_pkg.o
+lmk_tng-y := lowmemorykiller_tng.o lowmemorykiller_tasks.o \
+             lowmemorykiller_oom.o lowmemorykiller_vmpressure.o
+obj-$(CONFIG_ANDROID_LOW_MEMORY_KILLER_TNG) += lmk_tng.o
+obj-$(CONFIG_ANDROID_LOW_MEMORY_KILLER_STATS) += lowmemorykiller_stats.o
