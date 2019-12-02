@@ -2,6 +2,7 @@
  *  linux/kernel/panic.c
  *
  *  Copyright (C) 1991, 1992  Linus Torvalds
+ *  Copyright (C) 2019 XiaoMi, Inc.
  */
 
 /*
@@ -150,6 +151,13 @@ void panic(const char *fmt, ...)
 	regs.regs[30] = _RET_IP_;
 	regs.pc = regs.regs[30] - sizeof(unsigned int);
 #endif
+
+	if (!in_atomic())
+	{
+		pr_emerg("sys_sync:try sys_sync in panic\n");
+		exec_fs_sync_work();
+	}
+
 	exynos_trace_stop();
 	if (ecd_get_enable() &&
 		ecd_get_debug_panic() &&
