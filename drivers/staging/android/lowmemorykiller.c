@@ -1012,7 +1012,7 @@ static int lmk_task_migration_notify(struct notifier_block *nb,
 		.nr_to_scan = 1,
 	};
 
-	lowmem_shrink(&lowmem_shrinker, &sc);
+	lowmem_scan(&lowmem_shrinker, &sc);
 
 	return NOTIFY_OK;
 }
