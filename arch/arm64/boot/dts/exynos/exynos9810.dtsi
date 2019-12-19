@@ -254,6 +254,7 @@
 			compatible = "arm,ananke", "arm,armv8";
 			reg = <0x0 0x0000>;
 			enable-method = "psci";
+			freq-energy-model;
 			cpu-idle-states = <&BOOTCL_CPU_SLEEP>;
 			sched-energy-costs = <&CPU_COST_1 &CLUSTER_COST_1>;
 		};
@@ -262,6 +263,7 @@
 			compatible = "arm,ananke", "arm,armv8";
 			reg = <0x0 0x0001>;
 			enable-method = "psci";
+			freq-energy-model;
 			cpu-idle-states = <&BOOTCL_CPU_SLEEP>;
 			sched-energy-costs = <&CPU_COST_1 &CLUSTER_COST_1>;
 		};
@@ -270,6 +272,7 @@
 			compatible = "arm,ananke", "arm,armv8";
 			reg = <0x0 0x0002>;
 			enable-method = "psci";
+			freq-energy-model;
 			cpu-idle-states = <&BOOTCL_CPU_SLEEP>;
 			sched-energy-costs = <&CPU_COST_1 &CLUSTER_COST_1>;
 		};
@@ -278,6 +281,7 @@
 			compatible = "arm,ananke", "arm,armv8";
 			reg = <0x0 0x0003>;
 			enable-method = "psci";
+			freq-energy-model;
 			cpu-idle-states = <&BOOTCL_CPU_SLEEP>;
 			sched-energy-costs = <&CPU_COST_1 &CLUSTER_COST_1>;
 		};
@@ -286,6 +290,7 @@
 			compatible = "arm,meerkat", "arm,armv8";
 			reg = <0x0 0x100>;
 			enable-method = "psci";
+			freq-energy-model;
 			cpu-idle-states = <&NONBOOTCL_CPU_SLEEP>;
 			sched-energy-costs = <&CPU_COST_0 &CLUSTER_COST_0>;
 		};
@@ -294,6 +299,7 @@
 			compatible = "arm,meerkat", "arm,armv8";
 			reg = <0x0 0x101>;
 			enable-method = "psci";
+			freq-energy-model;
 			cpu-idle-states = <&NONBOOTCL_CPU_SLEEP>;
 			sched-energy-costs = <&CPU_COST_0 &CLUSTER_COST_0>;
 		};
@@ -302,6 +308,7 @@
 			compatible = "arm,meerkat", "arm,armv8";
 			reg = <0x0 0x102>;
 			enable-method = "psci";
+			freq-energy-model;
 			cpu-idle-states = <&NONBOOTCL_CPU_SLEEP>;
 			sched-energy-costs = <&CPU_COST_0 &CLUSTER_COST_0>;
 		};
@@ -310,6 +317,7 @@
 			compatible = "arm,meerkat", "arm,armv8";
 			reg = <0x0 0x103>;
 			enable-method = "psci";
+			freq-energy-model;
 			cpu-idle-states = <&NONBOOTCL_CPU_SLEEP>;
 			sched-energy-costs = <&CPU_COST_0 &CLUSTER_COST_0>;
 		};
