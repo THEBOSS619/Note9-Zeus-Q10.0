@@ -2850,7 +2850,7 @@ int do_swap_page(struct fault_env *fe, pte_t orig_pte)
 	}
 
 	swap_free(entry);
-	if (mem_cgroup_swap_full(page) ||
+	if (PageSwapCache(page) && mem_cgroup_swap_full(page) && vm_swap_full(page_swap_info(page)) ||
 	    (fe->vma_flags & VM_LOCKED) || PageMlocked(page))
 		try_to_free_swap(page);
 	unlock_page(page);
