@@ -42,6 +42,11 @@
 
 #include "internal.h"
 
+#ifdef CONFIG_STATE_NOTIFIER
+#include <linux/state_notifier.h>
+static struct notifier_block writeback_state_notif;
+#endif
+
 /*
  * Sleep at most 200ms at a time in balance_dirty_pages().
  */
@@ -115,14 +120,24 @@ unsigned long vm_dirty_bytes = 50 * 1024 * 1024;
 /*
  * The interval between `kupdate'-style writebacks
  */
-unsigned int dirty_writeback_interval; /* centiseconds */
+#define DEFAULT_DIRTY_WRITEBACK_INTERVAL 500 /* centiseconds */
+#define DEFAULT_SUSPEND_DIRTY_WRITEBACK_INTERVAL 1000 /* centiseconds */
+unsigned int dirty_writeback_interval,
+	resume_dirty_writeback_interval;
+unsigned int sleep_dirty_writeback_interval,
+	suspend_dirty_writeback_interval;
 
 EXPORT_SYMBOL_GPL(dirty_writeback_interval);
 
 /*
  * The longest time for which data is allowed to remain dirty
  */
-unsigned int dirty_expire_interval = 20 * 100; /* centiseconds */
+#define DEFAULT_DIRTY_EXPIRE_INTERVAL 3000 /* centiseconds */
+#define DEFAULT_SUSPEND_DIRTY_EXPIRE_INTERVAL 6000 /* centiseconds */
+unsigned int dirty_expire_interval,
+	resume_dirty_expire_interval;
+unsigned int sleep_dirty_expire_interval,
+	suspend_dirty_expire_interval;
 
 /*
  * Flag that makes the machine dump writes/reads and block dirtyings.
@@ -2106,6 +2121,31 @@ static int page_writeback_cpu_online(unsigned int cpu)
 	return 0;
 }
 
+#ifdef CONFIG_STATE_NOTIFIER
+static int state_notifier_callback(struct notifier_block *this,
+				unsigned long event, void *data)
+{
+	switch (event) {
+		case STATE_NOTIFIER_ACTIVE:
+			dirty_writeback_interval =
+				resume_dirty_writeback_interval;
+			dirty_expire_interval = resume_dirty_expire_interval;
+			break;
+		case STATE_NOTIFIER_SUSPEND:
+			dirty_writeback_interval =
+				suspend_dirty_writeback_interval;
+			dirty_expire_interval = suspend_dirty_expire_interval;
+			break;
+		default:
+			break;
+	}
+
+	return NOTIFY_OK;
+
+}
+
+#endif
+
 /*
  * Called early on to tune the page writeback dirty limits.
  *
@@ -2126,6 +2166,22 @@ static int page_writeback_cpu_online(unsigned int cpu)
  */
 void __init page_writeback_init(void)
 {
+	dirty_writeback_interval = resume_dirty_writeback_interval =
+		DEFAULT_DIRTY_WRITEBACK_INTERVAL;
+	dirty_expire_interval = resume_dirty_expire_interval =
+		DEFAULT_DIRTY_EXPIRE_INTERVAL;
+	sleep_dirty_writeback_interval = suspend_dirty_writeback_interval =
+		DEFAULT_SUSPEND_DIRTY_WRITEBACK_INTERVAL;
+	sleep_dirty_expire_interval = suspend_dirty_expire_interval =
+		DEFAULT_SUSPEND_DIRTY_EXPIRE_INTERVAL;
+
+#ifdef CONFIG_STATE_NOTIFIER
+	writeback_state_notif.notifier_call = state_notifier_callback;
+	if (state_register_client(&writeback_state_notif))
+		pr_err("%s: Failed to register State notifier callback\n",
+			__func__);
+#endif
+
 	BUG_ON(wb_domain_init(&global_wb_domain, GFP_KERNEL));
 
 	cpuhp_setup_state(CPUHP_AP_ONLINE_DYN, "mm/writeback:online",
