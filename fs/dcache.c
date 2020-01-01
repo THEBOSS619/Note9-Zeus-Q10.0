@@ -46,6 +46,11 @@
 u8 ns_prot = 0;
 #endif
 
+#ifdef CONFIG_STATE_NOTIFIER
+#include <linux/state_notifier.h>
+static struct notifier_block dcache_state_notif;
+#endif
+
 /*
  * Usage:
  * dcache->d_inode->i_lock protects:
@@ -84,7 +89,10 @@ u8 ns_prot = 0;
  *   dentry1->d_lock
  *     dentry2->d_lock
  */
-int sysctl_vfs_cache_pressure __read_mostly = 25;
+#define DEFAULT_VFS_CACHE_PRESSURE 100
+#define DEFAULT_VFS_SUSPEND_CACHE_PRESSURE 20
+int sysctl_vfs_cache_pressure __read_mostly, resume_cache_pressure;
+int sysctl_vfs_suspend_cache_pressure __read_mostly, suspend_cache_pressure;
 EXPORT_SYMBOL_GPL(sysctl_vfs_cache_pressure);
 
 __cacheline_aligned_in_smp DEFINE_SEQLOCK(rename_lock);
@@ -3602,6 +3610,27 @@ void d_tmpfile(struct dentry *dentry, struct inode *inode)
 }
 EXPORT_SYMBOL(d_tmpfile);
 
+#ifdef CONFIG_STATE_NOTIFIER
+static int state_notifier_callback(struct notifier_block *this,
+				unsigned long event, void *data)
+{
+
+	switch (event) {
+		case STATE_NOTIFIER_ACTIVE:
+			sysctl_vfs_cache_pressure = resume_cache_pressure;
+			break;
+		case STATE_NOTIFIER_SUSPEND:
+			sysctl_vfs_cache_pressure = suspend_cache_pressure;
+			break;
+		default:
+			break;
+	}
+
+	return NOTIFY_OK;
+
+}
+#endif
+
 static __initdata unsigned long dhash_entries;
 static int __init set_dhash_entries(char *str)
 {
@@ -3677,6 +3706,12 @@ EXPORT_SYMBOL(d_genocide);
 void __init vfs_caches_init_early(void)
 {
 	set_memsize_kernel_type(MEMSIZE_KERNEL_VFSHASH);
+
+	sysctl_vfs_cache_pressure = resume_cache_pressure =
+		DEFAULT_VFS_CACHE_PRESSURE;
+	sysctl_vfs_suspend_cache_pressure = suspend_cache_pressure =
+		DEFAULT_VFS_SUSPEND_CACHE_PRESSURE;
+
 	dcache_init_early();
 	inode_init_early();
 	set_memsize_kernel_type(MEMSIZE_KERNEL_OTHERS);
@@ -3697,4 +3732,12 @@ void __init vfs_caches_init(void)
 #ifdef CONFIG_RKP_NS_PROT
 	ns_prot = 1;
 #endif
+
+#ifdef CONFIG_STATE_NOTIFIER
+	dcache_state_notif.notifier_call = state_notifier_callback;
+	if (state_register_client(&dcache_state_notif))
+		pr_err("%s: Failed to register State notifier callback\n",
+			__func__);
+#endif
+
 }
