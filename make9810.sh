@@ -34,8 +34,8 @@ DEFAULT_DEVICE=crownlte
 DEFAULT_DEVICE_DIRECTORY="$CROWN_KERNEL_DIRECTORY"
 
 # Kernel Source Paths
-CROWN_KERNEL_DIRECTORY=/home/theboss/kernels/Note9-Zeus-Oreo8.1/
-TOOLCHAINS_DIRECTORY=/home/theboss/kernels/Note9-Zeus-Oreo8.1/toolchains/
+CROWN_KERNEL_DIRECTORY=/home/theboss/kernels/android-4.9-q/
+TOOLCHAINS_DIRECTORY=/home/theboss/kernels/android-4.9-q/toolchains/
 
 # Android Image Kitchen paths
 AIK_OREO_N960=/home/theboss/kernels/TW-N960/
@@ -180,7 +180,7 @@ if [ "$1" == "crownlte" ]; then
 		git checkout Endurance-Kernel-P
 		git reset --hard
 	elif [ "$2" == "oreo" ]; then
-		git checkout THEBOSS-Zeus
+		git checkout THEBOSS-ZeusQ
 		git reset --hard
 	else
 		git checkout "$2"
