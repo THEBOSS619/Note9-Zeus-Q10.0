@@ -58,8 +58,8 @@ static ion_phys_addr_t ion_carveout_allocate(struct ion_heap *heap,
 	unsigned long offset;
 
 	if (align > PAGE_SIZE) {
-		gen_pool_set_algo(carveout_heap->pool,
-				find_first_fit_with_align, &align);
+		gen_pool_set_algo(carveout_heap->pool, NULL,
+				find_first_fit_with_align);
 		offset = gen_pool_alloc(carveout_heap->pool, size);
 		gen_pool_set_algo(carveout_heap->pool, NULL, NULL);
 	} else {

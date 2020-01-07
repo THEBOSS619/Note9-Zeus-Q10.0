@@ -148,8 +148,8 @@ int ion_secure_iova_alloc(unsigned long *addr, unsigned long size,
 {
 	spin_lock(&siova_pool_lock);
 	if (align > PAGE_SIZE) {
-		gen_pool_set_algo(secure_iova_pool,
-				find_first_fit_with_align, &align);
+		gen_pool_set_algo(secure_iova_pool, NULL,
+				find_first_fit_with_align);
 		*addr = gen_pool_alloc(secure_iova_pool, size);
 		gen_pool_set_algo(secure_iova_pool, NULL, NULL);
 	} else {
