@@ -29,8 +29,8 @@ DEFAULT_DEVICE=crownlte
 DEFAULT_DEVICE_DIRECTORY="$CROWN_KERNEL_DIRECTORY"
 
 # Kernel Source Paths
-CROWN_KERNEL_DIRECTORY=/home/theboss/kernels/android-4.9-q/
-TOOLCHAINS_DIRECTORY=/home/theboss/kernels/android-4.9-q/toolchains/
+CROWN_KERNEL_DIRECTORY=/home/theboss/kernels/Note9-Zeus-Q10.0/
+TOOLCHAINS_DIRECTORY=/home/theboss/kernels/Note9-Zeus-Q10.0/toolchains/
 
 # Android Image Kitchen paths
 AIK_OREO_N960=/home/theboss/kernels/TW-N960-Q/
