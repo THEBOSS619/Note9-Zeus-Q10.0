@@ -21,12 +21,7 @@
 # File paths *must* have an '/' at the end, or else the script will generate various errors
 
 # Versions
-OLD_UPSTREAM=4\.9\.168
-UPSTREAM=4\.9\.169
-PIE_OLD_VERSION=2\.0\.10
-PIE_VERSION=2\.0\.11
-OREO_OLD_VERSION=1\.2\.16
-OREO_VERSION=1\.3\.107
+Q_VERSION=4\.9\.208
 
 # Default Device
 # Used as a backup when no valid device is defined
@@ -38,7 +33,7 @@ CROWN_KERNEL_DIRECTORY=/home/theboss/kernels/android-4.9-q/
 TOOLCHAINS_DIRECTORY=/home/theboss/kernels/android-4.9-q/toolchains/
 
 # Android Image Kitchen paths
-AIK_OREO_N960=/home/theboss/kernels/TW-N960/
+AIK_OREO_N960=/home/theboss/kernels/TW-N960-Q/
 
 # Zip directories
 ZIP_OREO_N960=/home/theboss/kernels/zip-note/
@@ -123,34 +118,9 @@ if [ "$1" == "help" ] || [ "$1" == "" ]; then
 	exit
 fi
 
-## Zip Update
-
-if [ "$1" == "update" ] || [ "$2" == "update" ] || [ "$3" == "update" ] || [ "$4" == "update" ] || [ "$5" == "update" ] || [ "$6" == "update" ]; then
-	echo "Updating zip installer versions..."
-	sed -i "s/"$OLD_UPSTREAM"/"$UPSTREAM"/g" "$ZIP_OREO"META-INF/com/google/android/update-binary
-	sed -i "s/"$OLD_UPSTREAM"/"$UPSTREAM"/g" "$ZIP_OREO_AOSP_S9"META-INF/com/google/android/update-binary
-	sed -i "s/"$OLD_UPSTREAM"/"$UPSTREAM"/g" "$ZIP_GSI_S9"META-INF/com/google/android/update-binary
-	sed -i "s/"$OLD_UPSTREAM"/"$UPSTREAM"/g" "$ZIP_PIE"META-INF/com/google/android/update-binary
-	sed -i "s/"$OLD_UPSTREAM"/"$UPSTREAM"/g" "$ZIP_PIE_AOSP_S9"META-INF/com/google/android/update-binary
-	sed -i "s/"$OREO_OLD_VERSION"/"$OREO_VERSION"/g" "$ZIP_OREO"META-INF/com/google/android/update-binary
-	sed -i "s/"$OREO_OLD_VERSION"/"$OREO_VERSION"/g" "$ZIP_OREO_AOSP_S9"META-INF/com/google/android/update-binary
-	sed -i "s/"$OREO_OLD_VERSION"/"$OREO_VERSION"/g" "$ZIP_GSI_S9"META-INF/com/google/android/update-binary
-	sed -i "s/"$OREO_OLD_VERSION"/"$OREO_VERSION"/g" "$ZIP_OREO_N960"META-INF/com/google/android/updater-script
-	sed -i "s/"$OREO_OLD_VERSION"/"$OREO_VERSION"/g" "$ZIP_GSI_N960"META-INF/com/google/android/updater-script 
-	sed -i "s/"$PIE_OLD_VERSION"/"$PIE_VERSION"/g" "$ZIP_PIE"META-INF/com/google/android/update-binary
-	sed -i "s/"$PIE_OLD_VERSION"/"$PIE_VERSION"/g" "$ZIP_PIE_N960"META-INF/com/google/android/update-binary
-	sed -i "s/Endurance Kernel "$PIE_OLD_VERSION"/Endurance Kernel "$PIE_VERSION"/g" "$ZIP_PIE_N960"META-INF/com/google/android/updater-script
-	sed -i "s/Endurance Kernel "$PIE_OLD_VERSION"/Endurance Kernel "$PIE_VERSION"/g" "$ZIP_PIE_AOSP_N960"META-INF/com/google/android/updater-script
-	if [ "$1" == "update" ]; then
-		exit
-	fi
-fi
-
 ## Kernel Directory
 
-if [ "$1" == "starlte" ] || [ "$1" == "star2lte" ]; then
-	cd "$STAR_KERNEL_DIRECTORY" || exit
-elif [ "$1" == "crownlte" ]; then
+if [ "$1" == "crownlte" ]; then
 	cd "$CROWN_KERNEL_DIRECTORY" || exit
 else
 	echo "Did not define a valid specific device!"
@@ -164,23 +134,9 @@ fi
 # Note: This will remove all uncommited changes. This is necessary when modifying defconfigs on the fly. If desired, git reset --hard can be removed. A bypass argument may be added eventually.
 #
 git reset --hard
-#if [ "$1" == "starlte" ] || [ "$1" == "star2lte" ]; then
-#	if [ "$2" == "pie" ]; then
-#		git checkout Endurance-Kernel-P
-#		git reset --hard
-#	elif [ "$2" == "oreo" ]; then
-#		git checkout THEBOSS-Zeus
-#		git reset --hard
-#	else
-#		git checkout "$2"
-#		git reset --hard
-#	fi
 if [ "$1" == "crownlte" ]; then
-	if [ "$2" == "pie" ]; then
-		git checkout Endurance-Kernel-P
-		git reset --hard
-	elif [ "$2" == "oreo" ]; then
-		git checkout THEBOSS-ZeusQ
+	if [ "$2" == "oreo" ]; then
+		git checkout THEBOSS-ZeusOC-Q
 		git reset --hard
 	else
 		git checkout "$2"
@@ -198,9 +154,7 @@ export SUBARCH=arm64
 
 # Check for specified GCC parameters. If none passed, use GCC 4.9 by default + use ccache to improve compile speeds
 
-if [ "$3" == "gcc-8" ]; then
-	export CROSS_COMPILE="ccache "$TOOLCHAINS_DIRECTORY"gcc-arm-8.3-2019.03-x86_64-aarch64-linux-gnu/bin/aarch64-linux-gnu-"
-elif [ "$3" == "gcc-9.1" ]; then
+if [ "$3" == "gcc-9.1" ]; then
 	export CROSS_COMPILE="ccache "$TOOLCHAINS_DIRECTORY"linaro-64/bin/aarch64-linux-gnu-"
 elif [ "$3" == "gcc-10" ]; then
 	export CROSS_COMPILE="ccache "$TOOLCHAINS_DIRECTORY"GCC-10/bin/aarch64-linux-elf-"
@@ -220,22 +174,7 @@ fi
 ## Build Specific Preperation
 # Includes specific modifications for OC and UC on the kernel, as well as modifies the kernels localversion on the fly.
 
-if [ "$2" == "pie" ]; then
-	if [ "$1" == "crownlte" ] && [ "$4" == "oc" ]; then
-		sed -i "s/-Endurance-Kernel-N9/-Endurance-Kernel-N9-OC-"$PIE_VERSION"/g" "$CROWN_KERNEL_DIRECTORY"arch/arm64/configs/exynos9810-crownlte_defconfig
-		sed -i "s/-Endurance-Kernel-N9/-Endurance-Kernel-N9-OC-"$PIE_VERSION"/g" "$CROWN_KERNEL_DIRECTORY"arch/arm64/boot/dts/include/dt-bindings/soc/samsung/crown_conf.h
-		pie_oc_crown
-#	elif [ "$1" == "crownlte" ] && [ "$4" == "uc" ]; then
-#		sed -i "s/-Endurance-Kernel-N9/-Endurance-Kernel-N9-UC-"$PIE_VERSION"/g" "$CROWN_KERNEL_DIRECTORY"arch/arm64/configs/exynos9810-crownlte_defconfig
-#		sed -i "s/-Endurance-Kernel-N9/-Endurance-Kernel-N9-UC-"$PIE_VERSION"/g" "$CROWN_KERNEL_DIRECTORY"arch/arm64/boot/dts/include/dt-bindings/soc/samsung/crown_conf.h
-#		sed -i 's/quad_freq = <1794000>;/quad_freq = <1586000>;/g' "$STAR_KERNEL_DIRECTORY"arch/arm64/boot/dts/exynos/exynos9810.dtsi
-	elif [ "$1" == "crownlte" ] && [ "$4" != "oc" ] && [ "$4" != "uc" ]; then
-		sed -i "s/-Endurance-Kernel-N9/-Endurance-Kernel-N9-"$PIE_VERSION"/g" "$CROWN_KERNEL_DIRECTORY"arch/arm64/configs/exynos9810-crownlte_defconfig
-		sed -i "s/-Endurance-Kernel-N9/-Endurance-Kernel-N9-"$PIE_VERSION"/g" "$CROWN_KERNEL_DIRECTORY"arch/arm64/boot/dts/include/dt-bindings/soc/samsung/crown_conf.h
-	else
-		echo "Invalid device or OC configuration detected... Please check your inputs."
-	fi
-elif [ "$2" == "oreo" ]; then
+if [ "$2" == "oreo" ]; then
 	if [ "$1" == "crownlte" ] && [ "$4" == "oc" ]; then
 		sed -i "s/-THEBOSS-Zeus-OC-/-THEBOSS-Zeus-OC-N9-"$OREO_VERSION"/g" "$CROWN_KERNEL_DIRECTORY"arch/arm64/configs/exynos9810-crownlte_defconfig
 		sed -i "s/-THEBOSS-Zeus-OC-/-THEBOSS-Zeus-OC-N9-"$OREO_VERSION"/g" "$CROWN_KERNEL_DIRECTORY"arch/arm64/boot/dts/include/dt-bindings/soc/samsung/crown_conf.h
@@ -255,15 +194,7 @@ fi
 
 make -j$(nproc) clean
 make -j$(nproc) mrproper
-if [ "$2" == "pie" ] || [ "$2" == "els" ] || [ "$2" == "9.0-aosp" ]; then
-	if [ "$1" == "crownlte" ]; then
-		make -j$(nproc) exynos9810-crownlte_defconfig
-	else
-		echo "Incorrect device variant configuration..."
-		echo "Using default device"
-		make -j$(nproc) exynos9810-"$DEFAULT_DEVICE"_defconfig
-	fi
-elif [ "$2" == "oreo" ] || [ "$2" == "apgk" ] || [ "$2" == "gsi" ] || [ "$2" == "8.1-aosp" ]; then
+if [ "$2" == "oreo" ] || [ "$2" == "apgk" ] || [ "$2" == "gsi" ] || [ "$2" == "8.1-aosp" ]; then
 	if [ "$1" == "crownlte" ]; then
 		make -j$(nproc) exynos9810-crownlte_defconfig
 	else
@@ -283,17 +214,7 @@ git reset --hard
 
 ## AIK Preparation
 
-if [ "$2" == "pie" ] || [ "$2" == "els" ]; then
-	if [ "$1" == "crownlte" ]; then
-		rm "$AIK_PIE_N960"split_img/boot.img-dtb
-		rm "$AIK_PIE_N960"split_img/boot.img-zImage
-		cp "$CROWN_KERNEL_DIRECTORY"arch/arm64/boot/Image "$AIK_PIE_N960"split_img/boot.img-zImage
-		cp "$CROWN_KERNEL_DIRECTORY"arch/arm64/boot/dtb.img "$AIK_PIE_N960"split_img/boot.img-dtb
-		cd "$AIK_PIE_N960" || exit
-		echo "$PASSWORD" | sudo -S ./repackimg.sh
-		cp "$AIK_PIE_N960"image-new.img "$ZIP_PIE_N960"boot.img
-	fi
-elif [ "$2" == "oreo" ] || [ "$2" == "apgk" ]; then
+if [ "$2" == "oreo" ] || [ "$2" == "apgk" ]; then
 	if [ "$1" == "crownlte" ]; then
 		rm "$AIK_OREO_N960"split_img/boot.img-dtb
 		rm "$AIK_OREO_N960"split_img/boot.img-zImage
@@ -303,242 +224,7 @@ elif [ "$2" == "oreo" ] || [ "$2" == "apgk" ]; then
 		echo "$PASSWORD" | sudo -S ./repackimg.sh
 		cp "$AIK_OREO_N960"image-new.img  "$ZIP_OREO_N960"boot.img
 	fi
-elif [ "$2" == "9.0-aosp" ]; then
-	rm "$AIK_PIE_AOSP"split_img/boot.img-dtb
-	rm "$AIK_PIE_AOSP"split_img/boot.img-zImage
-	cp "$STAR_KERNEL_DIRECTORY"arch/arm64/boot/Image "$AIK_PIE_AOSP"split_img/boot.img-zImage
-	cp "$STAR_KERNEL_DIRECTORY"arch/arm64/boot/dtb.img "$AIK_PIE_AOSP"split_img/boot.img-dtb
-	cd "$AIK_PIE_AOSP" || exit
-	echo "$PASSWORD" | sudo -S ./repackimg.sh
-	if [ "$1" == "crownlte" ]; then
-		cp "$AIK_PIE_AOSP"image-new.img "$ZIP_PIE_AOSP_N960"boot.img
-	elif [ "$1" == "starlte" ]; then
-		if [ "$4" != "uc" ] && [ "$4" != "oc" ]; then
-			cp "$AIK_PIE_AOSP"image-new.img "$ZIP_PIE_AOSP_S9"boot-G960F.img
-		elif [ "$4" == "oc" ]; then
-			cp "$AIK_PIE_AOSP"image-new.img "$ZIP_PIE_AOSP_S9"boot-G960F-oc.img
-		elif [ "$4" == "uc" ]; then
-			cp "$AIK_PIE_AOSP"image-new.img "$ZIP_PIE_AOSP_S9"boot-G960F-uc.img
-		fi
-	elif [ "$1" == "star2lte" ]; then
-		if [ "$4" != "uc" ] && [ "$4" != "oc" ]; then
-			cp "$AIK_PIE_AOSP"image-new.img  "$ZIP_PIE_AOSP_S9"boot-G965F.img
-		elif [ "$4" == "oc" ]; then
-			cp "$AIK_PIE_AOSP"image-new.img  "$ZIP_PIE_AOSP_S9"boot-G965F-oc.img
-		elif [ "$4" == "uc" ] && [ "$4" != "oc" ]; then
-			cp "$AIK_PIE_AOSP"image-new.img  "$ZIP_PIE_AOSP_S9"boot-G965F-uc.img
-		fi
-	fi
-elif [ "$2" == "gsi" ]; then
-	if [ "$1" == "starlte" ]; then
-		rm "$AIK_OREO_960"split_img/boot.img-dtb
-		rm "$AIK_OREO_960"split_img/boot.img-zImage
-		cp "$STAR_KERNEL_DIRECTORY"arch/arm64/boot/Image "$AIK_OREO_960"split_img/boot.img-zImage
-		cp "$STAR_KERNEL_DIRECTORY"arch/arm64/boot/dtb.img "$AIK_OREO_960"split_img/boot.img-dtb
-		cd "$AIK_OREO_960" || exit
-		echo "$PASSWORD" | sudo -S ./repackimg.sh
-		if [ "$4" != "uc" ] && [ "$4" != "oc" ]; then
-			cp "$AIK_OREO_960"image-new.img "$ZIP_GSI_S9"boot-G960F.img
-		elif [ "$4" == "oc" ]; then
-			cp "$AIK_OREO_960"image-new.img "$ZIP_GSI_S9"boot-G960F-oc.img
-		elif [ "$4" == "uc" ]; then
-			cp "$AIK_OREO_960"image-new.img "$ZIP_GSI_S9"boot-G960F-uc.img
-		fi
-	elif [ "$1" == "star2lte" ]; then
-		rm "$AIK_OREO_965"split_img/boot.img-dtb
-		rm "$AIK_OREO_965"split_img/boot.img-zImage
-		cp "$STAR_KERNEL_DIRECTORY"arch/arm64/boot/Image "$AIK_OREO_965"split_img/boot.img-zImage
-		cp "$STAR_KERNEL_DIRECTORY"arch/arm64/boot/dtb.img "$AIK_OREO_965"split_img/boot.img-dtb
-		cd "$AIK_OREO_965" || exit
-		echo "$PASSWORD" | sudo -S ./repackimg.sh
-		if [ "$4" != "uc" ] && [ "$4" != "oc" ]; then
-			cp "$AIK_OREO_965"image-new.img "$ZIP_GSI_S9"boot-G965F.img
-		elif [ "$4" == "oc" ]; then
-			cp "$AIK_OREO_965"image-new.img "$ZIP_GSI_S9"boot-G965F-oc.img
-		elif [ "$4" == "uc" ]; then
-			cp "$AIK_OREO_965"image-new.img "$ZIP_GSI_S9"boot-G965F-uc.img
-		fi
-	elif [ "$1" == "crownlte" ]; then
-		rm "$AIK_OREO_N960"split_img/boot.img-dtb
-		rm "$AIK_OREO_N960"split_img/boot.img-zImage
-		cp "$CROWN_KERNEL_DIRECTORY"arch/arm64/boot/Image "$AIK_OREO_N960"split_img/boot.img-zImage
-		cp "$CROWN_KERNEL_DIRECTORY"arch/arm64/boot/dtb.img "$AIK_OREO_N960"split_img/boot.img-dtb
-		cd "$AIK_OREO_N960" || exit
-		echo "$PASSWORD" | sudo -S ./repackimg.sh
-		cp "$AIK_OREO_N960"image-new.img  "$ZIP_GSI_N960"boot.img
-	fi
-elif [ "$2" == "8.1-aosp" ]; then
-	if [ "$1" == "starlte" ]; then
-		rm "$AIK_OREO_AOSP_960"split_img/boot.img-dtb
-		rm "$AIK_OREO_AOSP_960"split_img/boot.img-zImage
-		cp "$STAR_KERNEL_DIRECTORY"arch/arm64/boot/Image "$AIK_OREO_AOSP_960"split_img/boot.img-zImage
-		cp "$STAR_KERNEL_DIRECTORY"arch/arm64/boot/dtb.img "$AIK_OREO_AOSP_960"split_img/boot.img-dtb
-		cd "$AIK_OREO_AOSP_960" || exit
-		echo "$PASSWORD" | sudo -S ./repackimg.sh
-		if [ "$4" != "uc" ] && [ "$4" != "oc" ]; then
-			cp "$AIK_OREO_AOSP_960"image-new.img  "$ZIP_OREO_AOSP_S9"boot-G960F.img
-		elif [ "$4" == "oc" ]; then
-			cp "$AIK_OREO_AOSP_960"image-new.img  "$ZIP_OREO_AOSP_S9"boot-G960F-oc.img
-		elif [ "$4" == "uc" ]; then
-			cp "$AIK_OREO_AOSP_960"image-new.img  "$ZIP_OREO_AOSP_S9"boot-G960F-uc.img
-		fi
-	elif [ "$1" == "star2lte" ]; then
-		rm "$AIK_OREO_AOSP_965"split_img/boot.img-dtb
-		rm "$AIK_OREO_AOSP_965"split_img/boot.img-zImage
-		cp "$STAR_KERNEL_DIRECTORY"arch/arm64/boot/Image "$AIK_OREO_AOSP_965"split_img/boot.img-zImage
-		cp "$STAR_KERNEL_DIRECTORY"arch/arm64/boot/dtb.img "$AIK_OREO_AOSP_965"split_img/boot.img-dtb
-		cd "$AIK_OREO_AOSP_965" || exit
-		echo "$PASSWORD" | sudo -S ./repackimg.sh
-		if [ "$4" != "uc" ] && [ "$4" != "oc" ]; then
-			cp "$AIK_OREO_AOSP_965"image-new.img  "$ZIP_OREO_AOSP_S9"boot-G965F.img
-		elif [ "$4" == "oc" ]; then
-			cp "$AIK_OREO_AOSP_965"image-new.img  "$ZIP_OREO_AOSP_S9"boot-G965F-oc.img
-		elif [ "$4" == "uc" ]; then
-			cp "$AIK_OREO_AOSP_965"image-new.img  "$ZIP_OREO_AOSP_S9"boot-G965F-uc.img
-		fi
-	fi
 else
 	echo "This is where we depart. You're on your own for AIK!"
 	exit
-fi
-
-# If 'test' or 'release' aren't passed, the script ends here. Your kernel should be in the zip folder, or at least the relevant AIK folder.
-
-## Test Kernel
-# If the argument 'release' is passed in place of OC / UC, the script will create relevant patches with the base boot.img's present and zip it.
-# This will only zip the core boot-G965F.img & boot-G960F.img.bsdiff
-
-if [ "$4" == "test" ] || [ "$5" == "test" ]; then
-	if [ "$1" == "starlte" ] || [ "$1" == "star2lte" ]; then
-		if [ "$2" == "pie" ] || [ "$2" == "els" ]; then
-			cd "$ZIP_PIE" || exit
-			bsdiff boot-G965F.img boot-G960F.img boot-G960F.img.bsdiff
-			rm -f boot-G960F.img boot-G960F-uc.img boot-G960F-oc.img boot-G965F-oc.img boot-G965F-uc.img *.zip
-			zip -r Endurance-Kernel-"$PIE_VERSION".zip *
-		elif [ "$2" == "oreo" ] || [ "$2" == "apgk" ]; then
-			cd "$ZIP_OREO" || exit
-			bsdiff boot-G965F.img boot-G960F.img boot-G960F.img.bsdiff
-			rm -f boot-G960F.img boot-G960F-uc.img boot-G960F-oc.img boot-G965F-oc.img boot-G965F-uc.img *.zip
-			zip -r Endurance-Kernel-"$OREO_VERSION".zip *
-		elif [ "$2" == "9.0-aosp" ]; then
-			cd "$ZIP_PIE_AOSP_S9" || exit
-			bsdiff boot-G965F.img boot-G960F.img boot-G960F.img.bsdiff
-			rm -f boot-G960F.img boot-G960F-uc.img boot-G960F-oc.img boot-G965F-oc.img boot-G965F-uc.img *.zip
-			zip -r Endurance-Kernel-AOSP-"$PIE_VERSION".zip *
-		elif [ "$2" == "gsi" ]; then
-			cd "$ZIP_GSI_S9" || exit
-			bsdiff boot-G965F.img boot-G960F.img boot-G960F.img.bsdiff
-			rm -f boot-G960F.img boot-G960F-uc.img boot-G960F-oc.img boot-G965F-oc.img boot-G965F-uc.img *.zip
-			zip -r Endurance-Kernel-GSI-"$OREO_VERSION".zip *
-		elif [ "$2" == "8.1-aosp" ]; then
-			cd "$ZIP_OREO_AOSP_S9" || exit
-			bsdiff boot-G965F.img boot-G960F.img boot-G960F.img.bsdiff
-			rm -f boot-G960F.img boot-G960F-uc.img boot-G960F-oc.img boot-G965F-oc.img boot-G965F-uc.img *.zip
-			zip -r Endurance-Kernel-AOSP-"$OREO_VERSION".zip *
-		fi
-	elif [ "$1" == "crownlte" ]; then
-		if [ "$2" == "pie" ] || [ "$2" == "els" ]; then
-			cd "$ZIP_PIE_N960" || exit
-			rm -f *.zip
-			if [ "$4" == "oc" ]; then
-				zip -r Endurance-Kernel-"$PIE_VERSION"-OC.zip *
-			else
-				zip -r Endurance-Kernel-"$PIE_VERSION".zip *
-			fi
-		elif [ "$2" == "oreo" ]; then
-			cd "$ZIP_OREO_N960" || exit
-			rm -f *.zip
-			if [ "$4" == "oc" ]; then
-				zip -r Endurance-Kernel-"$OREO_VERSION"-OC.zip *
-			else
-				zip -r Endurance-Kernel-"$OREO_VERSION".zip *
-			fi
-		elif [ "$2" == "9.0-aosp" ]; then
-			cd "$ZIP_PIE_AOSP_N960" || exit
-			rm -f *.zip
-			if [ "$4" == "oc" ]; then
-				zip -r Endurance-Kernel-AOSP-"$PIE_VERSION"-OC.zip *
-			else
-				zip -r Endurance-Kernel-AOSP-"$PIE_VERSION".zip *
-			fi
-		elif [ "$2" == "gsi" ]; then
-			cd "$ZIP_GSI_N960" || exit
-			rm -f *.zip
-			if [ "$4" == "oc" ]; then
-				zip -r Endurance-Kernel-GSI-"$OREO_VERSION"-OC.zip *
-			else
-				zip -r Endurance-Kernel-GSI-"$OREO_VERSION".zip *
-			fi
-		fi
-	fi
-fi
-
-## Kernel Release
-# If the argument 'release' is passed after or in place of OC / UC, the script will create relevant patches with all boot.img's present and zip it.
-# Hence when building the last kernel (in the last call of the script) you'll want to pass 'release'.
-# Refer to make9810release.sh for a reference example for how I create a release zip!
-
-if [ "$4" == "release" ] || [ "$5" == "release" ]; then
-	if [ "$1" == "starlte" ] || [ "$1" == "star2lte" ]; then
-		if [ "$2" == "pie" ] || [ "$2" == "els" ]; then
-			cd "$ZIP_PIE" || exit
-			bsdiff_func
-			rm -f boot-G960F.img boot-G960F-uc.img boot-G960F-oc.img boot-G965F-oc.img boot-G965F-uc.img *.zip
-			zip -r Endurance-Kernel-"$PIE_VERSION".zip *
-		elif [ "$2" == "oreo" ] || [ "$2" == "apgk" ]; then
-			cd "$ZIP_OREO" || exit
-			bsdiff_func
-    		rm -f boot-G960F.img boot-G960F-uc.img boot-G960F-oc.img boot-G965F-oc.img boot-G965F-uc.img *.zip
-			zip -r Endurance-Kernel-"$OREO_VERSION".zip *
-		elif [ "$2" == "9.0-aosp" ]; then
-			cd "$ZIP_PIE_AOSP_S9" || exit
-			bsdiff_func
-			rm -f boot-G960F.img boot-G960F-uc.img boot-G960F-oc.img boot-G965F-oc.img boot-G965F-uc.img *.zip
-			zip -r Endurance-Kernel-AOSP-"$PIE_VERSION".zip *
-		elif [ "$2" == "gsi" ]; then
-			cd "$ZIP_GSI_S9" || exit
-			bsdiff_func
-			rm -f boot-G960F.img boot-G960F-uc.img boot-G960F-oc.img boot-G965F-oc.img boot-G965F-uc.img *.zip
-			zip -r Endurance-Kernel-GSI-"$OREO_VERSION".zip *
-		elif [ "$2" == "8.1-aosp" ]; then
-			cd "$ZIP_OREO_AOSP_S9" || exit
-			bsdiff_func
-			rm -f boot-G960F.img boot-G960F-uc.img boot-G960F-oc.img boot-G965F-oc.img boot-G965F-uc.img *.zip
-			zip -r Endurance-Kernel-AOSP-"$OREO_VERSION".zip *
-		fi
-	elif [ "$1" == "crownlte" ]; then
-		if [ "$2" == "pie" ] || [ "$2" == "els" ]; then
-			cd "$ZIP_PIE_N960" || exit
-			rm -f *.zip
-			if [ "$4" == "oc" ]; then
-				zip -r Endurance-Kernel-"$PIE_VERSION"-OC.zip *
-			else
-				zip -r Endurance-Kernel-"$PIE_VERSION".zip *
-			fi
-		elif [ "$2" == "oreo" ]; then
-			cd "$ZIP_OREO_N960" || exit
-			rm -f *.zip
-			if [ "$4" == "oc" ]; then
-				zip -r Endurance-Kernel-"$OREO_VERSION"-OC.zip *
-			else
-				zip -r Endurance-Kernel-"$OREO_VERSION".zip *
-			fi
-		elif [ "$2" == "9.0-aosp" ]; then
-			cd "$ZIP_PIE_AOSP_N960" || exit
-			rm -f *.zip
-			if [ "$4" == "oc" ]; then
-				zip -r Endurance-Kernel-AOSP-"$PIE_VERSION"-OC.zip *
-			else
-				zip -r Endurance-Kernel-AOSP-"$PIE_VERSION".zip *
-			fi
-		elif [ "$2" == "gsi" ]; then
-			cd "$ZIP_GSI_N960" || exit
-			rm -f *.zip
-			if [ "$4" == "oc" ]; then
-				zip -r Endurance-Kernel-GSI-"$OREO_VERSION"-OC.zip *
-			else
-				zip -r Endurance-Kernel-GSI-"$OREO_VERSION".zip *
-			fi
-		fi
-	fi
 fi
