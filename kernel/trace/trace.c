@@ -1935,18 +1935,6 @@ int trace_find_tgid(int pid)
 
 	tgid = __find_tgid_locked(pid);
 
-	return tgid;
-}
-
-int trace_find_tgid(int pid)
-{
-	int tgid;
-
-	preempt_disable();
-	arch_spin_lock(&trace_cmdline_lock);
-
-	tgid = __find_tgid_locked(pid);
-
 	arch_spin_unlock(&trace_cmdline_lock);
 	preempt_enable();
 
