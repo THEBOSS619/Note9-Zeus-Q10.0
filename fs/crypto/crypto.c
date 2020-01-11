@@ -485,24 +485,10 @@ static int __init fscrypt_init(void)
 	fscrypt_ctx_cachep = KMEM_CACHE(fscrypt_ctx, SLAB_RECLAIM_ACCOUNT);
 	if (!fscrypt_ctx_cachep)
 		goto fail_free_queue;
-
 	fscrypt_info_cachep = KMEM_CACHE(fscrypt_info, SLAB_RECLAIM_ACCOUNT);
 	if (!fscrypt_info_cachep)
 		goto fail_free_ctx;
-#ifdef CONFIG_FSCRYPT_SDP
-	sdp_crypto_init();
-	if (!fscrypt_sdp_init_sdp_info_cachep())
-		goto fail_free_info;
-#endif
-
-	res = fscrypt_sec_crypto_init();
-	if (res)
-		goto fail_free_info;
-
 	return 0;
-
-fail_free_info:
-	kmem_cache_destroy(fscrypt_info_cachep);
 fail_free_ctx:
 	kmem_cache_destroy(fscrypt_ctx_cachep);
 fail_free_queue:

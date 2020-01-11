@@ -72,15 +72,6 @@ out:
 	return res;
 }
 
-static inline int get_fe_key(char *nonce, const struct fscrypt_key *source_key, char *fe_key)
-{
-#ifdef CONFIG_FS_CRYPTO_SEC_EXTENSION
-	return fscrypt_sec_get_key_aes(nonce, source_key->raw, fe_key);
-#else
-	return derive_key_aes(nonce, source_key, fe_key);
-#endif /* CONFIG FS_CRYPTO_SEC_EXTENSION */
-}
-
 /*
  * Search the current task's subscribed keyrings for a "logon" key with
  * description prefix:descriptor, and if found acquire a read lock on it and
