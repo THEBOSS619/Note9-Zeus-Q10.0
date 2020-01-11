@@ -798,6 +798,13 @@ LDFLAGS		+= $(call ld-option, --no-fix-cortex-a53-843419)
 KBUILD_CFLAGS += $(call cc-ifversion, -lt, 0409, \
 			$(call cc-disable-warning,maybe-uninitialized,))
 
+KBUILD_CFLAGS += $(call cc-ifversion, -gt, 0900, \
+			$(call cc-option, -Wno-psabi) \
+			$(call cc-disable-warning,maybe-uninitialized,) \
+			$(call cc-disable-warning,format,) \
+			$(call cc-disable-warning,array-bounds,) \
+			$(call cc-disable-warning,stringop-overflow,))
+
 ifdef CONFIG_LTO
 LTO_CFLAGS    := -flto -flto=jobserver -fno-fat-lto-objects \
                  -fuse-linker-plugin -fwhole-program
