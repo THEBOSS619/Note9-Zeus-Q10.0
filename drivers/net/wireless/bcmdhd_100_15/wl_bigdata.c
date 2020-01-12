@@ -219,6 +219,7 @@ wg_parse_ap_stadata(struct net_device *dev, struct ether_addr *sta_mac,
 	ap_sta_data->mac = *sta_mac;
 	ap_sta_data->rssi = 0;
 	ap_sta_data->mimo = 0;
+	ap_sta_data->nss = 0;
 
 	rateset_adv = &sta_v4->rateset_adv;
 	ap_sta_data->chanspec = sta_v4->chanspec;
