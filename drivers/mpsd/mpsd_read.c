@@ -18,6 +18,7 @@
 #include <linux/version.h>
 #include <linux/irq_work.h>
 #include <linux/kthread.h>
+#include <linux/sched/loadavg.h>
 
 #include "../../kernel/sched/sched.h"
 #include "../cpufreq/cpufreq_governor.h"
