@@ -566,16 +566,15 @@ static int __tcp_grow_window(const struct sock *sk, const struct sk_buff *skb)
 
 static void tcp_grow_window(struct sock *sk, const struct sk_buff *skb)
 {
-	struct tcp_sock *tp = tcp_sk(sk);
 	int room;
-
-	room = min_t(int, tp->window_clamp, tcp_space(sk)) - tp->rcv_ssthresh;
+	struct tcp_sock *tp = tcp_sk(sk);
 #ifdef CONFIG_MPTCP
 	struct sock *meta_sk = mptcp(tp) ? mptcp_meta_sk(sk) : sk;
 	struct tcp_sock *meta_tp = tcp_sk(meta_sk);
 	if (is_meta_sk(sk))
 		return;
 #endif
+	room = min_t(int, tp->window_clamp, tcp_space(sk)) - tp->rcv_ssthresh;
 
 	/* Check #1 */
 #ifdef CONFIG_MPTCP
