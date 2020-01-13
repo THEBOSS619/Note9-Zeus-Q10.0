@@ -4991,7 +4991,7 @@
 			boost_table = < 100 598000 60 715000 30 832000 20 949000 10 1053000 0 >;
 			up_rate_limit_table = < 5 >;
 			down_rate_limit_table = < 5 >;
-			upscale_ratio_table = < 80 >;
+			upscale_ratio_table = < 100 949000 110 1053000 120 1248000 130 1456000 140 >;
 		};
 		domain@1 {
 			device_type = "freqvar-tune";
@@ -5000,7 +5000,7 @@
 			boost_table = < 20 858000 15 962000 5 1261000 0 >;
 			up_rate_limit_table = < 5 >;
 			down_rate_limit_table = < 5 >;
-			upscale_ratio_table = < 65 962000 80 1261000 90 >;
+			upscale_ratio_table = < 80 962000 85 1066000 90 1170000 95 1261000 100 >;
 		};
 	};
 
@@ -5025,9 +5025,9 @@
 		skip_lit_enabled = <0>;
 		cl_busy_ratio = <65>;
 		/* single_freq is parsed from ECT */
-		dual_freq = <2314000>;
-		triple_freq = <1794000>;
-		quad_freq = <1794000>;
+		dual_freq = <2496000>;
+		triple_freq = <2496000>;
+		quad_freq = <2314000>;
 		cal-id = <ACPM_DVFS_CPUCL1>;
 	};
 
@@ -5036,7 +5036,8 @@
 			device_type = "schedutil-domain";
 			shared-cpus = "0-3";
 
-			enabled = <0>;		/* Disable */
+			enabled = <1>;		/* Disable */
+			expired_time = <35>;	/* 35ms */
 			qos_min_class = <3>;
 		};
 
@@ -5045,7 +5046,7 @@
 			shared-cpus = "4-7";
 
 			enabled = <1>;		/* Enabled */
-			expired_time = <80>;	/* 80ms */
+			expired_time = <70>;	/* 70ms */
 			qos_min_class = <5>;
 		};
 	};
@@ -5082,7 +5083,7 @@
 					  2652000 1794000
 					  2496000 1794000
 					  2314000 1794000
-					  2158000 1794000
+					  2106000 1794000
 					  2002000 1794000
 					  1924000 1794000
 					  1794000 1794000
@@ -5109,7 +5110,7 @@
 					  2652000 1794000
 					  2496000 1794000
 					  2314000 1794000
-					  2158000 1794000
+					  2106000 1794000
 					  2002000 1794000
 					  1924000 1794000
 					  1794000 1794000
@@ -5150,7 +5151,8 @@
 					const-type = <CONSTRAINT_MIN>;
 					dm-type = <DM_MIF>;
 						/*  cpu     mif  */
-					table = < 1950000  845000
+					table = < 2002000  845000
+						  1950000  845000
 						  1794000  845000
 						  1690000  845000
 						  1456000  676000
@@ -5178,8 +5180,8 @@
 			dm-type = <DM_CPU_CL1>;
 
 			min-freq = <650000>;
-			max-freq = <1794000>;
-			policy-max = <1794000>;
+			max-freq = <2964000>;
+			policy-max = <2314000>;
 
 			/* PM QoS Class ID*/
 			pm_qos-min-class = <5>;
@@ -5194,7 +5196,7 @@
 					const-type = <CONSTRAINT_MIN>;
 					dm-type = <DM_MIF>;
 						/*  cpu     mif  */
-					table = < 2886000 1794000
+					table = < 2964000 1794000
 						  2860000 1794000
 						  2704000 1794000
 						  2652000 1794000
