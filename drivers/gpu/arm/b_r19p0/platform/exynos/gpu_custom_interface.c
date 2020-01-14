@@ -440,207 +440,6 @@ static ssize_t set_governor(struct device *dev, struct device_attribute *attr, c
 	return count;
 }
 
-static ssize_t show_max_lock_status(struct device *dev, struct device_attribute *attr, char *buf)
-{
-	ssize_t ret = 0;
-	unsigned long flags;
-	int i;
-	int max_lock_status[NUMBER_LOCK];
-	struct exynos_context *platform = (struct exynos_context *)pkbdev->platform_context;
-
-	if (!platform)
-		return -ENODEV;
-
-	spin_lock_irqsave(&platform->gpu_dvfs_spinlock, flags);
-	for (i = 0; i < NUMBER_LOCK; i++)
-		max_lock_status[i] = platform->user_max_lock[i];
-	spin_unlock_irqrestore(&platform->gpu_dvfs_spinlock, flags);
-
-	for (i = 0; i < NUMBER_LOCK; i++)
-		ret += snprintf(buf+ret, PAGE_SIZE-ret, "[%d:%d]", i,  max_lock_status[i]);
-
-	if (ret < PAGE_SIZE - 1) {
-		ret += snprintf(buf+ret, PAGE_SIZE-ret, "\n");
-	} else {
-		buf[PAGE_SIZE-2] = '\n';
-		buf[PAGE_SIZE-1] = '\0';
-		ret = PAGE_SIZE-1;
-	}
-
-	return ret;
-}
-
-static ssize_t show_min_lock_status(struct device *dev, struct device_attribute *attr, char *buf)
-{
-	ssize_t ret = 0;
-	unsigned long flags;
-	int i;
-	int min_lock_status[NUMBER_LOCK];
-	struct exynos_context *platform = (struct exynos_context *)pkbdev->platform_context;
-
-	if (!platform)
-		return -ENODEV;
-
-	spin_lock_irqsave(&platform->gpu_dvfs_spinlock, flags);
-	for (i = 0; i < NUMBER_LOCK; i++)
-		min_lock_status[i] = platform->user_min_lock[i];
-	spin_unlock_irqrestore(&platform->gpu_dvfs_spinlock, flags);
-
-	for (i = 0; i < NUMBER_LOCK; i++)
-		ret += snprintf(buf+ret, PAGE_SIZE-ret, "[%d:%d]", i,  min_lock_status[i]);
-
-	if (ret < PAGE_SIZE - 1) {
-		ret += snprintf(buf+ret, PAGE_SIZE-ret, "\n");
-	} else {
-		buf[PAGE_SIZE-2] = '\n';
-		buf[PAGE_SIZE-1] = '\0';
-		ret = PAGE_SIZE-1;
-	}
-
-	return ret;
-}
-
-static ssize_t show_max_lock_dvfs(struct device *dev, struct device_attribute *attr, char *buf)
-{
-	ssize_t ret = 0;
-	unsigned long flags;
-	int locked_clock = -1;
-	int user_locked_clock = -1;
-	struct exynos_context *platform = (struct exynos_context *)pkbdev->platform_context;
-
-	if (!platform)
-		return -ENODEV;
-
-	spin_lock_irqsave(&platform->gpu_dvfs_spinlock, flags);
-	locked_clock = platform->max_lock;
-	user_locked_clock = platform->user_max_lock_input;
-	spin_unlock_irqrestore(&platform->gpu_dvfs_spinlock, flags);
-
-	if (locked_clock > 0)
-		ret += snprintf(buf+ret, PAGE_SIZE-ret, "%d / %d", locked_clock, user_locked_clock);
-	else
-		ret += snprintf(buf+ret, PAGE_SIZE-ret, "-1");
-
-	if (ret < PAGE_SIZE - 1) {
-		ret += snprintf(buf+ret, PAGE_SIZE-ret, "\n");
-	} else {
-		buf[PAGE_SIZE-2] = '\n';
-		buf[PAGE_SIZE-1] = '\0';
-		ret = PAGE_SIZE-1;
-	}
-
-	return ret;
-}
-
-static ssize_t set_max_lock_dvfs(struct device *dev, struct device_attribute *attr, const char *buf, size_t count)
-{
-	int ret, clock = 0;
-	struct exynos_context *platform = (struct exynos_context *)pkbdev->platform_context;
-
-	if (!platform)
-		return -ENODEV;
-
-	if (sysfs_streq("0", buf)) {
-		platform->user_max_lock_input = 0;
-		gpu_dvfs_clock_lock(GPU_DVFS_MAX_UNLOCK, SYSFS_LOCK, 0);
-	} else {
-		ret = kstrtoint(buf, 0, &clock);
-		if (ret) {
-			GPU_LOG(DVFS_WARNING, DUMMY, 0u, 0u, "%s: invalid value\n", __func__);
-			return -ENOENT;
-		}
-
-		platform->user_max_lock_input = clock;
-
-		clock = gpu_dvfs_get_level_clock(clock);
-
-		ret = gpu_dvfs_get_level(clock);
-		if ((ret < gpu_dvfs_get_level(platform->gpu_max_clock)) || (ret > gpu_dvfs_get_level(platform->gpu_min_clock))) {
-			GPU_LOG(DVFS_WARNING, DUMMY, 0u, 0u, "%s: invalid clock value (%d)\n", __func__, clock);
-			return -ENOENT;
-		}
-
-		if (clock == platform->gpu_max_clock)
-			gpu_dvfs_clock_lock(GPU_DVFS_MAX_UNLOCK, SYSFS_LOCK, 0);
-		else
-			gpu_dvfs_clock_lock(GPU_DVFS_MAX_LOCK, SYSFS_LOCK, clock);
-	}
-
-	return count;
-}
-
-static ssize_t show_min_lock_dvfs(struct device *dev, struct device_attribute *attr, char *buf)
-{
-	ssize_t ret = 0;
-	unsigned long flags;
-	int locked_clock = -1;
-	int user_locked_clock = -1;
-	struct exynos_context *platform = (struct exynos_context *)pkbdev->platform_context;
-
-	if (!platform)
-		return -ENODEV;
-
-	spin_lock_irqsave(&platform->gpu_dvfs_spinlock, flags);
-	locked_clock = platform->min_lock;
-	user_locked_clock = platform->user_min_lock_input;
-	spin_unlock_irqrestore(&platform->gpu_dvfs_spinlock, flags);
-
-	if (locked_clock > 0)
-		ret += snprintf(buf+ret, PAGE_SIZE-ret, "%d / %d", locked_clock, user_locked_clock);
-	else
-		ret += snprintf(buf+ret, PAGE_SIZE-ret, "-1");
-
-	if (ret < PAGE_SIZE - 1) {
-		ret += snprintf(buf+ret, PAGE_SIZE-ret, "\n");
-	} else {
-		buf[PAGE_SIZE-2] = '\n';
-		buf[PAGE_SIZE-1] = '\0';
-		ret = PAGE_SIZE-1;
-	}
-
-	return ret;
-}
-
-static ssize_t set_min_lock_dvfs(struct device *dev, struct device_attribute *attr, const char *buf, size_t count)
-{
-	int ret, clock = 0;
-	struct exynos_context *platform = (struct exynos_context *)pkbdev->platform_context;
-
-	if (!platform)
-		return -ENODEV;
-
-	if (sysfs_streq("0", buf)) {
-		platform->user_min_lock_input = 0;
-		gpu_dvfs_clock_lock(GPU_DVFS_MIN_UNLOCK, SYSFS_LOCK, 0);
-	} else {
-		ret = kstrtoint(buf, 0, &clock);
-		if (ret) {
-			GPU_LOG(DVFS_WARNING, DUMMY, 0u, 0u, "%s: invalid value\n", __func__);
-			return -ENOENT;
-		}
-
-		platform->user_min_lock_input = clock;
-
-		clock = gpu_dvfs_get_level_clock(clock);
-
-		ret = gpu_dvfs_get_level(clock);
-		if ((ret < gpu_dvfs_get_level(platform->gpu_max_clock)) || (ret > gpu_dvfs_get_level(platform->gpu_min_clock))) {
-			GPU_LOG(DVFS_WARNING, DUMMY, 0u, 0u, "%s: invalid clock value (%d)\n", __func__, clock);
-			return -ENOENT;
-		}
-
-		if (clock > platform->gpu_max_clock_limit)
-			clock = platform->gpu_max_clock_limit;
-
-		if (clock == platform->gpu_min_clock)
-			gpu_dvfs_clock_lock(GPU_DVFS_MIN_UNLOCK, SYSFS_LOCK, 0);
-		else
-			gpu_dvfs_clock_lock(GPU_DVFS_MIN_LOCK, SYSFS_LOCK, clock);
-	}
-
-	return count;
-}
-
 static ssize_t show_down_staycount(struct device *dev, struct device_attribute *attr, char *buf)
 {
 	ssize_t ret = 0;
@@ -1376,10 +1175,6 @@ DEVICE_ATTR(perf, S_IRUGO, show_perf, NULL);
 #ifdef CONFIG_MALI_DVFS
 DEVICE_ATTR(dvfs, S_IRUGO|S_IWUSR, show_dvfs, set_dvfs);
 DEVICE_ATTR(dvfs_governor, S_IRUGO|S_IWUSR, show_governor, set_governor);
-DEVICE_ATTR(dvfs_max_lock_status, S_IRUGO, show_max_lock_status, NULL);
-DEVICE_ATTR(dvfs_min_lock_status, S_IRUGO, show_min_lock_status, NULL);
-DEVICE_ATTR(dvfs_max_lock, S_IRUGO|S_IWUSR, show_max_lock_dvfs, set_max_lock_dvfs);
-DEVICE_ATTR(dvfs_min_lock, S_IRUGO|S_IWUSR, show_min_lock_dvfs, set_min_lock_dvfs);
 DEVICE_ATTR(down_staycount, S_IRUGO|S_IWUSR, show_down_staycount, set_down_staycount);
 DEVICE_ATTR(highspeed_clock, S_IRUGO|S_IWUSR, show_highspeed_clock, set_highspeed_clock);
 DEVICE_ATTR(highspeed_load, S_IRUGO|S_IWUSR, show_highspeed_load, set_highspeed_load);
@@ -1970,26 +1765,6 @@ int gpu_create_sysfs_file(struct device *dev)
 		goto out;
 	}
 
-	if (device_create_file(dev, &dev_attr_dvfs_max_lock_status)) {
-		GPU_LOG(DVFS_ERROR, DUMMY, 0u, 0u, "couldn't create sysfs file [dvfs_max_lock_status]\n");
-		goto out;
-	}
-
-	if (device_create_file(dev, &dev_attr_dvfs_min_lock_status)) {
-		GPU_LOG(DVFS_ERROR, DUMMY, 0u, 0u, "couldn't create sysfs file [dvfs_min_lock_status]\n");
-		goto out;
-	}
-
-	if (device_create_file(dev, &dev_attr_dvfs_max_lock)) {
-		GPU_LOG(DVFS_ERROR, DUMMY, 0u, 0u, "couldn't create sysfs file [dvfs_max_lock]\n");
-		goto out;
-	}
-
-	if (device_create_file(dev, &dev_attr_dvfs_min_lock)) {
-		GPU_LOG(DVFS_ERROR, DUMMY, 0u, 0u, "couldn't create sysfs file [dvfs_min_lock]\n");
-		goto out;
-	}
-
 	if (device_create_file(dev, &dev_attr_down_staycount)) {
 		GPU_LOG(DVFS_ERROR, DUMMY, 0u, 0u, "couldn't create sysfs file [down_staycount]\n");
 		goto out;
@@ -2117,10 +1892,6 @@ void gpu_remove_sysfs_file(struct device *dev)
 #ifdef CONFIG_MALI_DVFS
 	device_remove_file(dev, &dev_attr_dvfs);
 	device_remove_file(dev, &dev_attr_dvfs_governor);
-	device_remove_file(dev, &dev_attr_dvfs_max_lock_status);
-	device_remove_file(dev, &dev_attr_dvfs_min_lock_status);
-	device_remove_file(dev, &dev_attr_dvfs_max_lock);
-	device_remove_file(dev, &dev_attr_dvfs_min_lock);
 	device_remove_file(dev, &dev_attr_down_staycount);
 	device_remove_file(dev, &dev_attr_highspeed_clock);
 	device_remove_file(dev, &dev_attr_highspeed_load);
