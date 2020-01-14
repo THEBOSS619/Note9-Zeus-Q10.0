@@ -1726,8 +1726,8 @@ static void configfs_composite_unbind(struct usb_gadget *gadget)
 	spin_unlock_irqrestore(&gi->spinlock, flags);
 }
 
-static int configfs_composite_setup(struct usb_gadget *gadget,
-		const struct usb_ctrlrequest *ctrl)
+__attribute__((unused)) static int configfs_composite_setup(struct usb_gadget *gadget,
+		const struct usb_ctrlrequest *ctrl __attribute__((unused)))
 {
 	struct usb_composite_dev *cdev;
 	struct gadget_info *gi;
@@ -1751,7 +1751,7 @@ static int configfs_composite_setup(struct usb_gadget *gadget,
 	return ret;
 }
 
-static void configfs_composite_disconnect(struct usb_gadget *gadget)
+__attribute__((unused)) static void configfs_composite_disconnect(struct usb_gadget *gadget __attribute__((unused)))
 {
 	struct usb_composite_dev *cdev;
 	struct gadget_info *gi;
