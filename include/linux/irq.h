@@ -100,7 +100,7 @@ enum {
 	IRQ_PER_CPU_DEVID	= (1 << 17),
 	IRQ_IS_POLLED		= (1 << 18),
 	IRQ_DISABLE_UNLAZY	= (1 << 19),
-	IRQ_AFFINITY_MANAGED	= (1 << 21),
+	IRQ_AFFINITY_MANAGED	= (1 << 20),
 };
 
 #define IRQF_MODIFY_MASK	\

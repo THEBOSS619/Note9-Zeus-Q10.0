@@ -694,6 +694,28 @@ int LZ4_decompress_fast_usingDict(const char *source, char *dest,
 		dictStart, dictSize);
 }
 
+/*-******************************
+ *	For backwards compatibility
+ ********************************/
+int lz4_decompress_unknownoutputsize(const unsigned char *src,
+	size_t src_len, unsigned char *dest, size_t *dest_len) {
+	*dest_len = LZ4_decompress_safe(src, dest,
+		src_len, *dest_len);
+
+	/*
+	 * Prior lz4_decompress_unknownoutputsize will return
+	 * 0 for success and a negative result for error
+	 * new LZ4_decompress_safe returns
+	 * - the length of data read on success
+	 * - and also a negative result on error
+	 * meaning when result > 0, we just return 0 here
+	 */
+	if (src_len > 0)
+		return 0;
+	else
+		return -1;
+}
+
 #ifndef STATIC
 EXPORT_SYMBOL(LZ4_decompress_safe);
 EXPORT_SYMBOL(LZ4_decompress_safe_partial);
