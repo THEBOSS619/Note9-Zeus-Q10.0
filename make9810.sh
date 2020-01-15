@@ -158,6 +158,8 @@ if [ "$3" == "gcc-9.1" ]; then
 	export CROSS_COMPILE="ccache "$TOOLCHAINS_DIRECTORY"linaro-64/bin/aarch64-linux-gnu-"
 elif [ "$3" == "gcc-10" ]; then
 	export CROSS_COMPILE="ccache "$TOOLCHAINS_DIRECTORY"GCC-10/bin/aarch64-linux-elf-"
+	export PLATFORM_VERSION=10.0.0
+	export ANDROID_MAJOR_VERSION=q
 	export CROSS_COMPILE_ARM32="ccache "$TOOLCHAINS_DIRECTORY"7.1/bin/arm-eabi-"
 	export LDLLD="ccache "$TOOLCHAINS_DIRECTORY"DragonTC-CLANG-9.0.5/bin/ld.lld"
 	export CC="ccache "$TOOLCHAINS_DIRECTORY"DragonTC-CLANG-9.0.5/bin/clang"
