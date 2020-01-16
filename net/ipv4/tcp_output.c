@@ -778,8 +778,6 @@ static unsigned int tcp_established_options(struct sock *sk, struct sk_buff *skb
 			      (remaining - TCPOLEN_SACK_BASE_ALIGNED) /
 			      TCPOLEN_SACK_PERBLOCK);
 #ifdef CONFIG_MPTCP
-		if (opts->num_sack_blocks)
-#else
 		if (likely(opts->num_sack_blocks))
 #endif
 			size += TCPOLEN_SACK_BASE_ALIGNED +
