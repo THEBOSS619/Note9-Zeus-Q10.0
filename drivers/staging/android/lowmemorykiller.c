@@ -555,6 +555,8 @@ void tune_lmk_param(int *other_free, int *other_file, struct shrink_control *sc)
 	}
 }
 
+static DEFINE_RATELIMIT_STATE(lmk_rs, DEFAULT_RATELIMIT_INTERVAL, 1);
+
 static unsigned long lowmem_scan(struct shrinker *s, struct shrink_control *sc)
 {
 	struct task_struct *tsk;
@@ -570,6 +572,15 @@ static unsigned long lowmem_scan(struct shrinker *s, struct shrink_control *sc)
 	int array_size = ARRAY_SIZE(lowmem_adj);
 	int other_free;
 	int other_file;
+	unsigned long nr_cma_free;
+	unsigned long nr_rbin_free, nr_rbin_pool, nr_rbin_alloc, nr_rbin_file;
+	int migratetype;
+#if defined(CONFIG_ZSWAP)
+	int zswap_stored_pages_temp;
+	int swap_rss;
+	int selected_swap_rss;
+#endif
+
 
 	if (mutex_lock_interruptible(&scan_mutex) < 0)
 		return 0;
@@ -585,17 +596,6 @@ static unsigned long lowmem_scan(struct shrinker *s, struct shrink_control *sc)
 					total_swapcache_pages();
 	else
 		other_file = 0;
-
-
-	static DEFINE_RATELIMIT_STATE(lmk_rs, DEFAULT_RATELIMIT_INTERVAL, 1);
-	unsigned long nr_cma_free;
-	unsigned long nr_rbin_free, nr_rbin_pool, nr_rbin_alloc, nr_rbin_file;
-	int migratetype;
-#if defined(CONFIG_ZSWAP)
-	int zswap_stored_pages_temp;
-	int swap_rss;
-	int selected_swap_rss;
-#endif
 
 	nr_cma_free = global_page_state(NR_FREE_CMA_PAGES);
 	migratetype = gfpflags_to_migratetype(sc->gfp_mask);
