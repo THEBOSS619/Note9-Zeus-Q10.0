@@ -111,8 +111,8 @@ static short adj_max_shift = 353;
 module_param_named(adj_max_shift, adj_max_shift, short, 0644);
 
 /* User knob to enable/disable adaptive lmk feature */
-static int enable_adaptive_lmk;
-module_param_named(enable_adaptive_lmk, enable_adaptive_lmk, int, 0644);
+static int enable_adaptive_lmk = 1;
+module_param_named(enable_adaptive_lmk, enable_adaptive_lmk, int, 0444);
 
 /*
  * This parameter controls the behaviour of LMK when vmpressure is in
@@ -126,7 +126,7 @@ module_param_named(vmpressure_file_min, vmpressure_file_min, int, 0644);
 
 /* User knob to enable/disable oom reaping feature */
 static int oom_reaper = 1;
-module_param_named(oom_reaper, oom_reaper, int, 0644);
+module_param_named(oom_reaper, oom_reaper, int, 0444);
 
 enum {
 	VMPRESSURE_NO_ADJUST = 0,
@@ -1148,7 +1148,7 @@ module_param_array_named(minfree, lowmem_minfree, uint, &lowmem_minfree_size,
 module_param_array_named(direct_minfree, lowmem_direct_minfree, uint,
 			 &lowmem_direct_minfree_size, 0644);
 module_param_named(debug_level, lowmem_debug_level, uint, S_IRUGO | S_IWUSR);
-module_param_named(lmk_fast_run, lmk_fast_run, int, S_IRUGO | S_IWUSR);
+module_param_named(lmk_fast_run, lmk_fast_run, int, 0444);
 module_param_named(lmkcount, lowmem_lmkcount, uint, 0444);
 module_param_named(lmkd_count, lmkd_count, int, 0644);
 module_param_named(lmkd_cricount, lmkd_cricount, int, 0644);
