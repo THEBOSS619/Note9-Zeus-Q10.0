@@ -4991,7 +4991,7 @@
 			boost_table = < 100 455000 60 598000 30 715000 20 832000 10 949000 0 >;
 			up_rate_limit_table = < 5 >;
 			down_rate_limit_table = < 5 >;
-			upscale_ratio_table = < 100 949000 110 1053000 120 1248000 130 1456000 140 1690000 190 >;
+			upscale_ratio_table = < 100 949000 110 1053000 120 1248000 130 1456000 140 1690000 150 >;
 		};
 		domain@1 {
 			device_type = "freqvar-tune";
@@ -5000,13 +5000,13 @@
 			boost_table = < 20 650000 15 741000 5 962000 0 >;
 			up_rate_limit_table = < 5 >;
 			down_rate_limit_table = < 5 >;
-			upscale_ratio_table = < 80 962000 90 1066000 100 1170000 110 1261000 120 1690000 190 >;
+			upscale_ratio_table = < 80 962000 90 1066000 100 1170000 110 1261000 120 1690000 130 >;
 		};
 	};
 
 	cpu_hotplug {
 		compatible = "exynos, cpu_hotplug";
-		boot_lock_time = <40>;
+		boot_lock_time = <35>;
 		fast_hp_cpus = "5-7";
 	};
 
@@ -5017,9 +5017,9 @@
 		dual_change_ms = <30>;
 		quad_change_ms = <15>;
 		big_heavy_thr = <600>;
-		lit_heavy_thr = <180>;
-		big_idle_thr = <106>;
-		lit_idle_thr = <46>;
+		lit_heavy_thr = <200>;
+		big_idle_thr = <110>;
+		lit_idle_thr = <50>;
 		ldsum_heavy_thr = <800>;
 		ldsum_enabled = <0>;
 		skip_lit_enabled = <0>;
@@ -5037,7 +5037,7 @@
 			shared-cpus = "0-3";
 
 			enabled = <1>;		/* Enabled */
-			expired_time = <40>;	/* 40ms */
+			expired_time = <35>;	/* 35ms */
 			qos_min_class = <3>;
 		};
 
@@ -5046,7 +5046,7 @@
 			shared-cpus = "4-7";
 
 			enabled = <1>;		/* Enabled */
-			expired_time = <75>;	/* 75ms */
+			expired_time = <70>;	/* 70ms */
 			qos_min_class = <5>;
 		};
 	};
@@ -5182,14 +5182,14 @@
 						  1950000  845000
 						  1794000  676000
 						  1690000  676000
-						  1456000  676000
+						  1456000  546000
 						  1248000  546000
-						  1053000  546000
-						   949000  546000
-						   832000  421000
-						   715000  421000
-						   598000  421000
-						   455000       0
+						  1053000  421000
+						   949000  421000
+						   832000  286000
+						   715000  286000
+						   598000  208000
+						   455000  208000
 						   >;
 				};
 				mif-skew {
