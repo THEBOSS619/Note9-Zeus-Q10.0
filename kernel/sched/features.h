@@ -3,7 +3,7 @@
  * them to run sooner, but does not allow tons of sleepers to
  * rip the spread apart.
  */
-SCHED_FEAT(GENTLE_FAIR_SLEEPERS, true)
+SCHED_FEAT(GENTLE_FAIR_SLEEPERS, false)
 
 /*
  * Place new tasks ahead so that they do not starve already running
@@ -49,7 +49,7 @@ SCHED_FEAT(NONTASK_CAPACITY, true)
  * Queue remote wakeups on the target CPU and process them
  * using the scheduler IPI. Reduces rq->lock contention/bounces.
  */
-SCHED_FEAT(TTWU_QUEUE, true)
+SCHED_FEAT(TTWU_QUEUE, false)
 
 /*
  * When doing wakeups, attempt to limit superfluous scans of the LLC domain.
@@ -103,7 +103,7 @@ SCHED_FEAT(HISI_FILTER, true)
  * ON: If the target CPU saves any energy, use that.
  * OFF: Use whichever of target or backup saves most.
  */
-SCHED_FEAT(FBT_STRICT_ORDER, false)
+SCHED_FEAT(FBT_STRICT_ORDER, true)
 
 #ifdef CONFIG_SCHED_EHMP
 SCHED_FEAT(EXYNOS_HMP, true)
