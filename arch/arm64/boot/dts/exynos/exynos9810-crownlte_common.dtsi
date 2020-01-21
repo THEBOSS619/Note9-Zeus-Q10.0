@@ -2453,7 +2453,7 @@
 			qos {
 				cl0 {
 					qos,label="LIT";
-					qos,delay_time=<0>;
+					qos,delay_time=<4>;
 					qos,table_size=<12>;
 					qos,table=<2002000 1950000 1794000 1690000 1456000 1248000 1053000 949000 832000 715000 598000
 						455000>;
@@ -2461,7 +2461,7 @@
 
 				cl1 {
 					qos,label="BIG";
-					qos,delay_time=<0>;
+					qos,delay_time=<4>;
 					qos,big_turbo_enable=<7>;
 					qos,s_table_size=<20>;
 					qos,s_table=<2964000 2860000 2704000 2652000 2496000 2314000 2106000 2002000 1924000 1794000 1690000 
@@ -2476,15 +2476,15 @@
 
 				mif {
 					qos,label="MIF";
-					qos,delay_time=<0>;
+					qos,delay_time=<5>;
 					qos,table_size=<12>;
 					qos,table=<2093000 2002000 1794000 1539000 1352000 1014000 845000 676000 546000 421000 286000 208000>;
 				};
 			};
 		sleep {
 			/* per msec */
-			sleep,suspend_threshold = <1000>;
-			sleep,resume_threshold = <1000>;
+			sleep,suspend_threshold = <750>;
+			sleep,resume_threshold = <750>;
 		};
 	};
 
