@@ -17,20 +17,7 @@
 #include "sched.h"
 #include "tune.h"
 
-unsigned long task_util(struct task_struct *p)
-{
-#ifdef CONFIG_SCHED_WALT
-	if (!walt_disabled && sysctl_sched_use_walt_task_util) {
-		unsigned long demand = p->ravg.demand;
-		return (demand << SCHED_CAPACITY_SHIFT) / walt_ravg_window;
-	}
-#endif
-
-	if (rt_task(p))
-		return p->rt.avg.util_avg;
-	else
-		return p->se.avg.util_avg;
-}
+extern unsigned long task_util(struct task_struct *p);
 
 static inline struct task_struct *task_of(struct sched_entity *se)
 {
