@@ -4280,7 +4280,7 @@ wl_cfgvendor_nan_parse_args(struct wiphy *wiphy, const void *buf,
 	int len, nan_config_cmd_data_t *cmd_data, uint32 *nan_attr_mask)
 {
 	int ret = BCME_OK;
-	int attr_type;
+	int attr_type = 0;
 	int rem = len;
 	const struct nlattr *iter;
 	struct bcm_cfg80211 *cfg = wiphy_priv(wiphy);
