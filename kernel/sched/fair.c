@@ -5343,7 +5343,7 @@ enqueue_task_fair(struct rq *rq, struct task_struct *p, int flags)
 	 * If CONFIG_ENERGY_MODEL and CONFIG_UCLAMP_TASK are both configured,
      * only boost for tasks set with non-null min-clamp.
 	 */
-	if (iowait_boosted(p))
+	if (iowait_boosted(p) && prefer_idle)
 		cpufreq_update_util(rq, SCHED_CPUFREQ_IOWAIT);
 #endif
 	for_each_sched_entity(se) {
