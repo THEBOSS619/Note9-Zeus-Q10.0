@@ -181,30 +181,6 @@ static inline u32 __pure crc32_le_generic(u32 crc, unsigned char const *p,
 	return crc;
 }
 
-#if CRC_LE_BITS == 1
-u32 __pure crc32_le(u32 crc, unsigned char const *p, size_t len)
-{
-	return crc32_le_generic(crc, p, len, NULL, CRCPOLY_LE);
-}
-u32 __pure __crc32c_le(u32 crc, unsigned char const *p, size_t len)
-{
-	return crc32_le_generic(crc, p, len, NULL, CRC32C_POLY_LE);
-}
-#else
-u32 __pure crc32_le(u32 crc, unsigned char const *p, size_t len)
-{
-	return crc32_le_generic(crc, p, len,
-			(const u32 (*)[256])crc32table_le, CRCPOLY_LE);
-}
-u32 __pure __crc32c_le(u32 crc, unsigned char const *p, size_t len)
-{
-	return crc32_le_generic(crc, p, len,
-			(const u32 (*)[256])crc32ctable_le, CRC32C_POLY_LE);
-}
-#endif
-EXPORT_SYMBOL(crc32_le);
-EXPORT_SYMBOL(__crc32c_le);
-
 /*
  * This multiplies the polynomials x and y modulo the given modulus.
  * This follows the "little-endian" CRC convention that the lsbit
