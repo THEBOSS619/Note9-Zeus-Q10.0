@@ -4988,16 +4988,16 @@
 			device_type = "freqvar-tune";
 			shared-cpus = "0-3";
 
-			boost_table = < 100 455000 60 598000 30 715000 20 832000 10 949000 0 >;
+			boost_table = < 100 455000 80 598000 60 715000 40 832000 20 949000 0 >;
 			up_rate_limit_table = < 5 >;
 			down_rate_limit_table = < 5 >;
-			upscale_ratio_table = < 100 949000 110 1053000 120 1248000 130 1456000 140 1690000 150 >;
+			upscale_ratio_table = < 80 949000 90 1053000 100 1248000 110 1456000 120 1690000 130 >;
 		};
 		domain@1 {
 			device_type = "freqvar-tune";
 			shared-cpus = "4-7";
 
-			boost_table = < 20 650000 15 741000 5 962000 0 >;
+			boost_table = < 30 650000 20 741000 10 962000 0 >;
 			up_rate_limit_table = < 5 >;
 			down_rate_limit_table = < 5 >;
 			upscale_ratio_table = < 80 962000 90 1066000 100 1170000 110 1261000 120 1690000 130 >;
@@ -5006,7 +5006,7 @@
 
 	cpu_hotplug {
 		compatible = "exynos, cpu_hotplug";
-		boot_lock_time = <35>;
+		boot_lock_time = <30>;
 		fast_hp_cpus = "5-7";
 	};
 
@@ -5037,7 +5037,7 @@
 			shared-cpus = "0-3";
 
 			enabled = <1>;		/* Enabled */
-			expired_time = <35>;	/* 35ms */
+			expired_time = <30>;	/* 30ms */
 			qos_min_class = <3>;
 		};
 
@@ -5046,7 +5046,7 @@
 			shared-cpus = "4-7";
 
 			enabled = <1>;		/* Enabled */
-			expired_time = <70>;	/* 70ms */
+			expired_time = <60>;	/* 60ms */
 			qos_min_class = <5>;
 		};
 	};
