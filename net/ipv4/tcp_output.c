@@ -857,22 +857,18 @@ static void tcp_tasklet_func(unsigned long data)
 		sk = (struct sock *)tp;
 #ifdef CONFIG_MPTCP
 		meta_sk = mptcp(tp) ? mptcp_meta_sk(sk) : sk;
-		smp_mb__before_atomic();
-		clear_bit(TSQ_QUEUED, &sk->sk_tsq_flags);
+		bh_lock_sock(meta_sk);
 
-		if (!sk->sk_lock.owned &&
-		    test_bit(TCP_TSQ_DEFERRED, &sk->sk_tsq_flags)) {
-			bh_lock_sock(meta_sk);
-			if (!sock_owned_by_user(meta_sk)) {
-				clear_bit(TCP_TSQ_DEFERRED, &sk->sk_tsq_flags);
+		if (!sock_owned_by_user(meta_sk)) {
+			tcp_tsq_handler(sk);
+			if (mptcp(tp))
 				tcp_tsq_handler(meta_sk);
-				if (mptcp(tp))
-					tcp_tsq_handler(meta_sk);
 		} else {
 			if (mptcp(tp) && sk->sk_state == TCP_CLOSE)
 				goto exit;
-			}
-			bh_unlock_sock(meta_sk);
+
+			/* defer the work to tcp_release_cb() */
+			set_bit(TCP_TSQ_DEFERRED, &sk->sk_tsq_flags);
 
 			if (mptcp(tp))
 				mptcp_tsq_flags(sk);
