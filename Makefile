@@ -306,8 +306,8 @@ CONFIG_SHELL := $(shell if [ -x "$$BASH" ]; then echo $$BASH; \
 
 HOSTCC       = gcc
 HOSTCXX      = g++
-HOSTCFLAGS   := -Wall -Wmissing-prototypes -Wstrict-prototypes -O3 -ffast-math -funsafe-math-optimizations -fomit-frame-pointer -std=gnu89
-HOSTCXXFLAGS = -O3 -ffast-math -funsafe-math-optimizations
+HOSTCFLAGS   := -Wall -Wmissing-prototypes -Wstrict-prototypes -O3 -pipe -ffast-math -funsafe-math-optimizations -fomit-frame-pointer -std=gnu89
+HOSTCXXFLAGS = -O3 -pipe -ffast-math -funsafe-math-optimizations
 
 # Decide whether to build built-in, modular, or both.
 # Normally, just do built-in.
@@ -768,9 +768,9 @@ ifdef CONFIG_CC_OPTIMIZE_FOR_SIZE
 KBUILD_CFLAGS	+= -Os $(call cc-disable-warning,maybe-uninitialized,)
 else
 ifdef CONFIG_PROFILE_ALL_BRANCHES
-KBUILD_CFLAGS	+= -O3 -ffast-math -funsafe-math-optimizations $(call cc-disable-warning,maybe-uninitialized,)
+KBUILD_CFLAGS	+= -O3 -pipe -ffast-math -funsafe-math-optimizations $(call cc-disable-warning,maybe-uninitialized,)
 else
-KBUILD_CFLAGS	+= -O3 -ffast-math -funsafe-math-optimizations $(call cc-disable-warning,maybe-uninitialized,)
+KBUILD_CFLAGS	+= -O3 -pipe -ffast-math -funsafe-math-optimizations $(call cc-disable-warning,maybe-uninitialized,)
 endif
 endif
 
@@ -874,14 +874,9 @@ KBUILD_CFLAGS   += $(call cc-option, -fno-var-tracking-assignments)
 
 ifdef CONFIG_DEBUG_INFO
 ifdef CONFIG_DEBUG_INFO_SPLIT
-KBUILD_CFLAGS   += $(call cc-option, -gsplit-dwarf, -g)
-else
-KBUILD_CFLAGS	+= -g
+KBUILD_CFLAGS	+= -g0
 endif
-KBUILD_AFLAGS	+= -Wa,-gdwarf-2
-endif
-ifdef CONFIG_DEBUG_INFO_DWARF4
-KBUILD_CFLAGS	+= $(call cc-option, -gdwarf-4,)
+KBUILD_AFLAGS	+= -g0
 endif
 
 ifdef CONFIG_RKP_CFP_JOPP
