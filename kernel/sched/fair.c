@@ -7157,7 +7157,6 @@ static inline int find_best_target(struct task_struct *p, int *backup_cpu,
 			}
 
 			/*
-			/*
 			 * Favor CPUs with smaller capacity for Non latency
 			 * sensitive tasks.
 			 */
