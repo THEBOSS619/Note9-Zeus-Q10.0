@@ -5182,6 +5182,7 @@ enqueue_task_fair(struct rq *rq, struct task_struct *p, int flags)
 			rq->nr_pinned_tasks++;
 	}
 
+
 	/*
 	 * Update SchedTune accounting.
 	 *
@@ -9699,7 +9700,7 @@ static struct sched_group *find_busiest_group(struct lb_env *env)
 		if (sds.busiest) {
 			int src_cpu = cpumask_first(sched_group_cpus(sds.busiest));
 
-			skip_lb = !ehmp_trigger_lb(src_cpu, env->dst_cpu);
+			skip_lb = !ehmp_trigger_lb(src_cpu, env->dst_cpu) && energy_aware() && !sd_overutilized(env->sd);
 		}
 	} else {
 		skip_lb = energy_aware() && !sd_overutilized(env->sd);
@@ -11068,7 +11069,6 @@ static void task_tick_fair(struct rq *rq, struct task_struct *curr, int queued)
 		task_tick_numa(rq, curr);
 
 	rq->misfit_task = !task_fits_max(curr, rq->cpu);
-#endif
 #ifdef CONFIG_EXYNOS_HOTPLUG_GOVERNOR
 	exynos_hpgov_update_rq_load(rq->cpu);
 #endif
