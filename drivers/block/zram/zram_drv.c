@@ -719,7 +719,7 @@ static ssize_t writeback_store(struct device *dev,
 			continue;
 		}
 
-		bio_init(&bio);
+		bio_init(&bio, NULL, 0);
 
 		bio.bi_max_vecs = 1;
 		bio.bi_io_vec = &bvec;
