@@ -3396,13 +3396,6 @@ static void tcp_update_rtt_min(struct sock *sk, u32 rtt_us, const int flag)
 	struct tcp_sock *tp = tcp_sk(sk);
 	u32 wlen = sysctl_tcp_min_rtt_wlen * HZ;
 
-	if ((flag & FLAG_ACK_MAYBE_DELAYED) && rtt_us > tcp_min_rtt(tp)) {
-		/* If the remote keeps returning delayed ACKs, eventually
-		 * the min filter would pick it up and overestimate the
-		 * prop. delay when it expires. Skip suspected delayed ACKs.
-		 */
-		return;
-	}
 	minmax_running_min(&tp->rtt_min, wlen, tcp_time_stamp,
 			   rtt_us ? : jiffies_to_usecs(1));
 }
@@ -3684,17 +3677,6 @@ static int tcp_clean_rtx_queue(struct sock *sk, int prior_fackets,
 	if (likely(first_ackt.v64) && !(flag & FLAG_RETRANS_DATA_ACKED)) {
 		seq_rtt_us = skb_mstamp_us_delta(now, &first_ackt);
 		ca_rtt_us = skb_mstamp_us_delta(now, &last_ackt);
-
-		if (pkts_acked == 1 && last_in_flight < tp->mss_cache &&
-		    last_in_flight && !prior_sacked && fully_acked &&
-		    sack->rate->prior_delivered + 1 == tp->delivered &&
-		    !(flag & (FLAG_CA_ALERT | FLAG_SYN_ACKED))) {
-			/* Conservatively mark a delayed ACK. It's typically
-			 * from a lone runt packet over the round trip to
-			 * a receiver w/o out-of-order or CE events.
-			 */
-			flag |= FLAG_ACK_MAYBE_DELAYED;
-		}
 	}
 	if (sack->first_sackt.v64) {
 		sack_rtt_us = skb_mstamp_us_delta(now, &sack->first_sackt);
