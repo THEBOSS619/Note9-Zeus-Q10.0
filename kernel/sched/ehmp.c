@@ -18,6 +18,15 @@
 #include "tune.h"
 
 extern unsigned long task_util(struct task_struct *p);
+static bool _sd_overutilized(struct sched_domain *sd)
+{
+	return sd->shared->overutilized;
+}
+static int _set_sd_overutilized(struct sched_domain *sd)
+{
+	sd->shared->overutilized = true;
+	return 0;
+}
 
 static inline struct task_struct *task_of(struct sched_entity *se)
 {
@@ -188,8 +197,8 @@ bool cpu_overutilized(int cpu)
 
 static bool inline lbt_top_overutilized(int cpu)
 {
-	struct rq *rq = cpu_rq(cpu);
-	return sched_feat(ENERGY_AWARE) && rq->rd->overutilized;
+	struct sched_domain *sd;
+	return sched_feat(ENERGY_AWARE) && _set_sd_overutilized(sd);
 }
 
 static bool inline lbt_bot_overutilized(int cpu)
@@ -1789,7 +1798,9 @@ int exynos_select_cpu(struct task_struct *p, int prev_cpu, int sync)
 			goto check_ontime;
 	}
 
-	if (sched_feat(ENERGY_AWARE) && !(cpu_rq(prev_cpu)->rd->overutilized)) {
+	sd = rcu_dereference(cpu_rq(prev_cpu)->sd);
+
+	if (sched_feat(ENERGY_AWARE) && sd && !_sd_overutilized(sd)) {
 		target_cpu = select_energy_cpu_brute(p, prev_cpu, sync);
 		if (cpu_selected(target_cpu))
 			goto check_ontime;
