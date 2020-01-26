@@ -5037,7 +5037,7 @@
 			shared-cpus = "0-3";
 
 			enabled = <1>;		/* Enabled */
-			expired_time = <30>;	/* 30ms */
+			expired_time = <25>;	/* 25ms */
 			qos_min_class = <3>;
 		};
 
@@ -5046,7 +5046,7 @@
 			shared-cpus = "4-7";
 
 			enabled = <1>;		/* Enabled */
-			expired_time = <60>;	/* 60ms */
+			expired_time = <50>;	/* 50ms */
 			qos_min_class = <5>;
 		};
 	};
@@ -5178,7 +5178,7 @@
 					const-type = <CONSTRAINT_MIN>;
 					dm-type = <DM_MIF>;
 						/*  cpu     mif  */
-					table = < 2002000  845000
+					table = < 2002000  1014000
 						  1950000  845000
 						  1794000  676000
 						  1690000  676000
