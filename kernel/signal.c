@@ -1398,7 +1398,7 @@ int kill_pid_info(int sig, struct siginfo *info, struct pid *pid)
 							   &rt_param);
 				set_cpus_allowed_ptr(p, cpu_perf_mask);
 
-				if (!state_suspended()) {
+				if (!state_suspended) {
 					devfreq_boost_kick_max(DEVFREQ_EXYNOS_MIF, 500);
 				}
 			}
