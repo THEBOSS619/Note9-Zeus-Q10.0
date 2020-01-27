@@ -5132,8 +5132,10 @@ enqueue_task_fair(struct rq *rq, struct task_struct *p, int flags)
 	 * If in_iowait is set, the code below may not trigger any cpufreq
 	 * utilization updates, so do it here explicitly with the IOWAIT flag
 	 * passed.
+	 * If CONFIG_ENERGY_MODEL and CONFIG_UCLAMP_TASK are both configured,
+     * only boost for tasks set with non-null min-clamp.
 	 */
-	if (p->in_iowait)
+	if (iowait_boosted(p))
 		cpufreq_update_util(rq, SCHED_CPUFREQ_IOWAIT);
 
 	for_each_sched_entity(se) {
