@@ -1815,6 +1815,13 @@ static inline int hrtick_enabled(struct rq *rq)
 #ifdef CONFIG_SMP
 extern void sched_avg_update(struct rq *rq);
 
+#if defined(CONFIG_ENERGY_MODEL)
+static inline bool iowait_boosted(struct task_struct *p)
+{
+	return p->in_iowait;
+}
+#endif /* defined(CONFIG_ENERGY_MODEL) */
+
 #ifndef arch_scale_freq_capacity
 static __always_inline
 unsigned long arch_scale_freq_capacity(struct sched_domain *sd, int cpu)
