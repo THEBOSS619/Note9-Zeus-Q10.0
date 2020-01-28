@@ -466,7 +466,7 @@ static ssize_t store_global_boost(struct kobject *kobj,
 static struct kobj_attribute global_boost_attr =
 __ATTR(global_boost, 0644, show_global_boost, store_global_boost);
 
-#define BOOT_BOOST_DURATION 40000000	/* microseconds */
+#define BOOT_BOOST_DURATION 100000000	/* microseconds = 100s*/
 unsigned long global_boost(void)
 {
 	u64 now = ktime_to_us(ktime_get());
