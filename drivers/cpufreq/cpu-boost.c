@@ -43,7 +43,6 @@ module_param(input_boost_ms, uint, 0644);
 static unsigned int sched_boost_on_input;
 module_param(sched_boost_on_input, uint, 0644);
 
-static bool sched_boost_active;
 #ifdef CONFIG_DYNAMIC_STUNE_BOOST
 static int dynamic_stune_boost;
 module_param(dynamic_stune_boost, uint, 0644);
@@ -169,7 +168,7 @@ static void update_policy_online(void)
 
 static void do_input_boost_rem(struct work_struct *work)
 {
-	unsigned int i, ret;
+	unsigned int i;
 	struct cpu_sync *i_sync_info;
 
 	/* Reset the input_boost_min for all CPUs in the system */
@@ -190,12 +189,6 @@ static void do_input_boost_rem(struct work_struct *work)
 	/* Update policies for all online CPUs */
 	update_policy_online();
 
-	if (sched_boost_active) {
-		ret = sched_set_boost(0);
-		if (ret)
-			pr_err("cpu-boost: HMP boost disable failed\n");
-		sched_boost_active = false;
-	}
 }
 
 static void do_input_boost(struct kthread_work *work)
@@ -204,10 +197,6 @@ static void do_input_boost(struct kthread_work *work)
 	struct cpu_sync *i_sync_info;
 
 	cancel_delayed_work_sync(&input_boost_rem);
-	if (sched_boost_active) {
-		sched_set_boost(0);
-		sched_boost_active = false;
-	}
 
 	if (stune_boost_active) {
 		reset_stune_boost("top-app", boost_slot);
@@ -224,14 +213,6 @@ static void do_input_boost(struct kthread_work *work)
 	/* Update policies for all online CPUs */
 	update_policy_online();
 
-	/* Enable scheduler boost to migrate tasks to big cluster */
-	if (sched_boost_on_input > 0) {
-		ret = sched_set_boost(sched_boost_on_input);
-		if (ret)
-			pr_err("cpu-boost: HMP boost enable failed\n");
-		else
-			sched_boost_active = true;
-	}
 #ifdef CONFIG_DYNAMIC_STUNE_BOOST
 	/* Set dynamic stune boost value */
 	ret = do_stune_boost("top-app", dynamic_stune_boost, &boost_slot);
@@ -257,7 +238,7 @@ static void cpuboost_input_event(struct input_handle *handle,
 	if (queuing_blocked(&cpu_boost_worker, &input_boost_work))
 		return;
 
-	queue_kthread_work(&cpu_boost_worker, &input_boost_work);
+	kthread_queue_work(&cpu_boost_worker, &input_boost_work);
 	last_input_time = ktime_to_us(ktime_get());
 }
 
@@ -350,7 +331,7 @@ static int cpu_boost_init(void)
 		cpumask_set_cpu(i, &sys_bg_mask);
 	}
 
-	init_kthread_worker(&cpu_boost_worker);
+	kthread_init_worker(&cpu_boost_worker);
 	cpu_boost_worker_thread = kthread_create(kthread_worker_fn,
 		&cpu_boost_worker, "cpu_boost_worker_thread");
 	if (IS_ERR(cpu_boost_worker_thread)) {
@@ -368,7 +349,7 @@ static int cpu_boost_init(void)
 	/* Wake it up! */
 	wake_up_process(cpu_boost_worker_thread);
 
-	init_kthread_work(&input_boost_work, do_input_boost);
+	kthread_init_work(&input_boost_work, do_input_boost);
 	INIT_DELAYED_WORK(&input_boost_rem, do_input_boost_rem);
 
 	for_each_possible_cpu(cpu) {
