@@ -40,8 +40,8 @@ static struct kthread_work input_boost_work;
 static unsigned int input_boost_enabled = 1;
 module_param(input_boost_enabled, uint, 0644);
 
-static unsigned int input_boost_ms = 40;
-module_param(input_boost_ms, uint, 0644);
+static unsigned int input_boost_ms = CONFIG_INPUT_BOOST_DURATION_MS;
+module_param_named(input_boost_duration, input_boost_ms, uint, 0644);
 
 static unsigned int sched_boost_on_input;
 module_param(sched_boost_on_input, uint, 0644);
@@ -136,6 +136,13 @@ static int boost_adjust_notify(struct notifier_block *nb, unsigned long val,
 			break;
 
 		ib_min = min(ib_min, policy->max);
+
+		/*
+		 * If the new boosted freq is below or equal to the current
+		 * min freq, bail early
+		 */
+		if (ib_min <= policy->min)
+			break;
 
 		pr_debug("CPU%u policy min before boost: %u kHz\n",
 			 cpu, policy->min);
@@ -389,6 +396,25 @@ static int cpu_boost_init(void)
 	for_each_possible_cpu(cpu) {
 		s = &per_cpu(sync_info, cpu);
 		s->cpu = cpu;
+		//little//
+		if (cpu == 0)
+			s->input_boost_freq = CONFIG_INPUT_BOOST_FREQ_LITTLE;
+		if (cpu == 1)
+			s->input_boost_freq = CONFIG_INPUT_BOOST_FREQ_LITTLE;
+		if (cpu == 2)
+			s->input_boost_freq = CONFIG_INPUT_BOOST_FREQ_LITTLE;
+		if (cpu == 3)
+			s->input_boost_freq = CONFIG_INPUT_BOOST_FREQ_LITTLE;
+		//big//
+		if (cpu == 4)
+			s->input_boost_freq = CONFIG_INPUT_BOOST_FREQ_BIG;
+		if (cpu == 5)
+			s->input_boost_freq = CONFIG_INPUT_BOOST_FREQ_BIG;
+		if (cpu == 6)
+			s->input_boost_freq = CONFIG_INPUT_BOOST_FREQ_BIG;
+		if (cpu == 7)
+			s->input_boost_freq = CONFIG_INPUT_BOOST_FREQ_BIG;
+
 	}
 	cpufreq_register_notifier(&boost_adjust_nb, CPUFREQ_POLICY_NOTIFIER);
 
