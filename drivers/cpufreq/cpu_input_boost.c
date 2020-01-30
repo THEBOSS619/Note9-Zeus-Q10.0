@@ -66,13 +66,14 @@ module_param(suspend_root_stune_boost, int, 0644);
 /* Available bits for boost_drv state */
 #define SCREEN_AWAKE		BIT(0)
 #define INPUT_BOOST		BIT(1)
-#define MAX_BOOST		BIT(2)
-#define GENERAL_BOOST		BIT(3)
-#define INPUT_STUNE_BOOST	BIT(4)
-#define MAX_STUNE_BOOST		BIT(5)
-#define GENERAL_STUNE_BOOST	BIT(6)
-#define DISPLAY_STUNE_BOOST	BIT(7)
-#define DISPLAY_BG_STUNE_BOOST	BIT(8)
+#define WAKE_BOOST		BIT(2)
+#define MAX_BOOST		BIT(3)
+#define GENERAL_BOOST		BIT(4)
+#define INPUT_STUNE_BOOST	BIT(5)
+#define MAX_STUNE_BOOST		BIT(6)
+#define GENERAL_STUNE_BOOST	BIT(7)
+#define DISPLAY_STUNE_BOOST	BIT(8)
+#define DISPLAY_BG_STUNE_BOOST	BIT(9)
 
 struct boost_drv {
 	struct kthread_worker worker;
@@ -210,7 +211,7 @@ static void unboost_all_cpus(struct boost_drv *b)
 	    !cancel_delayed_work_sync(&b->max_unboost))
 		return;
 
-	clear_boost_bit(b, INPUT_BOOST | MAX_BOOST | GENERAL_BOOST);
+	clear_boost_bit(b, INPUT_BOOST | WAKE_BOOST | MAX_BOOST | GENERAL_BOOST);
 	update_online_cpu_policy();
 
 	clear_stune_boost(b, state, INPUT_STUNE_BOOST, ST_TA, b->input_stune_slot);
@@ -360,7 +361,7 @@ static void max_unboost_worker(struct work_struct *work)
 					   typeof(*b), max_unboost);
 	u32 state = get_boost_state(b);
 
-	clear_boost_bit(b, MAX_BOOST);
+	clear_boost_bit(b, WAKE_BOOST | MAX_BOOST);
 	update_online_cpu_policy();
 
 	clear_stune_boost(b, state, MAX_STUNE_BOOST, ST_TA, b->max_stune_slot);
@@ -427,7 +428,6 @@ static int cpu_notifier_cb(struct notifier_block *nb,
 	else
 		min_freq = get_min_freq(b, policy->cpu, state);
 		policy->min = max(policy->cpuinfo.min_freq, min_freq);
-	}
 	return NOTIFY_OK;
 }
 
