@@ -730,8 +730,8 @@ static unsigned long task_h_load(struct task_struct *p);
 #endif
 #ifdef CONFIG_PELT_HALFLIFE_16
 #define LOAD_AVG_PERIOD 16
-#define LOAD_AVG_MAX 24152
-#define LOAD_AVG_MAX_N 517
+#define LOAD_AVG_MAX 24130
+#define LOAD_AVG_MAX_N 172
 #endif
 #ifdef CONFIG_PELT_HALFLIFE_8
 #define LOAD_AVG_PERIOD 8
