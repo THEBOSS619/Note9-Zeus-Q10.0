@@ -44,7 +44,7 @@ static inline struct sched_entity *se_of(struct sched_avg *sa)
 #define LOAD_AVG_MAX 47742 /* maximum possible load avg */
 #endif
 #ifdef CONFIG_PELT_HALFLIFE_16
-#define LOAD_AVG_MAX 24152
+#define LOAD_AVG_MAX 24130
 #endif
 #ifdef CONFIG_PELT_HALFLIFE_8
 #define LOAD_AVG_MAX 12337
