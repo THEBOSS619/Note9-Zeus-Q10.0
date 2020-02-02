@@ -7353,7 +7353,7 @@ static int wake_cap(struct task_struct *p, int cpu, int prev_cpu)
 		task_util(p) * capacity_margin_of(min_cpu);
 }
 
-int select_energy_cpu_brute(struct task_struct *p, int prev_cpu)
+int select_energy_cpu_brute(struct task_struct *p, int prev_cpu, int sync)
 {
 	bool boosted, prefer_idle;
 	struct sched_domain *sd;
@@ -7364,7 +7364,7 @@ int select_energy_cpu_brute(struct task_struct *p, int prev_cpu)
 	schedstat_inc(p->se.statistics.nr_wakeups_secb_attempts);
 	schedstat_inc(this_rq()->eas_stats.secb_attempts);
 
-	if (sysctl_sched_sync_hint_enable) {
+	if (sysctl_sched_sync_hint_enable && sync) {
 		int cpu = smp_processor_id();
 
 		if (cpumask_test_cpu(cpu, tsk_cpus_allowed(p))) {
@@ -7761,7 +7761,7 @@ select_task_rq_fair(struct task_struct *p, int prev_cpu, int sd_flag, int wake_f
 	sd = rcu_dereference(cpu_rq(prev_cpu)->sd);
 	if (energy_aware() && sd && !sd_overutilized(sd) &&
 		(sched_feat(EAS_PREFER_IDLE) && 
-			!(schedtune_prefer_idle(p) > 0))) {
+			!(schedtune_prefer_idle(p) > 0 && !sync))) {
 		new_cpu = find_energy_efficient_cpu(p, prev_cpu);
 		if (new_cpu >= 0)
 			return new_cpu;
@@ -11312,7 +11312,7 @@ void check_for_migration(struct rq *rq, struct task_struct *p)
 			return;
 
 		rcu_read_lock();
-		new_cpu = select_energy_cpu_brute(p, cpu);
+		new_cpu = select_energy_cpu_brute(p, cpu, 0);
 		rcu_read_unlock();
 		if (capacity_orig_of(new_cpu) > capacity_orig_of(cpu)) {
 			active_balance = kick_active_balance(rq, p, new_cpu);
