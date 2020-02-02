@@ -351,7 +351,7 @@ static struct governor_attr freqvar_up_rate_limit = __ATTR_RW(freqvar_up_rate_li
 static struct governor_attr freqvar_down_rate_limit = __ATTR_RW(freqvar_down_rate_limit);
 
 void sugov_update_rate_limit_us(struct cpufreq_policy *policy,
-			int up_rate_limit_ms, int down_rate_limit_ms);
+			int up_rate_limit_us, int down_rate_limit_us);
 static void freqvar_rate_limit_update(int cpu, int new_freq)
 {
 	struct freqvar_rate_limit *rate_limit;

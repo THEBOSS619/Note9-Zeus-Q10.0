@@ -4988,18 +4988,18 @@
 			device_type = "freqvar-tune";
 			shared-cpus = "0-3";
 
-			boost_table = < 100 455000 80 598000 60 715000 40 832000 20 949000 0 >;
-			up_rate_limit_table = < 5 >;
-			down_rate_limit_table = < 5 >;
-			upscale_ratio_table = < 80 949000 90 1053000 100 1248000 110 1456000 120 1690000 130 >;
+			boost_table = < 30 598000 20 715000 15 832000 10 949000 5 1053000 0 >;
+			up_rate_limit_table = < 1000 >;
+			down_rate_limit_table = < 2500 >;
+			upscale_ratio_table = < 140 598000 130 715000 120 832000 110 949000 100 1053000 90 1248000 90 1456000 90 1690000 90 1794000 90 >;
 		};
 		domain@1 {
 			device_type = "freqvar-tune";
 			shared-cpus = "4-7";
 
-			boost_table = < 30 650000 20 741000 10 962000 0 >;
-			up_rate_limit_table = < 5 >;
-			down_rate_limit_table = < 5 >;
+			boost_table = < 20 858000 15 962000 5 1261000 0 >;
+			up_rate_limit_table = < 1000 >;
+			down_rate_limit_table = < 2500 >;
 			upscale_ratio_table = < 80 962000 90 1066000 100 1170000 110 1261000 120 1690000 130 >;
 		};
 	};
@@ -5036,8 +5036,8 @@
 			device_type = "schedutil-domain";
 			shared-cpus = "0-3";
 
-			enabled = <1>;		/* Enabled */
-			expired_time = <15>;	/* 15ms */
+			enabled = <0>;		/* Disabled */
+			expired_time = <0>;	/* 0ms */
 			qos_min_class = <3>;
 		};
 
@@ -5046,7 +5046,7 @@
 			shared-cpus = "4-7";
 
 			enabled = <1>;		/* Enabled */
-			expired_time = <30>;	/* 30ms */
+			expired_time = <40>;	/* 40ms */
 			qos_min_class = <5>;
 		};
 	};
