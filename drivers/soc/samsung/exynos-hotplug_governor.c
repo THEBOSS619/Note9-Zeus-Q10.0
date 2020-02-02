@@ -1076,8 +1076,8 @@ static int __init exynos_hpgov_parse_dt(void)
 		exynos_hpgov.single_change_ms = 25;
 		exynos_hpgov.dual_change_ms = 20;
 		exynos_hpgov.quad_change_ms = 10;
-		exynos_hpgov.big_heavy_thr = 650;
-		exynos_hpgov.lit_heavy_thr = 225;
+		exynos_hpgov.big_heavy_thr = 500;
+		exynos_hpgov.lit_heavy_thr = 200;
 		exynos_hpgov.big_idle_thr = 125;
 		exynos_hpgov.lit_idle_thr = 75;
 		exynos_hpgov.ldsum_heavy_thr = 800;
