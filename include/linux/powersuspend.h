@@ -20,9 +20,7 @@
 #define _LINUX_POWERSUSPEND_H
 
 #include <linux/list.h>
-
-#define POWER_SUSPEND_INACTIVE	0
-#define POWER_SUSPEND_ACTIVE	1
+#include <linux/syscalls.h> /* sys_sync */
 
 #define POWER_SUSPEND_AUTOSLEEP	0	// Use kernel autosleep as hook
 #define POWER_SUSPEND_USERSPACE	1	// Use fauxclock as trigger
@@ -34,6 +32,9 @@ struct power_suspend {
 	void (*suspend)(struct power_suspend *h);
 	void (*resume)(struct power_suspend *h);
 };
+
+#define POWER_SUSPEND_INACTIVE	0
+#define POWER_SUSPEND_ACTIVE	1
 
 void register_power_suspend(struct power_suspend *handler);
 void unregister_power_suspend(struct power_suspend *handler);
