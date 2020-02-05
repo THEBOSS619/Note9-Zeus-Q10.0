@@ -5057,7 +5057,7 @@ SYSCALL_DEFINE0(sched_yield)
 
 	schedstat_inc(rq->yld_count);
 	if (rq->curr->yield_count == sysctl_sched_yield_sleep_threshold)
-		schedstat_inc(rq, yield_sleep_count);
+		schedstat_inc(rq->yield_sleep_count);
 	current->sched_class->yield_task(rq);
 
 	/*
