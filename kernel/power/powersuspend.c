@@ -26,6 +26,13 @@
  *
  *  v1.8 - add debug sysfs trigger to see how driver work
  *
+ *  v1.9.1 Updated the depecrated method of declaring work but simply declaring
+ *		  the two work structs.  Also actually INITialized the work on init, and
+ *        flushed it on exit.
+ *
+ *  v1.9.2 Included State Notifier hooks to run explicitly once power state changes
+ *		  are completed to prevent blocking issues.
+ *
  * This software is licensed under the terms of the GNU General Public
  * License version 2, as published by the Free Software Foundation, and
  * may be copied, distributed, and modified under those terms.
@@ -42,8 +49,11 @@
 #include <linux/mutex.h>
 #include <linux/workqueue.h>
 
-#define MAJOR_VERSION	1
-#define MINOR_VERSION	8
+#include "power.h"
+
+#define MAJOR_VERSION	3
+#define MINOR_VERSION	1
+#define SUB_MINOR_VERSION 0
 
 /*
  * debug = 1 will print all
@@ -60,14 +70,21 @@ do { 				\
 struct workqueue_struct *suspend_work_queue;
 
 static DEFINE_MUTEX(power_suspend_lock);
+static DEFINE_SPINLOCK(state_lock);
 static LIST_HEAD(power_suspend_handlers);
+static struct workqueue_struct *pwrsup_wq;
+struct work_struct power_suspend_work;
+struct work_struct power_resume_work;
+
 static void power_suspend(struct work_struct *work);
 static void power_resume(struct work_struct *work);
-static DECLARE_WORK(power_suspend_work, power_suspend);
-static DECLARE_WORK(power_resume_work, power_resume);
-static DEFINE_SPINLOCK(state_lock);
 
-static int state; // Yank555.lu : Current powersave state (screen on / off)
+/* Yank555.lu : Current powersuspend state (screen on / off) */
+static int state;
+/* Robcore: Provide an option to sync the system on powersuspend */
+static unsigned int sync_on_powersuspend;
+#define GLOBAL_PM 1
+static unsigned int use_global_suspend = GLOBAL_PM;
 static int mode;  // Yank555.lu : Current powersave mode  (kernel / userspace / panel / hybrid)
 
 void register_power_suspend(struct power_suspend *handler)
@@ -98,6 +115,15 @@ static void power_suspend(struct work_struct *work)
 	unsigned long irqflags;
 	int abort = 0;
 
+	cancel_work_sync(&power_resume_work);
+
+	if ((system_state == SYSTEM_RESTART)
+		|| (system_state == SYSTEM_POWER_OFF)) {
+		pr_info("[POWERSUSPEND] Ignoring Unsupported System \
+				State\n");
+		return;
+	}
+
 	dprintk("[POWERSUSPEND] entering suspend...\n");
 	mutex_lock(&power_suspend_lock);
 	spin_lock_irqsave(&state_lock, irqflags);
@@ -105,8 +131,10 @@ static void power_suspend(struct work_struct *work)
 		abort = 1;
 	spin_unlock_irqrestore(&state_lock, irqflags);
 
-	if (abort)
-		goto abort_suspend;
+	if (abort) {
+		mutex_unlock(&power_suspend_lock);
+		return;
+	}
 
 	dprintk("[POWERSUSPEND] suspending...\n");
 	list_for_each_entry(pos, &power_suspend_handlers, link) {
@@ -114,9 +142,23 @@ static void power_suspend(struct work_struct *work)
 			pos->suspend(pos);
 		}
 	}
-	dprintk("[POWERSUSPEND] suspend completed.\n");
-abort_suspend:
 	mutex_unlock(&power_suspend_lock);
+	dprintk("[POWERSUSPEND] suspend completed.\n");
+	if (sync_on_powersuspend) {
+		pr_info("[POWERSUSPEND] Syncing\n");
+		sys_sync();
+	}
+	if (use_global_suspend) {
+		if (!mutex_trylock(&pm_mutex)) {
+			pr_info("[POWERSUSPEND] Global Suspend Busy!\n");
+			return;
+		}
+		pr_info("[POWERSUSPEND] Suspend Completed. \
+				Calling System Suspend!\n");
+		pm_suspend(PM_HIBERNATION_PREPARE);
+		mutex_unlock(&pm_mutex);
+	} else
+		pr_info("[POWERSUSPEND] Suspend Completed.\n");
 }
 
 static void power_resume(struct work_struct *work)
@@ -125,6 +167,7 @@ static void power_resume(struct work_struct *work)
 	unsigned long irqflags;
 	int abort = 0;
 
+	cancel_work_sync(&power_suspend_work);
 	dprintk("[POWERSUSPEND] entering resume...\n");
 	mutex_lock(&power_suspend_lock);
 	spin_lock_irqsave(&state_lock, irqflags);
@@ -158,12 +201,12 @@ void set_power_suspend_state(int new_state)
 			dprintk("[POWERSUSPEND] state activated.\n");
 			state = new_state;
 			power_suspended = true;
-			schedule_work(&power_suspend_work);
+			queue_work(pwrsup_wq, &power_suspend_work);
 		} else if (state == POWER_SUSPEND_ACTIVE && new_state == POWER_SUSPEND_INACTIVE) {
 			dprintk("[POWERSUSPEND] state deactivated.\n");
 			state = new_state;
 			power_suspended = false;
-			schedule_work(&power_resume_work);
+			queue_work(pwrsup_wq, &power_resume_work);
 		}
 		spin_unlock_irqrestore(&state_lock, irqflags);
 	} else {
@@ -192,6 +235,59 @@ void set_power_suspend_state_panel_hook(int new_state)
 EXPORT_SYMBOL(set_power_suspend_state_panel_hook);
 
 // ------------------------------------------ sysfs interface ------------------------------------------
+
+static ssize_t power_suspend_sync_show(struct kobject *kobj,
+		struct kobj_attribute *attr, char *buf)
+{
+        return sprintf(buf, "%u\n", sync_on_powersuspend);
+}
+
+static ssize_t power_suspend_sync_store(struct kobject *kobj,
+		struct kobj_attribute *attr, const char *buf, size_t count)
+{
+	unsigned int val;
+
+	sscanf(buf, "%d\n", &val);
+
+	if (val <= 0)
+		val = 0;
+	if (val >= 1)
+		val = 1;
+
+	sync_on_powersuspend = val;
+	return count;
+}
+
+static struct kobj_attribute power_suspend_sync_attribute =
+	__ATTR(power_suspend_sync, 0644,
+		power_suspend_sync_show,
+		power_suspend_sync_store);
+static ssize_t power_suspend_use_global_suspend_show(struct kobject *kobj,
+		struct kobj_attribute *attr, char *buf)
+{
+        return sprintf(buf, "%u\n", use_global_suspend);
+}
+
+static ssize_t power_suspend_use_global_suspend_store(struct kobject *kobj,
+		struct kobj_attribute *attr, const char *buf, size_t count)
+{
+	unsigned int val;
+
+	sscanf(buf, "%u\n", &val);
+
+	if (val <= 0)
+		val = 0;
+	if (val >= 1)
+		val = 1;
+
+	use_global_suspend = val;
+	return count;
+}
+
+static struct kobj_attribute power_suspend_use_global_suspend_attribute =
+	__ATTR(power_suspend_use_global_suspend, 0644,
+		power_suspend_use_global_suspend_show,
+		power_suspend_use_global_suspend_store);
 
 static ssize_t power_suspend_state_show(struct kobject *kobj,
 		struct kobj_attribute *attr, char *buf)
@@ -237,7 +333,6 @@ static ssize_t power_suspend_mode_store(struct kobject *kobj,
 
 	switch (data) {
 		case POWER_SUSPEND_AUTOSLEEP:
-		case POWER_SUSPEND_PANEL:
 		case POWER_SUSPEND_USERSPACE:	mode = data;
 		case POWER_SUSPEND_HYBRID:	mode = data;
 						return count;
@@ -264,6 +359,8 @@ static struct kobj_attribute power_suspend_version_attribute =
 
 static struct attribute *power_suspend_attrs[] =
 {
+	&power_suspend_sync_attribute.attr,
+	&power_suspend_use_global_suspend_attribute.attr,
 	&power_suspend_state_attribute.attr,
 	&power_suspend_mode_attribute.attr,
 	&power_suspend_version_attribute.attr,
@@ -278,7 +375,7 @@ static struct attribute_group power_suspend_attr_group =
 static struct kobject *power_suspend_kobj;
 
 // ------------------ sysfs interface -----------------------
-static int __init power_suspend_init(void)
+static int power_suspend_init(void)
 {
 	int sysfs_result;
 
@@ -304,16 +401,27 @@ static int __init power_suspend_init(void)
 //	mode = POWER_SUSPEND_PANEL;	// Yank555.lu : Default to display panel mode
 	mode = POWER_SUSPEND_HYBRID;	// Yank555.lu : Default to display panel / autosleep hybrid mode
 
+	pwrsup_wq = alloc_workqueue("ps_pwrsup_wq", WQ_UNBOUND | WQ_MEM_RECLAIM | WQ_HIGHPRI, 1);
+	if (!pwrsup_wq)
+		pr_err("[POWERSUSPEND] Failed to allocate workqueue\n");
+
+	INIT_WORK(&power_resume_work, power_resume);
+	INIT_WORK(&power_suspend_work, power_suspend);
+
 	return 0;
 }
 
-static void __exit power_suspend_exit(void)
+static void power_suspend_exit(void)
 {
-	if (power_suspend_kobj != NULL)
+	if (power_suspend_kobj != NULL) {
 		kobject_put(power_suspend_kobj);
+		flush_work(&power_suspend_work);
+		flush_work(&power_resume_work);
+		destroy_workqueue(pwrsup_wq);
+	}
 }
 
-core_initcall(power_suspend_init);
+subsys_initcall(power_suspend_init);
 module_exit(power_suspend_exit);
 
 MODULE_AUTHOR("Paul Reioux <reioux@gmail.com> / Jean-Pierre Rasquin <yank555.lu@gmail.com>");
