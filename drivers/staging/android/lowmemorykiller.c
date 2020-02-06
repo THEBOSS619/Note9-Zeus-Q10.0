@@ -66,6 +66,11 @@
 #define _ZONE ZONE_NORMAL
 #endif
 
+#ifdef CONFIG_PROCESS_RECLAIM
+#define PROCESS_RECLAIM_ENABLE_LOG
+#include <linux/hrtimer.h>
+#endif
+
 #define CREATE_TRACE_POINTS
 #include "trace/lowmemorykiller.h"
 
@@ -77,15 +82,17 @@ static short lowmem_adj[6] = {
 	12,
 };
 
-static int lowmem_adj_size = 4;
+static int lowmem_adj_size = 6;
 static int lowmem_minfree[6] = {
-	3 * 512,	/* 6MB */
-	2 * 1024,	/* 8MB */
-	4 * 1024,	/* 16MB */
-	16 * 1024,	/* 64MB */
+	3 *  512,	/* Foreground App: 	6 MB	*/
+	2 * 1024,	/* Visible App: 	8 MB	*/
+	4 * 1024,	/* Secondary Server: 	16 MB	*/
+	16 * 1024,	/* Hidden App: 		64 MB	*/
+	28 * 1024,	/* Content Provider: 	112 MB	*/
+	32 * 1024,	/* Empty App: 		128 MB	*/
 };
 
-static int lowmem_minfree_size = 4;
+static int lowmem_minfree_size = 6;
 static int lmk_fast_run = 1;
 
 static short lowmem_direct_adj[6];
@@ -98,6 +105,10 @@ static int lmkd_count;
 static int lmkd_cricount;
 
 static unsigned long lowmem_deathpending_timeout;
+
+#ifdef CONFIG_PROCESS_RECLAIM
+extern ssize_t reclaim_walk_mm(struct task_struct *task, char *type_buf);
+#endif
 
 #define lowmem_print(level, x...)			\
 	do {						\
@@ -464,6 +475,24 @@ static inline int test_task_lmk_waiting(struct task_struct *p)
 	return 0;
 }
 
+#ifdef CONFIG_PROCESS_RECLAIM
+static int test_task_exit_state(struct task_struct *p, long flag)
+{
+	struct task_struct *t = p;
+
+	do {
+		task_lock(t);
+		if (t->exit_state == flag) {
+			task_unlock(t);
+			return 1;
+		}
+		task_unlock(t);
+	} while_each_thread(p, t);
+
+	return 0;
+}
+#endif
+
 static DEFINE_MUTEX(scan_mutex);
 
 void tune_lmk_zone_param(struct zonelist *zonelist, int classzone_idx,
@@ -595,10 +624,43 @@ static inline struct task_struct *pick_first_task(void);
 static inline struct task_struct *pick_last_task(void);
 #endif
 
+static bool avoid_to_kill(uid_t uid)
+{
+	/* 
+	 * uid info
+	 * uid == 0 > root
+	 * uid == 1001 > radio
+	 * uid == 1002 > bluetooth
+	 * uid == 1010 > wifi
+	 * uid == 1014 > dhcp
+	 */
+	if (uid == 0 || uid == 1001 || uid == 1002 || uid == 1010 ||
+			uid == 1014)
+		return 1;
+	return 0;
+}
+
+static bool protected_apps(char *comm)
+{
+	if (strcmp(comm, "android.process.acore") == 0 ||
+			strcmp(comm, "com.android.systemui") == 0 ||
+			strcmp(comm, "com.topjohnwu.magisk") == 0 ||
+			strcmp(comm, "com.google.android.gms") == 0 ||
+			strcmp(comm, "ch.deletescape.lawnchair.plah") == 0 ||
+			strcmp(comm, "com.android.phone") == 0 ||
+			strcmp(comm, "com.samsung.android.contacts") == 0 ||
+			strcmp(comm, "ndroid.contacts") == 0 ||
+			strcmp(comm, "system:ui") == 0)
+		return 1;
+	return 0;
+}
+
 static unsigned long lowmem_scan(struct shrinker *s, struct shrink_control *sc)
 {
 	struct task_struct *tsk;
 	struct task_struct *selected = NULL;
+	const struct cred *pcred;
+	unsigned int uid = 0;
 	unsigned long rem = 0;
 	int tasksize;
 	int i;
@@ -623,7 +685,7 @@ static unsigned long lowmem_scan(struct shrinker *s, struct shrink_control *sc)
 	if (!mutex_trylock(&scan_mutex))
 		return 0;
 
-	other_free = global_page_state(NR_FREE_PAGES) - totalreserve_pages;
+	other_free = global_page_state(NR_FREE_PAGES);
 
 	if (global_node_page_state(NR_SHMEM) + total_swapcache_pages() +
 			global_node_page_state(NR_UNEVICTABLE) <
@@ -754,7 +816,71 @@ static unsigned long lowmem_scan(struct shrinker *s, struct shrink_control *sc)
 			if (time_before_eq(jiffies,
 					   lowmem_deathpending_timeout))
 				if (test_task_lmk_waiting(tsk)) {
+#ifdef CONFIG_PROCESS_RECLAIM
+#ifdef PROCESS_RECLAIM_ENABLE_LOG
+				ktime_t reclaim_before;
+				ktime_t reclaim_after;
+				ktime_t reclaim_diff;
+				long free_before_kb;
+				long free_after_kb;
+				long file_before_kb;
+				long file_after_kb;
+#endif
+				bool rcu_locked = true;
+				/*
+				 if task is ZOMBIE, skip the task
+				 */
+				if (test_task_exit_state(tsk, EXIT_ZOMBIE))
+						continue;
+
+				p = find_lock_task_mm(tsk);
+				if (!p)
+					continue;
+				task_unlock(p);
+
+				/* if task is reclaimed */
+				if (test_task_flag(p, TIF_MM_RECLAIMED))
+					goto exit_timeout;
+
+				get_task_struct(p);
+				set_tsk_thread_flag(p, TIF_MM_RECLAIMED);
 					rcu_read_unlock();
+					rcu_locked = false;
+
+#ifdef PROCESS_RECLAIM_ENABLE_LOG
+				reclaim_before = ktime_get_boottime();
+				free_before_kb = global_page_state(NR_FREE_PAGES) *
+					(long)(PAGE_SIZE / 1024);
+				file_before_kb = global_page_state(NR_FILE_PAGES) *
+					(long)(PAGE_SIZE / 1024);
+#endif
+
+				if (reclaim_walk_mm(p, "file") < 0)
+					clear_tsk_thread_flag(p, TIF_MM_RECLAIMED);
+
+#ifdef PROCESS_RECLAIM_ENABLE_LOG
+				reclaim_after = ktime_get_boottime();
+				reclaim_diff = ktime_sub(reclaim_after, reclaim_before);
+
+				free_after_kb = global_page_state(NR_FREE_PAGES) *
+					(long)(PAGE_SIZE / 1024);
+				file_after_kb = global_page_state(NR_FILE_PAGES) *
+					(long)(PAGE_SIZE / 1024);
+
+				pr_err("LMK::reclaim_walk_mm() time, %ld, us, " \
+						"free inc, %ld, kb, file cache dec, %ld, kb \n",
+						(long)ktime_to_ns(reclaim_diff) / 1000,
+						free_after_kb - free_before_kb,
+						file_after_kb - file_before_kb);
+#endif
+
+				put_task_struct(p);
+exit_timeout:
+				if (rcu_locked)
+					rcu_read_unlock();
+#else
+				rcu_read_unlock();
+#endif
 					mutex_unlock(&scan_mutex);
 					if (same_thread_group(current, tsk))
 						set_tsk_thread_flag(current,
@@ -816,14 +942,28 @@ static unsigned long lowmem_scan(struct shrinker *s, struct shrink_control *sc)
 			    tasksize <= selected_tasksize)
 				continue;
 		}
-		selected = p;
-		selected_tasksize = tasksize;
 #if defined(CONFIG_ZSWAP)
 		selected_swap_rss = swap_rss;
 #endif
-		selected_oom_score_adj = oom_score_adj;
-		lowmem_print(2, "select '%s' (%d), adj %hd, size %d, to kill\n",
-			     p->comm, p->pid, oom_score_adj, tasksize);
+		pcred = __task_cred(p);
+		uid = pcred->uid.val;
+		if (avoid_to_kill(uid) || protected_apps(p->comm)){
+			if (tasksize * (long)(PAGE_SIZE / 1024) >= 100000){
+				selected = p;
+				selected_tasksize = tasksize;
+				selected_oom_score_adj = oom_score_adj;
+				lowmem_print(3, "select protected %d (%s), adj %hd, size %d, to kill\n",
+				     	p->pid, p->comm, oom_score_adj, tasksize);
+			} else
+			lowmem_print(3, "skip protected %d (%s), adj %hd, size %d, to kill\n",
+			     	p->pid, p->comm, oom_score_adj, tasksize);
+		} else {
+			selected = p;
+			selected_tasksize = tasksize;
+			selected_oom_score_adj = oom_score_adj;
+			lowmem_print(3, "select %d (%s), adj %hd, size %d, to kill\n",
+			     	p->pid, p->comm, oom_score_adj, tasksize);
+		}
 	}
 	if (selected) {
 		long cache_size = other_file * (long)(PAGE_SIZE / 1024);
@@ -1000,7 +1140,7 @@ static struct task_struct *pick_last_task(void)
 static struct shrinker lowmem_shrinker = {
 	.scan_objects = lowmem_scan,
 	.count_objects = lowmem_count,
-	.seeks = DEFAULT_SEEKS * 16
+	.seeks = 32
 };
 
 #ifdef CONFIG_ANDROID_BG_SCAN_MEM
@@ -1078,7 +1218,7 @@ static void lowmem_autodetect_oom_adj_values(short *lowmem_adj, int array_size,
 		oom_adj = lowmem_adj[i];
 		oom_score_adj = lowmem_oom_adj_to_oom_score_adj(oom_adj);
 		lowmem_adj[i] = oom_score_adj;
-		lowmem_print(1, "oom_adj %d => oom_score_adj %d\n",
+		lowmem_print(1, "oom_adj %hd => oom_score_adj %hd\n",
 			     oom_adj, oom_score_adj);
 	}
 }

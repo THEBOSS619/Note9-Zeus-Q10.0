@@ -99,6 +99,7 @@ struct thread_info {
 #define TIF_32BIT		22	/* 32bit process */
 #define TIF_SSBD		23	/* Wants SSB mitigation */
 #define TIF_MM_RELEASED		24
+#define TIF_MM_RECLAIMED	25	/* task MM has been reclaimed */
 #define TIF_MEMALLOC		29	/* allocating pages now */
 
 #define _TIF_SIGPENDING		(1 << TIF_SIGPENDING)
