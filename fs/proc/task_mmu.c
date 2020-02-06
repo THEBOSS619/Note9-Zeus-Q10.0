@@ -1750,6 +1750,29 @@ out:
 	return rp;
 }
 
+ssize_t reclaim_walk_mm(struct task_struct *task, char *type_buf)
+{
+
+	struct mm_struct *mm;
+	enum reclaim_type type;
+
+	if (!strcmp(type_buf, "file"))
+		type = RECLAIM_FILE;
+	else if (!strcmp(type_buf, "anon"))
+		type = RECLAIM_ANON;
+	else if (!strcmp(type_buf, "all"))
+		type = RECLAIM_ALL;
+	else
+		return -EINVAL;
+
+		if(!down_read_trylock(&mm->mmap_sem)) {
+			mmput(mm);
+			return -EINVAL;
+		}
+
+	return 0;
+}
+
 static ssize_t reclaim_write(struct file *file, const char __user *buf,
 				size_t count, loff_t *ppos)
 {

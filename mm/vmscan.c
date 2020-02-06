@@ -1979,7 +1979,7 @@ shrink_inactive_list(unsigned long nr_to_scan, struct lruvec *lruvec,
 		 * Tag a zone as congested if all the dirty pages scanned were
 		 * backed by a congested BDI and wait_iff_congested will stall.
 		 */
-		if (nr_dirty && nr_dirty == nr_congested)
+		if (nr_dirty && nr_dirty == nr_congested && pgdat)
 			set_bit(PGDAT_CONGESTED, &pgdat->flags);
 
 		/* Allow kswapd to start writing pages during reclaim. */
