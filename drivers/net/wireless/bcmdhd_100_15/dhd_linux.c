@@ -9971,6 +9971,7 @@ dhd_preinit_ioctls(dhd_pub_t *dhd)
 {
 	int ret = 0;
 	char eventmask[WL_EVENTING_MASK_LEN];
+	char *clm = 0;
 	char iovbuf[WL_EVENTING_MASK_LEN + 12];	/*  Room for "event_msgs" + '\0' + bitvec  */
 	uint32 buf_key_b4_m4 = 1;
 	uint8 msglen;
@@ -11209,14 +11210,14 @@ dhd_preinit_ioctls(dhd_pub_t *dhd)
 			} else if (tokenlim == '(') {
 				snprintf(clm_version,
 					CLM_VER_STR_LEN - 1, "%s, Blob ver = Major : %s minor : ",
-					clm_version, ver_temp_buf);
+					clm, ver_temp_buf);
 				DHD_INFO(("[INFO]CLM/Blob version = %s\n", clm_version));
 				if ((ver_temp_buf = bcmstrtok(&ptr, "\n", &tokenlim)) == NULL) {
 					DHD_ERROR(("Couldn't find New line character\n"));
 				} else {
 					snprintf(clm_version,
 						strlen(clm_version) + strlen(ver_temp_buf),
-						"%s%s",	clm_version, ver_temp_buf);
+						"%s%s",	clm, ver_temp_buf);
 					DHD_INFO(("[INFO]CLM/Blob/project version = %s\n",
 						clm_version));
 
@@ -11224,10 +11225,10 @@ dhd_preinit_ioctls(dhd_pub_t *dhd)
 			} else if (tokenlim == '\n') {
 				snprintf(clm_version,
 					strlen(clm_version) + strlen(", Blob ver = Major : ") + 1,
-					"%s, Blob ver = Major : ", clm_version);
+					"%s, Blob ver = Major : ", clm);
 				snprintf(clm_version,
 					strlen(clm_version) + strlen(ver_temp_buf) + 1,
-					"%s%s",	clm_version, ver_temp_buf);
+					"%s%s",	clm, ver_temp_buf);
 				DHD_INFO(("[INFO]CLM/Blob/project version = %s\n", clm_version));
 			}
 		}
