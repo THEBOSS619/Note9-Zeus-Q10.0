@@ -247,7 +247,7 @@ static int force_reclaim_show(struct seq_file *m, void *v)
 	return 0;
 }
 
-static int force_reclaim_write(struct file *flip, const char *ubuf, size_t cnt, loff_t *data)
+static ssize_t force_reclaim_write(struct file *flip, const char *ubuf, size_t cnt, loff_t *data)
 {
 	char buf[256];
 	size_t copysz = cnt;
