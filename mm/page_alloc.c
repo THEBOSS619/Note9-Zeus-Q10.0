@@ -2068,15 +2068,25 @@ int *get_migratetype_fallbacks(int mtype)
 	return fallbacks[mtype];
 }
 
-#ifdef CONFIG_CMA
+#ifdef CONFIG_RBIN
 static struct page *__rmqueue_cma_rbin_fallback(struct zone *zone,
 					unsigned int order, bool is_rbin)
 {
 	return __rmqueue_smallest(zone, order,
 					migratetype_rbin_or_cma(is_rbin));
 }
-#else
 static inline struct page *__rmqueue_cma_rbin_fallback(struct zone *zone,
+					unsigned int order) { return NULL; }
+#endif
+
+#ifdef CONFIG_CMA
+static struct page *__rmqueue_cma_fallback(struct zone *zone,
+					unsigned int order)
+{
+	return __rmqueue_smallest(zone, order, MIGRATE_CMA);
+}
+#else
+static inline struct page *__rmqueue_cma_fallback(struct zone *zone,
 					unsigned int order) { return NULL; }
 #endif
 
