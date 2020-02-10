@@ -1466,7 +1466,7 @@
 
 				default_int_cam = <DVFS_INT_CAM_L0>;
 				default_cam = <DVFS_CAM_L0>;
-				default_mif = <DVFS_MIF_L0>;
+				default_mif = <DVFS_MIF_L3>;
 				default_int = <DVFS_INT_L5>;
 				default_hpg = <1>;
 
@@ -1790,7 +1790,7 @@
 
 				ext_front_int_cam = <DVFS_INT_CAM_L0>;
 				ext_front_cam = <DVFS_CAM_L0>;
-				ext_front_mif = <DVFS_MIF_L0>;
+				ext_front_mif = <DVFS_MIF_L3>;
 				ext_front_int = <DVFS_INT_L0>;
 				ext_front_hpg = <1>;
 
@@ -2476,7 +2476,7 @@
 
 				mif {
 					qos,label="MIF";
-					qos,delay_time=<5>;
+					qos,delay_time=<0>;
 					qos,table_size=<10>;
 					qos,table=<2093000 2002000 1794000 1539000 1352000 1014000 845000 676000 546000 421000>;
 				};
