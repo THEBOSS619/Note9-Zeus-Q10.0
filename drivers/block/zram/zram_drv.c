@@ -42,6 +42,11 @@ static DEFINE_MUTEX(zram_index_mutex);
 static int zram_major;
 static const char *default_compressor = "zstd";
 
+/* Limit disksize on zram initialization 
+ * 0 = disable
+ */
+static u64 max_disksize_creation = 1536 * 1024 * 1024; // 1.5GB
+
 /* Module params (documentation at end) */
 static unsigned int num_devices = 1;
 /*
@@ -1752,6 +1757,11 @@ static ssize_t disksize_store(struct device *dev,
 	}
 
 	zram->comp = comp;
+
+	/* filter zram size if zram is limited */
+	if(max_disksize_creation > 1024)
+		disksize = min(disksize, max_disksize_creation);
+
 	zram->disksize = disksize;
 	set_capacity(zram->disk, zram->disksize >> SECTOR_SHIFT);
 
