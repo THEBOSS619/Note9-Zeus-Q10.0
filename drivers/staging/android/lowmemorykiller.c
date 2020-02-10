@@ -743,7 +743,9 @@ static unsigned long lowmem_scan(struct shrinker *s, struct shrink_control *sc)
 	int other_free;
 	int other_file;
 	unsigned long nr_cma_free;
+#ifdef CONFIG_RBIN
 	unsigned long nr_rbin_free, nr_rbin_pool, nr_rbin_alloc, nr_rbin_file;
+#endif
 	int migratetype;
 #if defined(CONFIG_ZSWAP)
 	int zswap_stored_pages_temp;
@@ -772,6 +774,7 @@ static unsigned long lowmem_scan(struct shrinker *s, struct shrink_control *sc)
 	if (!((migratetype == MIGRATE_MOVABLE) &&
 		((sc->gfp_mask & GFP_HIGHUSER_MOVABLE) == GFP_HIGHUSER_MOVABLE)))
 		other_free -= nr_cma_free;
+#ifdef CONFIG_RBIN
 	if ((sc->gfp_mask & __GFP_RBIN) != __GFP_RBIN) {
 		nr_rbin_free = global_page_state(NR_FREE_RBIN_PAGES);
 		nr_rbin_pool = atomic_read(&rbin_pool_pages);
@@ -781,6 +784,7 @@ static unsigned long lowmem_scan(struct shrinker *s, struct shrink_control *sc)
 		other_free -= nr_rbin_free;
 		other_file -= nr_rbin_file;
 	}
+#endif
 
 	tune_lmk_param(&other_free, &other_file, sc);
 
