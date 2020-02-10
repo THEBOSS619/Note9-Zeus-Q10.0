@@ -57,6 +57,7 @@
 #include <linux/freezer.h>
 #include <linux/devfreq_boost.h>
 #include <linux/cpu_input_boost.h>
+#include <linux/compaction.h>
 
 #define CREATE_TRACE_POINTS
 #include <trace/events/almk.h>
@@ -108,6 +109,11 @@ static int lmkd_count;
 static int lmkd_cricount;
 
 static unsigned long lowmem_deathpending_timeout;
+
+static inline enum compact_result compact_nodes(bool sync)
+{
+    return COMPACT_CONTINUE;
+}
 
 #ifdef CONFIG_PROCESS_RECLAIM
 extern ssize_t reclaim_walk_mm(struct task_struct *task, char *type_buf);
@@ -1059,6 +1065,7 @@ exit_timeout:
 	if (selected) {
 		handle_lmk_event(selected, selected_tasksize, min_score_adj);
 		put_task_struct(selected);
+		compact_nodes(false);
 	}
 	return rem;
 }
