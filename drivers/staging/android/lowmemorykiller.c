@@ -842,9 +842,9 @@ static unsigned long lowmem_scan(struct shrinker *s, struct shrink_control *sc)
 
 	selected_oom_score_adj = min_score_adj;
 
-	cpu_input_boost_kick_general(100);
-	cpu_input_boost_kick_max(150);
-	devfreq_boost_kick_max(DEVFREQ_EXYNOS_MIF, 200);
+	cpu_input_boost_kick_general(250);
+	cpu_input_boost_kick_max(500);
+	devfreq_boost_kick_max(DEVFREQ_EXYNOS_MIF, 500);
 
 	rcu_read_lock();
 #ifdef CONFIG_ANDROID_LMK_ADJ_RBTREE
