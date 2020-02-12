@@ -10,6 +10,7 @@
 #include <linux/pm_qos.h>
 #include <linux/ehmp.h>
 #include <linux/sched_energy.h>
+#include <linux/tick.h>
 
 #define CREATE_TRACE_POINTS
 #include <trace/events/ehmp.h>
@@ -103,7 +104,7 @@ int exynos_estimate_idle_state(int cpu_idx, struct cpumask *mask,
 	for_each_cpu(i, mask) {
 		grp_nr_running += cpu_rq(i)->nr_running;
 
-		next_timer_us = ktime_to_us(tick_nohz_get_sleep_length_cpu(i));
+		next_timer_us = ktime_to_us(tick_nohz_get_sleep_length());
 		deepest_state_residency = cpuidle_get_target_residency(i, state);
 
 		if (next_timer_us > deepest_state_residency)
