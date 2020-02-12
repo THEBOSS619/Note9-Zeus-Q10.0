@@ -5921,7 +5921,7 @@ int calc_total_energy(struct energy_env *eenv, struct sched_domain *sd,
 	int cpu_idx, cpu;
 
 	if (sched_feat(EAS_SIMPLIFIED_EM) && pd) {
-		for (cpu_idx = EAS_CPU_PRV; cpu_idx < eenv->max_cpu_count; ++cpu_idx) {
+		for (cpu_idx = EAS_CPU_PRV; cpu_idx < EAS_CPU_CNT; ++cpu_idx) {
 			cpu = eenv->cpu[cpu_idx].cpu_id;
 			if (cpu < 0)
 				continue;
@@ -5932,7 +5932,7 @@ int calc_total_energy(struct energy_env *eenv, struct sched_domain *sd,
 		struct sched_group *sg = sd->groups;
 		do {
 			/* Skip SGs which do not contains a candidate CPU */
-			if (!cpumask_intersects(&eenv->cpus_mask, sched_group_span(sg)))
+			if (!cpumask_intersects(&eenv->cpus_mask, sched_group_cpus(sg)))
 				continue;
 
 			eenv->sg_top = sg;
