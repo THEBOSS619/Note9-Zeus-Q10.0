@@ -9592,7 +9592,7 @@ static inline void update_sg_lb_stats(struct lb_env *env,
 	}
 
 	/* Adjust by relative CPU capacity of the group */
-	sg_cpu = cpumask_first(sched_group_span(group));
+	sg_cpu = cpumask_first(sched_group_cpus(group));
 	sgs->group_capacity = group->sgc->capacity;
 	sgs->avg_load = (sgs->group_load * capacity_orig_of(sg_cpu)) /
 			sgs->group_capacity;
