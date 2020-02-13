@@ -54,7 +54,7 @@ static u64 zswap_pool_total_size;
 /* Number of memory pages used by the compressed pool */
 u64 zswap_pool_pages;
 /* The number of compressed pages currently stored in zswap */
-static atomic_t zswap_stored_pages = ATOMIC_INIT(0);
+atomic_t zswap_stored_pages = ATOMIC_INIT(0);
 /* The number of same-value filled pages currently stored in zswap */
 static atomic_t zswap_same_filled_pages = ATOMIC_INIT(0);
 
@@ -319,15 +319,6 @@ static struct zswap_entry *zswap_entry_cache_alloc(gfp_t gfp)
 static void zswap_entry_cache_free(struct zswap_entry *entry)
 {
 	kmem_cache_free(zswap_entry_cache, entry);
-}
-
-static int is_page_zero_filled(struct zswap_entry *entry)
-{
-#ifdef CONFIG_ZSWAP_SAME_PAGE_SHARING
-	return entry->zhandle == NULL;
-#else
-	return entry->handle == 0;
-#endif
 }
 
 #ifdef CONFIG_ZSWAP_SAME_PAGE_SHARING
