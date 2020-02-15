@@ -155,11 +155,11 @@ sched_feat_write(struct file *filp, const char __user *ubuf,
 
 	/* Ensure the static_key remains in a consistent state */
 	inode = file_inode(filp);
-	cpus_read_lock();
+	get_online_cpus();
 	inode_lock(inode);
 	ret = sched_feat_set(cmp);
 	inode_unlock(inode);
-	cpus_read_unlock();
+	put_online_cpus();
 	if (ret < 0)
 		return ret;
 
