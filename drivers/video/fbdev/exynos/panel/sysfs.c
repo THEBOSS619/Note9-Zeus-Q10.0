@@ -1270,7 +1270,6 @@ static ssize_t poc_mca_show(struct device *dev,
 	struct device_attribute *attr, char *buf)
 {
 	struct panel_device *panel = dev_get_drvdata(dev);
-	char *dump = 0;
 	int ret;
 	u8 chksum_data[256];
 	int i, len;
@@ -1304,7 +1303,7 @@ static ssize_t poc_mca_show(struct device *dev,
 	len = get_resource_size_by_name(&panel->panel_data, "poc_mca_chksum");
 	buf[0] = '\0';
 	for (i = 0; i < len; i++) {
-		snprintf(buf, PAGE_SIZE, "%s%02X ", dump, chksum_data[i]);
+		snprintf(buf, PAGE_SIZE, "%s%02X ", buf, chksum_data[i]);
 	}
 
 	dev_info(dev, "%s poc_mca_checksum: %s\n", __func__, buf);

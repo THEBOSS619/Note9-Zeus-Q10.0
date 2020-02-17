@@ -2380,7 +2380,6 @@ ssize_t ext4_mb_freefrag_show(struct ext4_sb_info *sbi, char *buf)
 	ext4_group_t group = 0;
 	int i;
 	ext4_fsblk_t freeblock[EXT4_FREEFRAG_COLUMN] = {0,};
-	char *ext4 = 0;
 	char *size[EXT4_FREEFRAG_COLUMN] = {"4K", "8K", "16K", "32K", "64K",
 		"128K", "256K", "512K", "1M", "2M", "4M", "8M", "16M", "32M"};
 
@@ -2417,7 +2416,7 @@ ssize_t ext4_mb_freefrag_show(struct ext4_sb_info *sbi, char *buf)
 	}
 out:
 	for (i = 0; i < EXT4_FREEFRAG_COLUMN; i++)
-		snprintf(buf, PAGE_SIZE, "%s\"%s\":\"%llu\",", ext4, size[i],
+		snprintf(buf, PAGE_SIZE, "%s\"%s\":\"%llu\",", buf, size[i],
 			(unsigned long long)freeblock[i]);
 	buf[strlen(buf)-1] = '\n';
 
