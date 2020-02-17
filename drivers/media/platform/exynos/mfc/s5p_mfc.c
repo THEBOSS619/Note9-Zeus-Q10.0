@@ -925,7 +925,6 @@ static struct video_device *mfc_video_device_register(struct s5p_mfc_dev *dev,
 				char *name, int node_num)
 {
 	struct video_device *vfd;
-	char *devvfd = 0;
 	int ret = 0;
 
 	vfd = video_device_alloc();
@@ -947,7 +946,7 @@ static struct video_device *mfc_video_device_register(struct s5p_mfc_dev *dev,
 	vfd->v4l2_dev = &dev->v4l2_dev;
 	vfd->vfl_dir = VFL_DIR_M2M;
 
-	snprintf(vfd->name, sizeof(vfd->name), "%s%d", devvfd, dev->id);
+	snprintf(vfd->name, sizeof(vfd->name), "%s%d", vfd->name, dev->id);
 
 	ret = video_register_device(vfd, VFL_TYPE_GRABBER, node_num + 60 * dev->id);
 	if (ret) {
