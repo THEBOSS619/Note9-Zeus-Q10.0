@@ -30,6 +30,8 @@
 #include <linux/compiler.h>
 #include <linux/moduleparam.h>
 #include <linux/wakeup_reason.h>
+#include <linux/devfreq_boost.h>
+#include <linux/cpu_input_boost.h>
 
 #include "power.h"
 
@@ -501,6 +503,8 @@ int suspend_devices_and_enter(suspend_state_t state)
  */
 static void suspend_finish(void)
 {
+	cpu_input_boost_kick_max(1250);
+	devfreq_boost_kick_max(DEVFREQ_EXYNOS_MIF, 1250);
 	suspend_thaw_processes();
 	pm_notifier_call_chain(PM_POST_SUSPEND);
 	pm_restore_console();
