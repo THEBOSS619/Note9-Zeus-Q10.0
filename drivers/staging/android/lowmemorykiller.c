@@ -887,7 +887,7 @@ static unsigned long lowmem_scan(struct shrinker *s, struct shrink_control *sc)
 		for (i = 0; i < array_size; i++) {
 			minfree = mult_frac(lowmem_direct_minfree[i], scale_percent, 100) +
 			  ((extra_free_kbytes * 1024) / PAGE_SIZE);
-			if (other_free + other_file < minfree) {
+			if (other_free < minfree && other_file < minfree) {
 				min_score_adj = lowmem_direct_adj[i];
 				break;
 			}
@@ -900,7 +900,7 @@ static unsigned long lowmem_scan(struct shrinker *s, struct shrink_control *sc)
 		for (i = 0; i < array_size; i++) {
 			minfree = mult_frac(lowmem_minfree[i], scale_percent, 100) +
 			  ((extra_free_kbytes * 1024) / PAGE_SIZE);
-			if (other_free + other_file < minfree) {
+			if (other_free < minfree && other_file < minfree) {
 				min_score_adj = lowmem_adj[i];
 				break;
 			}
