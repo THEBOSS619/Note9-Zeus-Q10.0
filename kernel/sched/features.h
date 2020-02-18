@@ -116,7 +116,7 @@ SCHED_FEAT(EAS_PREFER_IDLE, true)
  * ON: If the target CPU saves any energy, use that.
  * OFF: Use whichever of target or backup saves most.
  */
-SCHED_FEAT(FBT_STRICT_ORDER, false)
+SCHED_FEAT(FBT_STRICT_ORDER, true)
 
 #ifdef CONFIG_SCHED_EHMP
 SCHED_FEAT(EXYNOS_HMP, true)
