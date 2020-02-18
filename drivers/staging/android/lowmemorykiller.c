@@ -797,6 +797,7 @@ static unsigned long lowmem_scan(struct shrinker *s, struct shrink_control *sc)
 	}
 	rcu_read_unlock();
 
+
 	if (!current_is_kswapd() && is_mem_boost_high() &&
 			lowmem_direct_minfree_size && lowmem_direct_adj_size) {
 		array_size = ARRAY_SIZE(lowmem_direct_adj);
@@ -819,7 +820,7 @@ static unsigned long lowmem_scan(struct shrinker *s, struct shrink_control *sc)
 		for (i = 0; i < array_size; i++) {
 			minfree = lowmem_minfree[i] +
 			  ((extra_free_kbytes * 1024) / PAGE_SIZE);
-			if (other_free + other_file < minfree) {
+			if (other_free < minfree && other_file < minfree) {
 				min_score_adj = lowmem_adj[i];
 				break;
 			}
