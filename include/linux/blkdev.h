@@ -588,10 +588,12 @@ struct request_queue {
 #endif
 
 #define QUEUE_FLAG_DEFAULT	((1 << QUEUE_FLAG_STACKABLE)	|	\
-				 (1 << QUEUE_FLAG_SAME_COMP))
+				 (1 << QUEUE_FLAG_SAME_COMP)	|	\
+				 (1 << QUEUE_FLAG_SAME_SYNC))
 
 #define QUEUE_FLAG_MQ_DEFAULT	((1 << QUEUE_FLAG_STACKABLE)	|	\
-				 (1 << QUEUE_FLAG_SAME_COMP)
+				 (1 << QUEUE_FLAG_SAME_COMP)	|	\
+				 (1 << QUEUE_FLAG_SAME_SYNC))
 
 static inline void queue_lockdep_assert_held(struct request_queue *q)
 {
