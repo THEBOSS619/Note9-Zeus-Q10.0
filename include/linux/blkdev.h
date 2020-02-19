@@ -583,17 +583,18 @@ struct request_queue {
 #define QUEUE_FLAG_DAX         26	/* device supports DAX */
 #define QUEUE_FLAG_FAST        27	/* fast block device (e.g. ram based) */
 #define QUEUE_FLAG_STATS       28	/* track rq completion times */
+#define QUEUE_FLAG_SAME_SYNC   29	/* complete syncs on same CPU */
 #ifdef CONFIG_JOURNAL_DATA_TAG
 #define QUEUE_FLAG_JOURNAL_TAG     31      /* supports JOURNAL_DATA_TAG */
 #endif
 
 #define QUEUE_FLAG_DEFAULT	((1 << QUEUE_FLAG_STACKABLE)	|	\
-				 (1 << QUEUE_FLAG_SAME_COMP)	|	\
-				 (1 << QUEUE_FLAG_SAME_SYNC))
+            				 (1 << QUEUE_FLAG_SAME_SYNC)	|	\
+            				 (1 << QUEUE_FLAG_SAME_COMP))
 
 #define QUEUE_FLAG_MQ_DEFAULT	((1 << QUEUE_FLAG_STACKABLE)	|	\
-				 (1 << QUEUE_FLAG_SAME_COMP)	|	\
-				 (1 << QUEUE_FLAG_SAME_SYNC))
+                				 (1 << QUEUE_FLAG_SAME_SYNC)	|	\
+                				 (1 << QUEUE_FLAG_SAME_COMP))
 
 static inline void queue_lockdep_assert_held(struct request_queue *q)
 {

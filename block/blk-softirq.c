@@ -117,7 +117,9 @@ void __blk_complete_request(struct request *req)
 		completion_cpu = req->cpu;
 
 		/* Check the request flags and see if we should do an IPI */
-		if (test_bit(QUEUE_FLAG_SAME_FORCE, &q->queue_flags))
+		if (test_bit(QUEUE_FLAG_SAME_FORCE, &q->queue_flags) ||
+			(test_bit(QUEUE_FLAG_SAME_SYNC, &q->queue_flags) &&
+			rq_is_sync(req)))
 			do_local = false;
 		else
 			do_local = cpus_share_cache(this_cpu, completion_cpu);
