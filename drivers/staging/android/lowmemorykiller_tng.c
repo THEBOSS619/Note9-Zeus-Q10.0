@@ -191,8 +191,8 @@ static void calc_params(struct calculated_params *cp, gfp_t mask)
 
 	tot_usable = usable_free_swap + irp;
 	/* Free CMA is part of NR_FREE_PAGES, but sometimes not usable. */
-	cp->margin = global_zone_page_state(NR_FREE_PAGES) - totalreserve_pages
-	  - global_zone_page_state(NR_FREE_CMA_PAGES);
+	cp->margin = global_page_state(NR_FREE_PAGES) - totalreserve_pages
+	  - global_page_state(NR_FREE_CMA_PAGES);
 	cp->other_free = cp->margin + tot_usable;
 
 	if (global_node_page_state(NR_SHMEM) + total_swapcache_pages() +
@@ -286,10 +286,10 @@ void print_obituary(struct task_struct *doomed,
 		     cache_size, cache_limit,
 		     cp->min_score_adj,
 		     free,
-		     global_zone_page_state(NR_FREE_CMA_PAGES) *
+		     global_page_state(NR_FREE_CMA_PAGES) *
 		     (long)(PAGE_SIZE / 1024),
 		     totalreserve_pages * (long)(PAGE_SIZE / 1024),
-		     global_zone_page_state(NR_FREE_PAGES) *
+		     global_page_state(NR_FREE_PAGES) *
 		     (long)(PAGE_SIZE / 1024),
 		     global_node_page_state(NR_FILE_PAGES) *
 		     (long)(PAGE_SIZE / 1024),
