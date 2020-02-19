@@ -38,6 +38,7 @@
 #include <linux/sched/rt.h>
 #include <linux/mm_inline.h>
 #include <trace/events/writeback.h>
+#include <linux/binfmts.h>
 
 #include "internal.h"
 
@@ -121,7 +122,7 @@ EXPORT_SYMBOL_GPL(dirty_writeback_interval);
 /*
  * The longest time for which data is allowed to remain dirty
  */
-unsigned int dirty_expire_interval = 30 * 100; /* centiseconds */
+unsigned int dirty_expire_interval = 20 * 100; /* centiseconds */
 
 /*
  * Flag that makes the machine dump writes/reads and block dirtyings.
@@ -545,6 +546,9 @@ int dirty_background_ratio_handler(struct ctl_table *table, int write,
 {
 	int ret;
 
+	if (task_is_booster(current))
+		return 0;
+
 	ret = proc_dointvec_minmax(table, write, buffer, lenp, ppos);
 	if (ret == 0 && write)
 		dirty_background_bytes = 0;
@@ -569,6 +573,9 @@ int dirty_ratio_handler(struct ctl_table *table, int write,
 {
 	int old_ratio = vm_dirty_ratio;
 	int ret;
+
+	if (task_is_booster(current))
+		return 0;
 
 	ret = proc_dointvec_minmax(table, write, buffer, lenp, ppos);
 	if (ret == 0 && write && vm_dirty_ratio != old_ratio) {

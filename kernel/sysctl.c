@@ -1322,6 +1322,24 @@ static int proc_swappiness_handler(struct ctl_table *table, int write,
 	return proc_dointvec_minmax(table, write, buffer, lenp, ppos);
 }
 
+static int proc_dirty_handler(struct ctl_table *table, int write,
+		  void __user *buffer, size_t *lenp, loff_t *ppos)
+{
+	if (task_is_booster(current))
+		return 0;
+
+	return proc_dointvec_minmax(table, write, buffer, lenp, ppos);
+}
+
+static int proc_dirtyratio_handler(struct ctl_table *table, int write,
+		  void __user *buffer, size_t *lenp, loff_t *ppos)
+{
+	if (task_is_booster(current))
+		return 0;
+
+	return proc_dointvec_minmax(table, write, buffer, lenp, ppos);
+}
+
 static struct ctl_table vm_table[] = {
 	{
 		.procname	= "overcommit_memory",
@@ -1381,8 +1399,8 @@ static struct ctl_table vm_table[] = {
 		.procname	= "dirty_background_ratio",
 		.data		= &dirty_background_ratio,
 		.maxlen		= sizeof(dirty_background_ratio),
-		.mode		= 0644,
-		.proc_handler	= dirty_background_ratio_handler,
+		.mode		= 0444,
+		.proc_handler	= proc_dirty_handler,
 		.extra1		= &zero,
 		.extra2		= &one_hundred,
 	},
@@ -1398,8 +1416,8 @@ static struct ctl_table vm_table[] = {
 		.procname	= "dirty_ratio",
 		.data		= &vm_dirty_ratio,
 		.maxlen		= sizeof(vm_dirty_ratio),
-		.mode		= 0644,
-		.proc_handler	= dirty_ratio_handler,
+		.mode		= 0444,
+		.proc_handler	= proc_dirtyratio_handler,
 		.extra1		= &zero,
 		.extra2		= &one_hundred,
 	},
