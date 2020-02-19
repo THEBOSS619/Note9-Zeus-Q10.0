@@ -98,6 +98,12 @@ static int lowmem_minfree[6] = {
 
 static int lowmem_minfree_size = 6;
 static int lmk_fast_run = 1;
+/*
+ * This parameter tracks the kill count per minfree since boot.
+ * the last index is the kills of almk triggers which should not
+ * been killed
+ */
+static int lowmem_per_minfree_count[7];
 
 static short lowmem_direct_adj[6];
 static int lowmem_direct_adj_size;
@@ -184,7 +190,7 @@ static int lmk_vmpressure_notifier(struct notifier_block *nb,
 	if (!enable_adaptive_lmk)
 		return 0;
 
-	if (pressure >= 95) {
+	if (pressure >= 90) {
 		other_file = global_node_page_state(NR_FILE_PAGES) -
 			global_node_page_state(NR_SHMEM) -
 			global_node_page_state(NR_UNEVICTABLE) -
@@ -193,7 +199,7 @@ static int lmk_vmpressure_notifier(struct notifier_block *nb,
 
 		atomic_set(&shift_adj, 1);
 		trace_almk_vmpressure(pressure, other_free, other_file);
-	} else if (pressure >= 90) {
+	} else if (pressure >= 85) {
 		if (lowmem_adj_size < array_size)
 			array_size = lowmem_adj_size;
 		if (lowmem_minfree_size < array_size)
@@ -729,6 +735,7 @@ static unsigned long lowmem_scan(struct shrinker *s, struct shrink_control *sc)
 {
 	struct task_struct *tsk;
 	struct task_struct *selected = NULL;
+	static const struct sched_param sched_zero_prio;
 	const struct cred *pcred;
 	unsigned int uid = 0;
 	unsigned long rem = 0;
@@ -752,12 +759,14 @@ static unsigned long lowmem_scan(struct shrinker *s, struct shrink_control *sc)
 	int swap_rss;
 	int selected_swap_rss;
 #endif
+	int minfree_count_offset = 0;
+	int array_count = ARRAY_SIZE(lowmem_per_minfree_count);
 
 
 	if (!mutex_trylock(&scan_mutex))
 		return 0;
 
-	other_free = global_page_state(NR_FREE_PAGES);
+	other_free = global_page_state(NR_FREE_PAGES) - totalreserve_pages;
 
 	if (global_node_page_state(NR_SHMEM) + global_node_page_state(NR_UNEVICTABLE) + total_swapcache_pages() +
 			global_node_page_state(NR_UNEVICTABLE) <
@@ -807,7 +816,7 @@ static unsigned long lowmem_scan(struct shrinker *s, struct shrink_control *sc)
 			array_size = lowmem_direct_minfree_size;
 		for (i = 0; i < array_size; i++) {
 			minfree = lowmem_direct_minfree[i];
-			if (other_free < minfree && other_file < minfree) {
+			if (other_free + other_file < minfree) {
 				min_score_adj = lowmem_direct_adj[i];
 				break;
 			}
@@ -820,7 +829,7 @@ static unsigned long lowmem_scan(struct shrinker *s, struct shrink_control *sc)
 		for (i = 0; i < array_size; i++) {
 			minfree = lowmem_minfree[i] +
 			  ((extra_free_kbytes * 1024) / PAGE_SIZE);
-			if (other_free < minfree && other_file < minfree) {
+			if (other_free + other_file < minfree) {
 				min_score_adj = lowmem_adj[i];
 				break;
 			}
@@ -828,6 +837,9 @@ static unsigned long lowmem_scan(struct shrinker *s, struct shrink_control *sc)
 	}
 
 	ret = adjust_minadj(&min_score_adj);
+	if (ret == VMPRESSURE_ADJUST_ENCROACH) {
+		minfree_count_offset = array_count-1;
+	}
 
 	lowmem_print(3, "lowmem_scan %lu, %x, ofree %d %d, ma %hd\n",
 		     sc->nr_to_scan, sc->gfp_mask, other_free,
@@ -1063,6 +1075,8 @@ exit_timeout:
 
 		task_lock(selected);
 		send_sig(SIGKILL, selected, 0);
+		sched_setscheduler_nocheck(selected, SCHED_RR, &sched_zero_prio);
+		set_cpus_allowed_ptr(selected, cpu_all_mask);
 		if (selected->mm) {
 			task_set_lmk_waiting(selected);
 			if (!test_bit(MMF_OOM_SKIP, &selected->mm->flags) &&
@@ -1073,6 +1087,7 @@ exit_timeout:
 		}
 		task_unlock(selected);
 		trace_lowmemory_kill(selected, cache_size, cache_limit, free);
+		lowmem_per_minfree_count[minfree_count_offset]++;
 		lowmem_print(1, "Killing '%s' (%d) (tgid %d), adj %hd,\n"
 #if defined(CONFIG_ZSWAP)
 				 "   to free %ldkB (%ldKB %ldKB) on behalf of '%s' (%d) because\n"
@@ -1390,6 +1405,8 @@ module_param_array_named(direct_adj, direct_lowmem_adj, short, &lowmem_direct_ad
 #endif
 module_param_array_named(minfree, lowmem_minfree, uint, &lowmem_minfree_size,
 			 S_IRUGO | S_IWUSR);
+module_param_array_named(lmk_count, lowmem_per_minfree_count, uint, NULL,
+			 S_IRUGO);
 module_param_array_named(direct_minfree, lowmem_direct_minfree, uint,
 			 &lowmem_direct_minfree_size, 0644);
 module_param_named(debug_level, lowmem_debug_level, uint, S_IRUGO | S_IWUSR);

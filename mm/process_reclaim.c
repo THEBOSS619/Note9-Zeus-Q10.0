@@ -20,6 +20,8 @@
 #include <linux/rcupdate.h>
 #include <linux/notifier.h>
 #include <linux/vmpressure.h>
+#include <linux/cpu_input_boost.h>
+#include <linux/devfreq_boost.h>
 
 #define CREATE_TRACE_POINTS
 #include <trace/events/process_reclaim.h>
@@ -42,7 +44,7 @@ module_param_named(reclaim_avg_efficiency, reclaim_avg_efficiency, int, 0444);
 
 /* The vmpressure region where process reclaim operates */
 static unsigned long pressure_min = 50;
-static unsigned long pressure_max = 90;
+static unsigned long pressure_max = 95;
 module_param_named(pressure_min, pressure_min, ulong, 0644);
 module_param_named(pressure_max, pressure_max, ulong, 0644);
 
@@ -163,6 +165,10 @@ static void swap_fn(struct work_struct *work)
 			si++;
 		}
 	}
+
+	cpu_input_boost_kick_max(100);
+	devfreq_boost_kick_max(DEVFREQ_EXYNOS_MIF, 100);
+	cpu_input_boost_kick_general(100);
 
 	for (i = 0; i < si; i++)
 		total_sz += selected[i].tasksize;
