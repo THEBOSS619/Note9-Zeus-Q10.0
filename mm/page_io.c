@@ -416,7 +416,7 @@ int swap_readpage(struct page *page, bool synchronous)
 		if (!READ_ONCE(bio->bi_private))
 			break;
 
-		if (!blk_mq_poll(bdev_get_queue(bdev), qc))
+		if (!blk_poll(bdev_get_queue(bdev), qc))
 			break;
 	}
 	__set_current_state(TASK_RUNNING);
