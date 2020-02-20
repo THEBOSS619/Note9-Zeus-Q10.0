@@ -4427,7 +4427,7 @@ CONFIG_SEC_EXT=y
 # sec sysfs Feature
 #
 CONFIG_SEC_SYSFS=y
-# CONFIG_SEC_REBOOT is not set
+CONFIG_SEC_REBOOT=y
 
 #
 # Samsung TN Build Options
