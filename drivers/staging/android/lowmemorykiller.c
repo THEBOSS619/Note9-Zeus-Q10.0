@@ -1217,6 +1217,7 @@ exit_timeout:
 				dump_tasks(NULL, NULL);
 
 		lowmem_deathpending_timeout = jiffies + HZ;
+		cpu_input_boost_kick_general(100);
 		rem += selected_tasksize;
 		lowmem_lmkcount++;
 
