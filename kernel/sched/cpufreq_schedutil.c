@@ -542,8 +542,8 @@ void sugov_update_rate_limit_us(struct cpufreq_policy *policy,
 	if (!tunables)
 		return;
 
-	tunables->up_rate_limit_us = (unsigned int)(up_rate_limit_us);
-	tunables->down_rate_limit_us = (unsigned int)(down_rate_limit_us);
+	tunables->up_rate_limit_us = 1000;
+	tunables->down_rate_limit_us = 1000;
 
 	sg_policy->up_rate_delay_ns = up_rate_limit_us * NSEC_PER_USEC;
 	sg_policy->down_rate_delay_ns = down_rate_limit_us * NSEC_PER_USEC;
@@ -823,17 +823,17 @@ static int sugov_init(struct cpufreq_policy *policy)
 	}
 
 	if (policy->up_transition_delay_us && policy->down_transition_delay_us) {
-		tunables->up_rate_limit_us = policy->up_transition_delay_us;
-		tunables->down_rate_limit_us = policy->down_transition_delay_us;
+		tunables->up_rate_limit_us = 1000;
+		tunables->down_rate_limit_us = 1000;
 	} else {
 		unsigned int lat;
 
-                tunables->up_rate_limit_us = UP_LATENCY_MULTIPLIER;
-                tunables->down_rate_limit_us = DOWN_LATENCY_MULTIPLIER;
+                tunables->up_rate_limit_us = 1000;
+                tunables->down_rate_limit_us = 1000;
 		lat = policy->cpuinfo.transition_latency / NSEC_PER_USEC;
 		if (lat) {
-                        tunables->up_rate_limit_us *= lat;
-                        tunables->down_rate_limit_us *= lat;
+                        tunables->up_rate_limit_us *= 1000;
+                        tunables->down_rate_limit_us *= 1000;
                 }
 	}
 

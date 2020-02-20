@@ -2609,12 +2609,8 @@ struct su_gov_policy {
 static inline void get_schedutil_gov_params(struct cpufreq_policy *policy,
 	union cpufreq_gov_data *data)
 {
-	struct su_gov_policy *gov_data = policy->governor_data;
-
-	data->gov_schedutil.up_rate_limit_us =
-		(long long)gov_data->tunables->up_rate_limit_us;
-	data->gov_schedutil.down_rate_limit_us =
-		(long long)gov_data->tunables->down_rate_limit_us;
+	data->gov_schedutil.up_rate_limit_us = 1000;
+	data->gov_schedutil.down_rate_limit_us = 1000;
 }
 #endif
 
