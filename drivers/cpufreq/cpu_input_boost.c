@@ -13,6 +13,7 @@
 #include <linux/slab.h>
 #include <linux/kthread.h>
 #include <linux/state_notifier.h>
+#include <linux/sched/sysctl.h>
 #include "../../kernel/sched/sched.h"
 
 #define ST_TA "top-app"
@@ -490,6 +491,7 @@ static int cpu_notifier_cb(struct notifier_block *nb,
 
 	/* Boost CPU to max frequency for max boost */
 	if (state & MAX_BOOST) {
+		sysctl_sched_energy_aware = 0;
 		policy->min = policy->max;
 		return NOTIFY_OK;
 	}
@@ -505,6 +507,8 @@ static int cpu_notifier_cb(struct notifier_block *nb,
 		min_freq = get_min_freq(b, policy->cpu, state);
 		policy->min = max(policy->cpuinfo.min_freq, min_freq);
 	}
+
+	sysctl_sched_energy_aware = 1;
 
 	return NOTIFY_OK;
 }
