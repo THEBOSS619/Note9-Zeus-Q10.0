@@ -4695,7 +4695,7 @@ static int binder_open(struct inode *nodp, struct file *filp)
 
 	/* binderfs stashes devices in i_private */
 	if (is_binderfs_device(nodp)) {
-		binder_dev = nodp->i_private;
+		binder_dev = binderfs_device_get(nodp->i_private);
 		info = nodp->i_sb->s_fs_info;
 		binder_binderfs_dir_entry_proc = info->proc_log_dir;
 	} else {
@@ -4871,6 +4871,7 @@ static int binder_node_release(struct binder_node *node, int refs)
 static void binder_deferred_release(struct binder_proc *proc)
 {
 	struct binder_context *context = proc->context;
+	struct binder_device *device;
 	struct rb_node *n;
 	int threads, nodes, incoming_refs, outgoing_refs, active_transactions;
 
@@ -4944,6 +4945,8 @@ static void binder_deferred_release(struct binder_proc *proc)
 	binder_release_work(proc, &proc->delivered_death);
 
 	binder_proc_dec_tmpref(proc);
+	device = container_of(proc->context, struct binder_device, context);
+	binderfs_device_put(device);
 }
 
 static void binder_deferred_func(struct work_struct *work)
