@@ -161,8 +161,7 @@ static void calc_params(struct calculated_params *cp, gfp_t mask)
 	int i;
 	int array_size;
 	long free_swap = get_nr_swap_pages();
-	long irp = global_node_page_state(NR_INDIRECTLY_RECLAIMABLE_BYTES)
-	  >> PAGE_SHIFT;
+	long irp = global_node_page_state(NR_KERNEL_MISC_RECLAIMABLE);
 	long usable_free_swap = 0;
 	long tot_usable = 0;
 	int start;
@@ -302,8 +301,7 @@ void print_obituary(struct task_struct *doomed,
 		     global_node_page_state(NR_SLAB_UNRECLAIMABLE) *
 		     (long)(PAGE_SIZE / 1024),
 		     gfp_mask,
-		     global_node_page_state(NR_INDIRECTLY_RECLAIMABLE_BYTES)
-		     / 1024,
+		     global_node_page_state(NR_KERNEL_MISC_RECLAIMABLE),
 		     get_nr_swap_pages() * (long)(PAGE_SIZE / 1024),
 		     death_pending_len,
 		     cp->dynamic_max_queue_len,
