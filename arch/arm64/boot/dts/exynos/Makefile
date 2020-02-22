@@ -5,5 +5,6 @@ dtb-$(CONFIG_MACH_EXYNOS9810_CROWNLTE_EUR_OPEN) :=  \
 # dtb-$(CONFIG_MACH_EXYNOS9810_STARLTE_KOR) :=
 # dtb-$(CONFIG_MACH_EXYNOS9810_STAR2LTE_KOR) :=
 
-always		:= $(dtb-y)
+always            := $(dtb-y) $(dtbo-y)
 subdir-y	:= $(dts-dirs)
+clean-files       := *.dtb*
