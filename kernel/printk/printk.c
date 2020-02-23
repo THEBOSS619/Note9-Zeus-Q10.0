@@ -914,6 +914,9 @@ static ssize_t devkmsg_write(struct kiocb *iocb, struct iov_iter *from)
 	printk_emit(facility, level, NULL, 0, "%s", line);
 	kfree(buf);
 	return ret;
+out:
+	kfree(buf);
+	return ret;
 }
 
 static ssize_t devkmsg_read(struct file *file, char __user *buf,
