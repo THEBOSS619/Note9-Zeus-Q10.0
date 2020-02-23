@@ -7039,7 +7039,7 @@ static int select_idle_sibling(struct task_struct *p, int prev, int target)
 		/*
 		 * If the prevous cpu is cache affine and idle, don't be stupid.
 		 */
-		if ((i != target && cpus_share_cache(i, target) && idle_cpu(i) || sched_idle_cpu(prev))) {
+		if (i != target && cpus_share_cache(i, target) && (idle_cpu(i) || sched_idle_cpu(prev))) {
 			schedstat_inc(p->se.statistics.nr_wakeups_sis_cache_affine);
 			schedstat_inc(this_rq()->eas_stats.sis_cache_affine);
 			return i;
