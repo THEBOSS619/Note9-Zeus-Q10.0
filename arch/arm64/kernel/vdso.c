@@ -163,15 +163,6 @@ out:
 #endif /* !CONFIG_VDSO32 */
 #endif /* CONFIG_COMPAT */
 
-static struct vm_special_mapping vdso_spec[2] __ro_after_init = {
-	{
-		.name	= "[vvar]",
-	},
-	{
-		.name	= "[vdso]",
-	},
-};
-
 static int __init vdso_mappings_init(const char *name,
 				     const char *code_start,
 				     const char *code_end,
