@@ -485,7 +485,6 @@ struct cfs_bandwidth { };
 struct cfs_rq {
 	struct load_weight load;
 	unsigned int nr_running, h_nr_running, idle_h_nr_running;
-	unsigned long runnable_weight;
 
 	u64 exec_clock;
 	u64 min_vruntime;
@@ -692,8 +691,10 @@ struct dl_rq {
 #ifdef CONFIG_FAIR_GROUP_SCHED
 /* An entity is a task if it doesn't "own" a runqueue */
 #define entity_is_task(se)	(!se->my_q)
+
 #else
 #define entity_is_task(se)	1
+
 #endif
 
 #ifdef CONFIG_SMP
@@ -705,10 +706,6 @@ static inline long se_weight(struct sched_entity *se)
 	return scale_load_down(se->load.weight);
 }
 
-static inline long se_runnable(struct sched_entity *se)
-{
-	return scale_load_down(se->runnable_weight);
-}
 
 struct max_cpu_capacity {
 	raw_spinlock_t lock;
