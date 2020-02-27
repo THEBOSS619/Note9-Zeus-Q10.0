@@ -3605,7 +3605,7 @@ __alloc_pages_direct_compact(gfp_t gfp_mask, unsigned int order,
 	return NULL;
 }
 
-#ifdef CONFIG_ANDROID_LOW_MEMORY_KILLER
+#ifdef CONFIG_HAVE_LOW_MEMORY_KILLER
 static inline bool
 should_compact_lmk_retry(struct alloc_context *ac, int order, int alloc_flags)
 {
@@ -3933,7 +3933,8 @@ should_reclaim_retry(gfp_t gfp_mask, unsigned order,
 	 * always increment the no progress counter for them
 	 */
 	if ((did_some_progress || lmk_kill_possible()) &&
-				order <= PAGE_ALLOC_COSTLY_ORDER) {
+				order <= PAGE_ALLOC_COSTLY_ORDER  ||
+			IS_ENABLED(CONFIG_HAVE_LOW_MEMORY_KILLER)) {
 
 		*no_progress_loops = 0;
 
@@ -4224,8 +4225,8 @@ retry:
 	 * implementation of the compaction depends on the sufficient amount
 	 * of free memory (see __compaction_suitable)
 	 */
-	if ((did_some_progress > 0 || lmk_kill_possible()) &&
-			should_compact_retry(ac, order, alloc_flags,
+	if ((did_some_progress > 0 || IS_ENABLED(CONFIG_HAVE_LOW_MEMORY_KILLER) && ||
+		lmk_kill_possible()) && should_compact_retry(ac, order, alloc_flags,
 				compact_result, &compact_priority,
 				&compaction_retries))
 		goto retry;
