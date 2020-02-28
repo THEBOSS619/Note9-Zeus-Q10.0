@@ -28,7 +28,7 @@
 #include <linux/devfreq_boost.h>
 
 
-#define MAX_SWAP_TASKS 200
+#define MAX_SWAP_TASKS 100
 
 
 static void swap_fn(struct work_struct *work);
@@ -44,8 +44,8 @@ module_param_named(reclaim_avg_efficiency, reclaim_avg_efficiency,
 			int, S_IRUGO);
 
 /* The vmpressure region where process reclaim operates */
-static unsigned long pressure_min = 50;
-static unsigned long pressure_max = 90;
+static unsigned long pressure_min = 45;
+static unsigned long pressure_max = 95;
 module_param_named(pressure_min, pressure_min, ulong, S_IRUGO | S_IWUSR);
 module_param_named(pressure_max, pressure_max, ulong, S_IRUGO | S_IWUSR);
 
@@ -61,7 +61,7 @@ module_param_named(pressure_max, pressure_max, ulong, S_IRUGO | S_IWUSR);
 static int swap_eff_win = 2;
 module_param_named(swap_eff_win, swap_eff_win, int, S_IRUGO | S_IWUSR);
 
-static int swap_opt_eff = 10;
+static int swap_opt_eff = 50;
 module_param_named(swap_opt_eff, swap_opt_eff, int, S_IRUGO | S_IWUSR);
 
 static atomic_t swap_opt_delay = ATOMIC_INIT(0);
