@@ -36,14 +36,14 @@ static int enable_process_reclaim = 1;
 module_param_named(enable_process_reclaim, enable_process_reclaim, int, 0644);
 
 /* The max number of pages tried to be reclaimed in a single run */
-int per_swap_size = SWAP_CLUSTER_MAX * 512;
+int per_swap_size = 1024;
 module_param_named(per_swap_size, per_swap_size, int, 0644);
 
 int reclaim_avg_efficiency;
 module_param_named(reclaim_avg_efficiency, reclaim_avg_efficiency, int, 0444);
 
 /* The vmpressure region where process reclaim operates */
-static unsigned long pressure_min = 50;
+static unsigned long pressure_min = 45;
 static unsigned long pressure_max = 95;
 module_param_named(pressure_min, pressure_min, ulong, 0644);
 module_param_named(pressure_max, pressure_max, ulong, 0644);
