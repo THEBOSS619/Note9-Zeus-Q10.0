@@ -737,7 +737,7 @@ struct sec_ts_data {
 	u8 cal_status;
 	struct mutex lock;
 	struct mutex device_mutex;
-	struct mutex i2c_mutex;
+	struct rt_mutex i2c_mutex;
 	struct mutex eventlock;
 	struct mutex modechange;
 
