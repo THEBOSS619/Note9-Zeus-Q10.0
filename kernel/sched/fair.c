@@ -7630,7 +7630,7 @@ task_is_boosted(struct task_struct *p) {
 static inline bool
 cpu_is_in_target_set(struct task_struct *p, int cpu)
 {
-	bool boosted = (schedtune_ontime_en(p) || task_is_boosted(p));
+	bool boosted = (schedtune_task_boost(p) || task_is_boosted(p));
 	int first_cpu = start_cpu(boosted);
 	int next_usable_cpu = cpumask_next(first_cpu - 1, tsk_cpus_allowed(p));
 	return cpu >= next_usable_cpu || next_usable_cpu >= nr_cpu_ids;
