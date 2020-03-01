@@ -172,8 +172,7 @@ void exynos_init_entity_util_avg(struct sched_entity *se)
 /**********************************************************************
  * load balance                                                       *
  **********************************************************************/
-bool cpu_overutilized(int cpu);
-
+bool _cpu_overutilized(int cpu);
 #define lb_sd_parent(sd) \
 	(sd->parent && sd->parent->groups != sd->parent->groups->next)
 
@@ -227,14 +226,14 @@ int exynos_need_active_balance(enum cpu_idle_type idle, struct sched_domain *sd,
 		}
 
 		if (!lb_sd_parent(sd) && src_cap < dst_cap)
-			if (cpu_overutilized(src_cpu) || global_boost())
+			if (_cpu_overutilized(src_cpu) || global_boost())
 				return 1;
 	}
 
 	if ((src_cap * src_imb_pct < dst_cap * dst_imb_pct) &&
 			cpu_rq(src_cpu)->cfs.h_nr_running == 1 &&
-			cpu_overutilized(src_cpu) &&
-			!cpu_overutilized(dst_cpu)) {
+			_cpu_overutilized(src_cpu) &&
+			!_cpu_overutilized(dst_cpu)) {
 		return 1;
 	}
 
@@ -259,7 +258,7 @@ DEFINE_PER_CPU(struct lbt_overutil, ehmp_bot_overutil);
 DEFINE_PER_CPU(struct lbt_overutil, ehmp_top_overutil);
 #define DISABLE_OU	-1
 
-bool cpu_overutilized(int cpu)
+bool _cpu_overutilized(int cpu)
 {
 	struct lbt_overutil *ou = &per_cpu(ehmp_top_overutil, cpu);
 

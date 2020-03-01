@@ -2917,21 +2917,14 @@ retry:
 		int fcpu = group_first_cpu(sg);
 		int capacity_orig = capacity_orig_of(fcpu);
 
-		if (boost_on_big) {
-			if (is_min_capacity_cpu(fcpu))
-				continue;
-		} else {
 			if (capacity_orig > best_capacity)
 				continue;
-		}
 
-		for_each_cpu_and(cpu, lowest_mask, sched_group_span(sg)) {
-			if (cpu_isolated(cpu))
-				continue;
-
+		for_each_cpu_and(cpu, lowest_mask, sched_group_cpus(sg)) {
+#ifdef CONFIG_SCHED_WALT
 			if (sched_cpu_high_irqload(cpu))
 				continue;
-
+#endif
 			util = cpu_util(cpu);
 
 			if (__cpu_overutilized(cpu, tutil))
@@ -2958,7 +2951,7 @@ retry:
 			if (sysctl_sched_cstate_aware)
 				cpu_idle_idx = idle_get_state_idx(cpu_rq(cpu));
 
-			util_cum = cpu_util_cum(cpu, 0);
+			util_cum = cpu_util(best_cpu);
 			if (cpu != task_cpu(task) && best_cpu_util == util) {
 				if (best_cpu_idle_idx < cpu_idle_idx)
 					continue;
