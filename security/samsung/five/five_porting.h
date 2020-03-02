@@ -19,6 +19,7 @@
 #define __LINUX_FIVE_PORTING_H
 
 #include <linux/version.h>
+#include <linux/iversion.h>
 #include <linux/magic.h>
 
 /* OVERLAYFS_SUPER_MAGIC is defined since v4.5.0 */
@@ -133,24 +134,6 @@ static inline int integrity_kernel_read(struct file *file, loff_t offset,
 
 	return ret;
 }
-#endif
-
-#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 16, 0)
-#include <linux/fs.h>
-
-static inline bool
-inode_eq_iversion(const struct inode *inode, u64 old)
-{
-	return inode->i_version == old;
-}
-
-static inline u64
-inode_query_iversion(struct inode *inode)
-{
-	return inode->i_version;
-}
-#else
-#include <linux/iversion.h>
 #endif
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(4, 8, 0)
