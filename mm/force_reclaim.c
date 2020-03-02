@@ -29,13 +29,13 @@
 #include <linux/state_notifier.h>
 
 
-#define MAX_SWAP_TASKS 100
+#define MAX_SWAP_TASKS SWAP_CLUSTER_MAX
 
 
 static void swap_fn(struct work_struct *work);
 static DECLARE_DELAYED_WORK(swap_work, swap_fn);
 
-/* User knob to enable/disable process reclaim feature */
+/* User knob to enable/disable force reclaim feature */
 static int enable_force_reclaim = 1;
 module_param_named(enable_force_reclaim, enable_force_reclaim, int,
 	S_IRUGO | S_IWUSR);
@@ -44,9 +44,9 @@ static int reclaim_avg_efficiency;
 module_param_named(reclaim_avg_efficiency, reclaim_avg_efficiency,
 			int, S_IRUGO);
 
-/* The vmpressure region where process reclaim operates */
+/* The vmpressure region where force reclaim operates */
 static unsigned long pressure_min = 45;
-static unsigned long pressure_max = 95;
+static unsigned long pressure_max = 85;
 module_param_named(pressure_min, pressure_min, ulong, S_IRUGO | S_IWUSR);
 module_param_named(pressure_max, pressure_max, ulong, S_IRUGO | S_IWUSR);
 
