@@ -2087,9 +2087,8 @@ static void check_preempt_equal_prio(struct rq *rq, struct task_struct *p)
 	 * p is migratable, so let's not schedule it and
 	 * see if it is pushed or pulled somewhere else.
 	 */
-	if (p->nr_cpus_allowed != 1
-	    && cpupri_find(&rq->rd->cpupri, p, NULL))
-		return;
+	if (p->nr_cpus_allowed != 1 &&
+	    cpupri_find(&rq->rd->cpupri, p, NULL))
 
 	/*
 	 * There appears to be other cpus that can accept
@@ -2445,6 +2444,7 @@ static int find_lowest_rq_fluid(struct task_struct *task)
 	int min_norm_cpu = -1, min_rt_cpu = -1;
 	int i;
 	bool boost = false;
+	int ret;
 
 	/* Make sure the mask is initialized first */
 	if (unlikely(!lowest_mask))
@@ -2453,8 +2453,23 @@ static int find_lowest_rq_fluid(struct task_struct *task)
 	if (task->nr_cpus_allowed == 1)
 		return best_cpu; /* No other targets possible */
 
-	/* find target cpu */
-	cpupri_find(&task_rq(task)->rd->cpupri, task, lowest_mask);
+	/*
+	 * If we're on asym system ensure we consider the different capacities
+	 * of the CPUs when searching for the lowest_mask.
+	 */
+	if (static_branch_unlikely(&sched_asym_cpucapacity)) {
+
+		ret = cpupri_find_fitness(&task_rq(task)->rd->cpupri,
+					  task, lowest_mask,
+					  rt_task_fits_capacity);
+	} else {
+
+		ret = cpupri_find(&task_rq(task)->rd->cpupri,
+				  task, lowest_mask);
+	}
+
+	if (!ret)
+		return -1; /* No targets found */
 
 	rcu_read_lock();
 
