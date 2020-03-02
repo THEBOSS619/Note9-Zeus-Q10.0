@@ -179,6 +179,13 @@ static void scan_and_kill(unsigned long pages_needed)
 	 * is preferred to holding an RCU read lock so that the list of tasks
 	 * is guaranteed to be up to date.
 	 */
+
+	if (!state_suspended) {
+		cpu_input_boost_kick_max(250);
+		devfreq_boost_kick_max(DEVFREQ_EXYNOS_MIF, 250);
+		cpu_input_boost_kick_general(250);
+	}
+
 	read_lock(&tasklist_lock);
 	for (i = 1; i < ARRAY_SIZE(adjs); i++) {
 		pages_found += find_victims(&nr_victims, adjs[i], adjs[i - 1]);
