@@ -23,7 +23,7 @@
 #include <linux/f2fs_fs.h>
 #include <linux/sysfs.h>
 #include <linux/quota.h>
-
+#include <linux/iversion.h>
 #include "f2fs.h"
 #include "node.h"
 #include "segment.h"
@@ -880,7 +880,7 @@ static struct inode *f2fs_alloc_inode(struct super_block *sb)
 	/* Initialize f2fs-specific inode info */
 	/* F2FS doesn't write value of i_version to disk and
 	   it will be reinitialize after a reboot.*/
-	fi->vfs_inode.i_version = 1;
+	inode_set_iversion(&fi->vfs_inode, 1);
 	atomic_set(&fi->dirty_pages, 0);
 	init_rwsem(&fi->i_sem);
 	INIT_LIST_HEAD(&fi->dirty_list);

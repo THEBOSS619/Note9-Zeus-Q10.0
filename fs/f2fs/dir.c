@@ -883,8 +883,8 @@ static int f2fs_readdir(struct file *file, struct dir_context *ctx)
 		goto out_free;
 	}
 
-	if (IS_I_VERSION(inode) && file->f_version != inode->i_version)
-		file->f_version = inode->i_version;
+	if (IS_I_VERSION(inode) && !inode_eq_iversion(inode, file->f_version))
+		file->f_version = inode_query_iversion(inode);
 
 	for (; n < npages; n++, ctx->pos = n * NR_DENTRY_IN_BLOCK) {
 
