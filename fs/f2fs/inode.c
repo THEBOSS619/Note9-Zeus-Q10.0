@@ -8,6 +8,7 @@
 #include <linux/fs.h>
 #include <linux/f2fs_fs.h>
 #include <linux/buffer_head.h>
+#include <linux/iversion.h>
 #include <linux/backing-dev.h>
 #include <linux/writeback.h>
 
