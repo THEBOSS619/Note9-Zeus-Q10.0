@@ -1340,6 +1340,24 @@ static int proc_dirtyratio_handler(struct ctl_table *table, int write,
 	return proc_dointvec_minmax(table, write, buffer, lenp, ppos);
 }
 
+static int proc_min_free_kbytes_handler(struct ctl_table *table, int write,
+		  void __user *buffer, size_t *lenp, loff_t *ppos)
+{
+	if (task_is_booster(current))
+		return 0;
+
+	return proc_dointvec_minmax(table, write, buffer, lenp, ppos);
+}
+
+static int proc_watermark_scale_factor_handler(struct ctl_table *table, int write,
+		  void __user *buffer, size_t *lenp, loff_t *ppos)
+{
+	if (task_is_booster(current))
+		return 0;
+
+	return proc_dointvec_minmax(table, write, buffer, lenp, ppos);
+}
+
 static struct ctl_table vm_table[] = {
 	{
 		.procname	= "overcommit_memory",
@@ -1567,7 +1585,7 @@ static struct ctl_table vm_table[] = {
 		.data		= &min_free_kbytes,
 		.maxlen		= sizeof(min_free_kbytes),
 		.mode		= 0644,
-		.proc_handler	= min_free_kbytes_sysctl_handler,
+		.proc_handler	= proc_min_free_kbytes_handler,
 		.extra1		= &zero,
 	},
 	{
@@ -1575,7 +1593,7 @@ static struct ctl_table vm_table[] = {
 		.data		= &extra_free_kbytes,
 		.maxlen		= sizeof(extra_free_kbytes),
 		.mode		= 0644,
-		.proc_handler	= min_free_kbytes_sysctl_handler,
+		.proc_handler	= proc_min_free_kbytes_handler,
 		.extra1		= &zero,
 	},
 	{
@@ -1583,7 +1601,7 @@ static struct ctl_table vm_table[] = {
 		.data		= &watermark_scale_factor,
 		.maxlen		= sizeof(watermark_scale_factor),
 		.mode		= 0644,
-		.proc_handler	= watermark_scale_factor_sysctl_handler,
+		.proc_handler	= proc_watermark_scale_factor_handler,
 		.extra1		= &one,
 		.extra2		= &one_thousand,
 	},

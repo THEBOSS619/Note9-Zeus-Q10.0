@@ -62,7 +62,7 @@ module_param_named(pressure_max, pressure_max, ulong, S_IRUGO | S_IWUSR);
 static int swap_eff_win = 2;
 module_param_named(swap_eff_win, swap_eff_win, int, S_IRUGO | S_IWUSR);
 
-static int swap_opt_eff = 50;
+static int swap_opt_eff = 30;
 module_param_named(swap_opt_eff, swap_opt_eff, int, S_IRUGO | S_IWUSR);
 
 static atomic_t swap_opt_delay = ATOMIC_INIT(0);
