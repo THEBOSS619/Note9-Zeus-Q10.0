@@ -487,6 +487,16 @@ static int cpu_notifier_cb(struct notifier_block *nb,
 	if (action != CPUFREQ_ADJUST)
 		return NOTIFY_OK;
 
+	if (state_suspended) {
+		clear_boost_bit(b, INPUT_BOOST | MAX_BOOST | GENERAL_BOOST);
+		{
+			sysctl_sched_energy_aware = 1;
+			return idle_min_freq_lp;
+		}
+
+		return NOTIFY_OK;
+	}
+
 	state = get_boost_state(b);
 
 	/* Boost CPU to max frequency for max boost */
@@ -508,6 +518,7 @@ static int cpu_notifier_cb(struct notifier_block *nb,
 		policy->min = max(policy->cpuinfo.min_freq, min_freq);
 	}
 
+	/* If we are not boosting max for app launch/device wake, enable EAS */
 	sysctl_sched_energy_aware = 1;
 
 	return NOTIFY_OK;
