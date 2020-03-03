@@ -902,19 +902,23 @@ static int sugov_init(struct cpufreq_policy *policy)
 	if (policy->up_transition_delay_us && policy->down_transition_delay_us) {
 		tunables->up_rate_limit_us = policy->up_transition_delay_us;
 		tunables->down_rate_limit_us = policy->down_transition_delay_us;
+		tunables->exp_util = true;
 	} else {
 		unsigned int lat;
 
                 tunables->up_rate_limit_us = 125;
                 tunables->down_rate_limit_us = 125;
+                tunables->exp_util = true;
 		lat = policy->cpuinfo.transition_latency / NSEC_PER_USEC;
 		if (lat) {
                         tunables->up_rate_limit_us *= lat;
                         tunables->down_rate_limit_us *= lat;
+                        tunables->exp_util = true;
                 }
 	}
 
 	tunables->iowait_boost_enable = 1;
+	tunables->exp_util = true;
 	policy->governor_data = sg_policy;
 	sg_policy->tunables = tunables;
 
