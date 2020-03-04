@@ -66,6 +66,7 @@ struct boost_drv {
 };
 
 static struct boost_drv *boost_drv_g __read_mostly;
+static int boost_slot;
 
 static u32 get_boost_freq(struct boost_drv *b, u32 cpu, u32 state)
 {
@@ -207,12 +208,12 @@ static void input_boost_worker(struct work_struct *work)
 	/* Set input dynamic stune boost value only
 	if max_dynamic_stune_boost is inactive */
 	if (!max_stune_boost_active) {
-		reset_stune_boost("top-app");
+		reset_stune_boost("top-app", boost_slot);
 		if (input_dynamic_stune_boost > general_dynamic_stune_boost) {
-			do_stune_boost("top-app", input_dynamic_stune_boost);
+			do_stune_boost("top-app", input_dynamic_stune_boost, &boost_slot);
 		}
 		else {
-			do_stune_boost("top-app", general_dynamic_stune_boost);
+			do_stune_boost("top-app", general_dynamic_stune_boost, &boost_slot);
 		}
 		input_stune_boost_active = true;			
 	}	
@@ -233,7 +234,7 @@ static void input_unboost_worker(struct work_struct *work)
 	/* Reset dynamic stune boost value to the default value
 	only if the boost active is input_dynamic_stune_boost */
 	if (input_stune_boost_active) {
-		reset_stune_boost("top-app");
+		reset_stune_boost("top-app", boost_slot);
 		input_stune_boost_active = false;
 	}
 #endif /* CONFIG_DYNAMIC_STUNE_BOOST */
@@ -253,12 +254,12 @@ static void max_boost_worker(struct work_struct *work)
 
 #ifdef CONFIG_DYNAMIC_STUNE_BOOST
 	/* Set max dynamic stune boost value */
-	reset_stune_boost("top-app");
+	reset_stune_boost("top-app", boost_slot);
 	if (max_dynamic_stune_boost > general_dynamic_stune_boost) {
-		do_stune_boost("top-app", max_dynamic_stune_boost);
+		do_stune_boost("top-app", max_dynamic_stune_boost, &boost_slot);
 	}
 	else {
-		do_stune_boost("top-app", general_dynamic_stune_boost);
+		do_stune_boost("top-app", general_dynamic_stune_boost, &boost_slot);
 	}	
 	max_stune_boost_active = true;
 #endif /* CONFIG_DYNAMIC_STUNE_BOOST */	
@@ -278,7 +279,7 @@ static void max_unboost_worker(struct work_struct *work)
 	/* Reset dynamic stune boost value to the default value
 	only if the boost active is max_dynamic_stune_boost */
 	if (max_stune_boost_active) {
-		reset_stune_boost("top-app");
+		reset_stune_boost("top-app", boost_slot);
 		max_stune_boost_active = false;
 	}
 #endif /* CONFIG_DYNAMIC_STUNE_BOOST */
@@ -300,8 +301,8 @@ static void general_boost_worker(struct work_struct *work)
 	/* Set general dynamic stune boost value only
 	if no other boosts are active at the moment */
 	if (!input_stune_boost_active && !max_stune_boost_active) {
-		reset_stune_boost("top-app");
-		do_stune_boost("top-app", general_dynamic_stune_boost);
+		reset_stune_boost("top-app", boost_slot);
+		do_stune_boost("top-app", general_dynamic_stune_boost, &boost_slot);
 		general_stune_boost_active = true;
 	}	
 #endif /* CONFIG_DYNAMIC_STUNE_BOOST */	
@@ -321,7 +322,7 @@ static void general_unboost_worker(struct work_struct *work)
 	/* Reset dynamic stune boost value to the default value 
 	only if the boost active is general_dynamic_stune_boost */
 	if (general_stune_boost_active) {
-		reset_stune_boost("top-app");
+		reset_stune_boost("top-app", boost_slot);
 		general_stune_boost_active = false;
 	}
 #endif /* CONFIG_DYNAMIC_STUNE_BOOST */
@@ -437,7 +438,7 @@ static void cpu_input_boost_input_disconnect(struct input_handle *handle)
 {
 #ifdef CONFIG_DYNAMIC_STUNE_BOOST
 	/* Reset dynamic stune boost value to the default value */
-	reset_stune_boost("top-app");
+	reset_stune_boost("top-app", boost_slot);
 #endif /* CONFIG_DYNAMIC_STUNE_BOOST */
 
 	input_close_device(handle);
