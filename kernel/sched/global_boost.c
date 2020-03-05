@@ -8,6 +8,8 @@
 #include <linux/sched.h>
 #include <linux/kobject.h>
 #include <trace/events/ehmp.h>
+#include "sched.h"
+
 /*
  * Global boost manages each boosting request as a list so that it can support
  * boosting at the device driver level as well as user level. The list management

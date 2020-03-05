@@ -30,6 +30,7 @@ extern u64 decay_load(u64 val, u64 n);
 extern int start_cpu(bool boosted);
 
 extern unsigned long task_util(struct task_struct *p);
+
 static bool _sd_overutilized(struct sched_domain *sd)
 {
 	return sd->shared->overutilized;
@@ -120,7 +121,35 @@ int exynos_estimate_idle_state(int cpu_idx, struct cpumask *mask,
 /**********************************************************************
  * task initialization                                                *
  **********************************************************************/
+/*
+ * Global boost manages each boosting request as a list so that it can support
+ * boosting at the device driver level as well as user level. The list management
+ * algorithm uses the priority-list same as pm_qos.
+ */
+static struct plist_head gb_list = PLIST_HEAD_INIT(gb_list);
+
+static int gb_qos_value(void)
+{
+	return plist_last(&gb_list)->prio;
+}
+
 void attach_entity_cfs_rq(struct sched_entity *se);
+
+/*
+ * Returns the biggest value in the global boost list. In the current policy,
+ * a value greater than 0 is unconditionally boosting. The size of the value
+ * is meaningless.
+ */
+int global_boosted(void)
+{
+	u64 now = ktime_to_us(ktime_get());
+
+	/* booting boost duration = 40s */
+	if (now < 40 * USEC_PER_SEC)
+		return 1;
+
+	return gb_qos_value() > 0;
+}
 
 void exynos_init_entity_util_avg(struct sched_entity *se)
 {
@@ -225,7 +254,7 @@ int exynos_need_active_balance(enum cpu_idle_type idle, struct sched_domain *sd,
 		}
 
 		if (!lb_sd_parent(sd) && src_cap < dst_cap)
-			if (_cpu_overutilized(src_cpu) || global_boosted())
+			if (_cpu_overutilized(src_cpu) || global_boosted() || global_boost())
 				return 1;
 	}
 
@@ -476,8 +505,6 @@ static struct gb_qos_request gb_req_user =
 	.name = "ehmp_gb_req_user",
 };
 
-static struct plist_head gb_list = PLIST_HEAD_INIT(gb_list);
-
 static DEFINE_SPINLOCK(gb_lock);
 
 static int gb_qos_max_value(void)
@@ -643,7 +670,7 @@ static int check_boost_trigger(struct task_struct *p, struct boost_trigger *bt)
 	}
 #endif
 
-	gb = global_boosted();
+	gb = global_boosted() || global_boost();
 	if (gb) {
 		bt->trigger = BT_GLOBAL_BOOST;
 		bt->boost_val = gb;

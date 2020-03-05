@@ -1650,7 +1650,6 @@ bool __cpu_overutilized(int cpu, int delta);
 bool cpu_overutilized(int cpu);
 extern int select_perf_cpu(struct task_struct *p);
 extern int global_boosted(void);
-
 #endif
 
 #ifdef CONFIG_CPU_IDLE
