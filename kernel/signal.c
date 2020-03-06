@@ -37,6 +37,8 @@
 #include <linux/cn_proc.h>
 #include <linux/compiler.h>
 #include <linux/devfreq_boost.h>
+#include <linux/cpu_input_boost.h>
+
 #include <linux/state_notifier.h>
 #include <linux/oom.h>
 
@@ -1335,7 +1337,9 @@ static int do_lmkd_kill(struct task_struct *p)
 	int ret;
 
 	/* Boost CPU and DDR bus to the max */
-	devfreq_boost_kick_max(DEVFREQ_EXYNOS_MIF, 200);
+	cpu_input_boost_kick_max(250);
+	devfreq_boost_kick_max(DEVFREQ_EXYNOS_MIF, 250);
+	cpu_input_boost_kick_general(500);
 
 	preempt_disable();
 	get_task_struct(p);

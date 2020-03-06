@@ -503,8 +503,9 @@ int suspend_devices_and_enter(suspend_state_t state)
  */
 static void suspend_finish(void)
 {
-	cpu_input_boost_kick_max(500);
-	devfreq_boost_kick_max(DEVFREQ_EXYNOS_MIF, 1250);
+	cpu_input_boost_kick_max(250);
+	devfreq_boost_kick_max(DEVFREQ_EXYNOS_MIF, 250);
+	cpu_input_boost_kick_general(750);
 	suspend_thaw_processes();
 	pm_notifier_call_chain(PM_POST_SUSPEND);
 	pm_restore_console();

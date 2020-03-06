@@ -41,6 +41,8 @@
 #include <linux/sec_debug.h>
 #endif
 #include <linux/devfreq_boost.h>
+#include <linux/cpu_input_boost.h>
+#include <linux/state_notifier.h>
 
 #ifdef CONFIG_POWERSUSPEND
 #include <linux/powersuspend.h>
@@ -2565,7 +2567,9 @@ static int decon_set_win_config(struct decon_device *decon,
 #endif
 	num_of_window = decon_get_active_win_count(decon, win_data);
 	if (num_of_window) {
+		if (!state_suspended) {
 		devfreq_boost_kick(DEVFREQ_EXYNOS_MIF);
+	}
 		win_data->retire_fence = decon_create_fence(decon, &sync_file);
 		if (win_data->retire_fence < 0)
 			goto err_prepare;
@@ -2589,7 +2593,9 @@ static int decon_set_win_config(struct decon_device *decon,
 			sizeof(struct decon_rect));
 
 	if (num_of_window) {
+		if (!state_suspended) {
 		devfreq_boost_kick(DEVFREQ_EXYNOS_MIF);
+	}
 		fd_install(win_data->retire_fence, sync_file->file);
 #if defined(CONFIG_DPU_2_0_RELEASE_FENCES)
 		decon_create_release_fences(decon, win_data, sync_file);

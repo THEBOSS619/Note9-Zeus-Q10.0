@@ -180,11 +180,9 @@ static void swap_fn(struct work_struct *work)
 		}
 	}
 
-	if (!state_suspended) {
-		cpu_input_boost_kick_max(250);
+		cpu_input_boost_kick_max(100);
 		devfreq_boost_kick_max(DEVFREQ_EXYNOS_MIF, 250);
-		cpu_input_boost_kick_general(250);
-	}
+		cpu_input_boost_kick_general(500);
 
 	for (i = 0; i < si; i++)
 		total_sz += selected[i].tasksize;

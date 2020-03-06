@@ -2940,9 +2940,9 @@ static ssize_t __cgroup_procs_write(struct kernfs_open_file *of, char *buf,
 	if (!ret && !threadgroup && !state_suspended &&
 		!strcmp(of->kn->parent->name, "top-app") &&
 		task_is_zygote(tsk->parent)) {
-		cpu_input_boost_kick_max(750);
-		devfreq_boost_kick_max(DEVFREQ_EXYNOS_MIF, 750);
-		cpu_input_boost_kick_general(250);
+		cpu_input_boost_kick_max(500);
+		devfreq_boost_kick_max(DEVFREQ_EXYNOS_MIF, 500);
+		cpu_input_boost_kick_general(750);
 	}
 
 

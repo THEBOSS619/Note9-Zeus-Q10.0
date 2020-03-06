@@ -180,11 +180,9 @@ static void scan_and_kill(unsigned long pages_needed)
 	 * is guaranteed to be up to date.
 	 */
 
-	if (!state_suspended) {
-		cpu_input_boost_kick_max(250);
+		cpu_input_boost_kick_max(100);
 		devfreq_boost_kick_max(DEVFREQ_EXYNOS_MIF, 250);
-		cpu_input_boost_kick_general(250);
-	}
+		cpu_input_boost_kick_general(500);
 
 	read_lock(&tasklist_lock);
 	for (i = 1; i < ARRAY_SIZE(adjs); i++) {
@@ -228,11 +226,10 @@ static void scan_and_kill(unsigned long pages_needed)
 			vtsk->signal->oom_score_adj,
 			victim->size << (PAGE_SHIFT - 10));
 
-		if (!state_suspended) {
-		cpu_input_boost_kick_max(250);
+		cpu_input_boost_kick_max(100);
 		devfreq_boost_kick_max(DEVFREQ_EXYNOS_MIF, 250);
-		cpu_input_boost_kick_general(250);
-	}
+		cpu_input_boost_kick_general(500);
+
 		/* Accelerate the victim's death by forcing the kill signal */
 		do_send_sig_info(SIGKILL, SEND_SIG_FORCED, vtsk, true);
 
