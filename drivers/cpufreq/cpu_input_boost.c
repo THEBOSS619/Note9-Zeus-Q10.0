@@ -25,6 +25,7 @@ static __read_mostly unsigned int input_boost_freq_lp = CONFIG_INPUT_BOOST_FREQ_
 static __read_mostly unsigned int input_boost_freq_hp = CONFIG_INPUT_BOOST_FREQ_PERF;
 static __read_mostly unsigned int input_boost_return_freq_lp = CONFIG_REMOVE_INPUT_BOOST_FREQ_LP;
 static __read_mostly unsigned int input_boost_return_freq_hp = CONFIG_REMOVE_INPUT_BOOST_FREQ_PERF;
+static __read_mostly unsigned int idle_min_freq_lp = CONFIG_IDLE_MIN_FREQ_LP;
 static __read_mostly unsigned int input_boost_awake_return_freq_lp = CONFIG_AWAKE_REMOVE_INPUT_BOOST_FREQ_LP;
 static __read_mostly unsigned int input_boost_awake_return_freq_hp = CONFIG_AWAKE_REMOVE_INPUT_BOOST_FREQ_PERF;
 static __read_mostly unsigned int general_boost_freq_lp = CONFIG_GENERAL_BOOST_FREQ_LP;
@@ -37,6 +38,7 @@ module_param_named(remove_input_boost_freq_lp, input_boost_return_freq_lp, uint,
 module_param_named(remove_input_boost_freq_perf, input_boost_return_freq_hp, uint, 0644);
 module_param(input_boost_awake_return_freq_lp, uint, 0644);
 module_param(input_boost_awake_return_freq_hp, uint, 0644);
+module_param(idle_min_freq_lp, uint, 0644);
 module_param(general_boost_freq_lp, uint, 0644);
 module_param(general_boost_freq_hp, uint, 0644);
 module_param(input_boost_duration, short, 0644);
@@ -137,6 +139,10 @@ static u32 get_boost_freq(struct boost_drv *b, u32 cpu, u32 state)
 
 static u32 get_min_freq(struct boost_drv *b, u32 cpu, u32 state)
 {
+	if (cpumask_test_cpu(cpu, cpu_lp_mask) && (!(state & SCREEN_AWAKE))) {
+		return idle_min_freq_lp;
+	}
+
 	if (state & SCREEN_AWAKE) {
 		if (cpumask_test_cpu(cpu, cpu_lp_mask))
 			return input_boost_awake_return_freq_lp;
