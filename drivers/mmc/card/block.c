@@ -644,7 +644,8 @@ static struct mmc_blk_ioc_data *mmc_blk_ioctl_copy_from_kernel(
 		goto out;
 	}
 
-	memcpy(&idata->ic, icmd, sizeof(idata->ic));
+	if (icmd)
+		memcpy(&idata->ic, icmd, sizeof(idata->ic));
 
 	idata->buf_bytes = (u64) idata->ic.blksz * idata->ic.blocks;
 	if (idata->buf_bytes > MMC_IOC_MAX_BYTES) {
