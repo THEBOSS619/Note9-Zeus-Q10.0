@@ -1203,7 +1203,6 @@ static int sched_colocate_write_wrapper(struct cgroup_subsys_state *css,
 
 	return 0;
 }
-#endif
 
 static int boost_write_wrapper(struct cgroup_subsys_state *css,
 			struct cftype *cft, s64 boost)
@@ -1215,6 +1214,7 @@ static int boost_write_wrapper(struct cgroup_subsys_state *css,
 
 	return 0;
 }
+#endif
 
 static int prefer_idle_write_wrapper(struct cgroup_subsys_state *css,
 			struct cftype *cft, u64 prefer_idle)
@@ -1350,8 +1350,10 @@ static void write_default_values(struct cgroup_subsys_state *css)
 	char cg_name[15];
 	static const int boost_values[3] = { 0, 0, 0 };
 	static const bool prefer_idle_values[3] = { 1, 1, 0 };
+#ifdef CONFIG_SCHED_WALT
 	static const bool sched_colocate_values[3] = { 0, 0, 0 };
 	static const bool sched_boost_no_override_values[3] = { 1, 1, 0 };
+#endif
 	static const char *stune_groups[] =
 	{ "top-app", "foreground", "background" };
 
@@ -1362,8 +1364,10 @@ static void write_default_values(struct cgroup_subsys_state *css)
 		if (!strcmp(cg_name, stune_groups[i])) {
 			boost_write(css, NULL, boost_values[i]);
 			prefer_idle_write(css, NULL, prefer_idle_values[i]);
+#ifdef CONFIG_SCHED_WALT
 			sched_colocate_write(css, NULL, sched_colocate_values[i]);
 			sched_boost_override_write(css, NULL, sched_boost_no_override_values[i]);
+#endif
 		}
 	}
 }
