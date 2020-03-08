@@ -1358,6 +1358,15 @@ static int proc_watermark_scale_factor_handler(struct ctl_table *table, int writ
 	return proc_dointvec_minmax(table, write, buffer, lenp, ppos);
 }
 
+static int proc_sysctl_vfs_cache_pressure_handler(struct ctl_table *table, int write,
+		  void __user *buffer, size_t *lenp, loff_t *ppos)
+{
+	if (task_is_booster(current))
+		return 0;
+
+	return proc_dointvec_minmax(table, write, buffer, lenp, ppos);
+}
+
 static struct ctl_table vm_table[] = {
 	{
 		.procname	= "overcommit_memory",
@@ -1651,8 +1660,8 @@ static struct ctl_table vm_table[] = {
 		.procname	= "vfs_cache_pressure",
 		.data		= &sysctl_vfs_cache_pressure,
 		.maxlen		= sizeof(sysctl_vfs_cache_pressure),
-		.mode		= 0644,
-		.proc_handler	= proc_dointvec,
+		.mode		= 0444,
+		.proc_handler	= proc_sysctl_vfs_cache_pressure_handler,
 		.extra1		= &zero,
 	},
 #ifdef HAVE_ARCH_PICK_MMAP_LAYOUT
