@@ -43,8 +43,8 @@ static int dp_parser_reg(struct dp_parser *parser)
 	}
 
 	io->len = reg_count;
-	io->data = devm_kzalloc(dev, sizeof(struct dp_io_data) * reg_count,
-			GFP_KERNEL);
+	io->data = devm_kcalloc(dev, reg_count, sizeof(struct dp_io_data),
+				GFP_KERNEL);
 	if (!io->data)
 		return -ENOMEM;
 

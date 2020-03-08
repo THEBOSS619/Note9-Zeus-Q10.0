@@ -502,7 +502,7 @@ static ssize_t diag_dbgfs_read_smdinfo(struct file *file, char __user *ubuf,
 		return 0;
 	}
 
-	buf = kzalloc(sizeof(char) * DEBUG_BUF_SIZE, GFP_KERNEL);
+	buf = kzalloc(DEBUG_BUF_SIZE, GFP_KERNEL);
 	if (!buf)
 		return -ENOMEM;
 

@@ -251,14 +251,14 @@ int v4l2_event_subscribe(struct v4l2_fh *fh,
 
 	if (found_ev) {
 		/* Already listening */
-		kfree(sev);
+		kvfree(sev);
 	} else if (sev->ops && sev->ops->add) {
 		ret = sev->ops->add(sev, elems);
 		if (ret) {
 			spin_lock_irqsave(&fh->vdev->fh_lock, flags);
 			__v4l2_event_unsubscribe(sev);
 			spin_unlock_irqrestore(&fh->vdev->fh_lock, flags);
-			kfree(sev);
+			kvfree(sev);
 		}
 	}
 
@@ -317,7 +317,7 @@ int v4l2_event_unsubscribe(struct v4l2_fh *fh,
 
 	mutex_unlock(&fh->subscribe_lock);
 
-		kvfree(sev);
+	kvfree(sev);
 
 	return 0;
 }
