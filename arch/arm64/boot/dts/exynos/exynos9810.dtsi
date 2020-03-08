@@ -407,6 +407,8 @@
 			};
 			CPU_COST_1: core-core1{
 				busy-cost-data = <
+					24	19
+					35	19
 					46	22
 					61	31
 					72	39
@@ -457,6 +459,8 @@
 			};
 			CLUSTER_COST_1: cluster-core1{
 			busy-cost-data = <
+					24	1
+					35	1
 					46      1
 					61      3
 					72      4
