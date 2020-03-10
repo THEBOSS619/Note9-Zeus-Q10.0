@@ -29,7 +29,7 @@ void cpufreq_remove_update_util_hook(int cpu);
 static inline unsigned long map_util_freq(unsigned long util,
 					unsigned long freq, unsigned long cap)
 {
-	return (freq + (freq >> 3)) * util / cap;
+	return (freq + (freq >> 7)) * util / cap;
 }
 
 bool cpufreq_this_cpu_can_update(struct cpufreq_policy *policy);
