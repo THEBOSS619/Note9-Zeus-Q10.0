@@ -157,7 +157,7 @@ config MMU
 	def_bool y
 
 config DEBUG_RODATA
-	def_bool y
+	def_bool n
 
 config ARM64_PAGE_SHIFT
 	int

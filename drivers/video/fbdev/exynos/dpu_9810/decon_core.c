@@ -3043,7 +3043,9 @@ static struct fb_ops decon_fb_ops = {
 	.fb_set_par	= decon_set_par,
 	.fb_blank	= decon_blank,
 	.fb_setcolreg	= decon_setcolreg,
+#ifdef CONFIG_FB_SIMPLE
 	.fb_fillrect    = cfb_fillrect,
+#endif
 #ifdef CONFIG_COMPAT
 	.fb_compat_ioctl = decon_compat_ioctl,
 #endif
