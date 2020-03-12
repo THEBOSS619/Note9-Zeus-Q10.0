@@ -118,20 +118,24 @@ ifeq ($(CONFIG_CPU_BIG_ENDIAN), y)
 KBUILD_CPPFLAGS	+= -mbig-endian
 AS		+= -EB
 LD		+= -EB
+ifeq ($(cc-name),clang)
 ifeq ($(ld-name),gold)
 LDFLAGS		+= -maarch64_elf64_be_vec
 else
 LDFLAGS		+= -maarch64elfb
+endif
 endif
 UTS_MACHINE	:= aarch64_be
 else
 KBUILD_CPPFLAGS	+= -mlittle-endian
 AS		+= -EL
 LD		+= -EL
+ifeq ($(cc-name),clang)
 ifeq ($(ld-name),gold)
 LDFLAGS		+= -maarch64_elf64_le_vec
 else
 LDFLAGS		+= -maarch64elf
+endif
 endif
 UTS_MACHINE	:= aarch64
 endif
