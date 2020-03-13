@@ -46,9 +46,9 @@
 #define CREATE_TRACE_POINTS
 #include <trace/events/oom.h>
 
-int sysctl_panic_on_oom;
+int sysctl_panic_on_oom = 0;
 int sysctl_oom_kill_allocating_task = 1;
-int sysctl_oom_dump_tasks;
+int sysctl_oom_dump_tasks = 0;
 
 DEFINE_MUTEX(oom_lock);
 
