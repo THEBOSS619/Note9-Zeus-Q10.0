@@ -303,10 +303,10 @@ struct cgroup {
 
 	/* used to schedule release agent */
 	struct work_struct release_agent_work;
-
+#ifdef CONFIG_PSI
 	/* used to track pressure stalls */
 	struct psi_group psi;
-
+#endif
 	/* used to store eBPF programs */
 	struct cgroup_bpf bpf;
 

@@ -619,12 +619,12 @@ static inline void pr_cont_cgroup_path(struct cgroup *cgrp)
 {
 	pr_cont_kernfs_path(cgrp->kn);
 }
-
+#ifdef CONFIG_PSI
 static inline struct psi_group *cgroup_psi(struct cgroup *cgrp)
 {
 	return &cgrp->psi;
 }
-
+#endif
 static inline void cgroup_init_kthreadd(void)
 {
 	/*
