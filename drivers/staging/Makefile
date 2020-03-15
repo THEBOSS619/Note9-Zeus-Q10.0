@@ -44,4 +44,3 @@ obj-$(CONFIG_GREYBUS)		+= greybus/
 obj-$(CONFIG_BCM2708_VCHIQ)	+= vc04_services/
 obj-$(CONFIG_SEC_EXT)		+= samsung/
 obj-$(CONFIG_SEC_STI)		+= sti/
-obj-$(CONFIG_VNSWAP)		+= vnswap/

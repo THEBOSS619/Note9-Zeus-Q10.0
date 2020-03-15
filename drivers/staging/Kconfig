@@ -108,7 +108,6 @@ source "drivers/staging/vc04_services/Kconfig"
 
 source "drivers/staging/samsung/Kconfig"
 
-source "drivers/staging/vnswap/Kconfig"
 
 source "drivers/staging/sti/Kconfig"
 
