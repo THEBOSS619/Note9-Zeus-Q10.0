@@ -1267,7 +1267,7 @@ static int security_sid_to_context_core(u32 sid, char **scontext,
 		if (sid <= SECINITSID_NUM) {
 			char *scontextp;
 
-			*scontext_len = strlen(initial_sid_to_string[sid]) + 1;
+			*scontext_len = sizeof(initial_sid_to_string[sid]);
 			if (alloc) {
 				if (!scontext)
 					goto out;
@@ -1279,7 +1279,7 @@ static int security_sid_to_context_core(u32 sid, char **scontext,
 				}
 				*scontext = scontextp;
 			} else {
-				strncpy(*scontext, initial_sid_to_string[sid],
+				strscpy(*scontext, initial_sid_to_string[sid],
 					*scontext_len);
 			}
 			goto out;

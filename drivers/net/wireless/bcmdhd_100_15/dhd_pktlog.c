@@ -993,7 +993,7 @@ void dhd_pktlog_get_filename(dhd_pub_t *dhdp, char *dump_path, int len)
 				DHD_PKTLOG_DUMP_PATH DHD_PKTLOG_DUMP_TYPE);
 
 	}
-	snprintf(dump_path, len, "%s_" "%s"
+	scnprintf(dump_path, len, "%s_" "%s"
 			".pcap", dump_path,
 			dhdp->debug_dump_time_pktlog_str);
 	DHD_ERROR(("%s: pktlog path = %s%s\n", __FUNCTION__, dump_path, FILE_NAME_HAL_TAG));
