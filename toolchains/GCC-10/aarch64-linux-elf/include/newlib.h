@@ -33,6 +33,9 @@
    very restricted storage.  */
 /* #undef _WANT_REENT_SMALL */
 
+/* Verify _REENT_CHECK macros allocate memory successfully. */
+#define _REENT_CHECK_VERIFY 1
+
 /* Multibyte supported */
 /* #undef _MB_CAPABLE */
 
@@ -47,7 +50,7 @@
 
 /* Define if the linker supports .preinit_array/.init_array/.fini_array
  * sections.  */
-#define HAVE_INITFINI_ARRAY 1
+/* #undef HAVE_INITFINI_ARRAY */
 
 /* True if atexit() may dynamically allocate space for cleanup
    functions.  */
@@ -86,7 +89,7 @@
 /* #undef _WANT_REENT_GLOBAL_STDIO_STREAMS */
 
 /* Define if small footprint nano-formatted-IO implementation used.  */
-/* #undef _NANO_FORMATTED_IO */
+#define _NANO_FORMATTED_IO 1
 
 /* Define if using retargetable functions for default lock routines.  */
 /* #undef _RETARGETABLE_LOCKING */
