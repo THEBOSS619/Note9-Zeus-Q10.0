@@ -80,11 +80,11 @@ module_param(suspend_root_stune_boost, int, 0644);
 static bool input_stune_boost_active;
 static bool max_stune_boost_active;
 static bool general_stune_boost_active;
-static int input_dynamic_stune_boost;
+static int input_dynamic_stune_boost = 25;
 module_param(input_dynamic_stune_boost, uint, 0644);
-static int general_dynamic_stune_boost;
+static int general_dynamic_stune_boost = 15;
 module_param(general_dynamic_stune_boost, uint, 0644);
-static int max_dynamic_stune_boost;
+static int max_dynamic_stune_boost = 50;
 module_param(max_dynamic_stune_boost, uint, 0644);
 #endif /* CONFIG_DYNAMIC_STUNE_BOOST */
 
