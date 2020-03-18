@@ -102,7 +102,6 @@ SCHED_FEAT(ENERGY_AWARE, false)
  */
 SCHED_FEAT(ENERGY_FILTER, false)
 
-SCHED_FEAT(HISI_FILTER, true)
 
 /*
  * Energy aware scheduling algorithm choices:
