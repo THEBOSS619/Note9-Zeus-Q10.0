@@ -186,7 +186,7 @@ static noinline void __vnswap_make_request(struct bio *bio, int rw)
 		index++;
 	}
 
-	bio->bi_status = BLK_STS_OK;
+	bio->bi_error = 0;
 	bio_endio(bio);
 
 	return;
@@ -302,7 +302,7 @@ static int create_device(void)
 	 */
 	blk_queue_physical_block_size(vnswap_disk->queue, PAGE_SIZE);
 	blk_queue_logical_block_size(vnswap_disk->queue,
-				     vnswap_LOGICAL_BLOCK_SIZE);
+				     VNSWAP_LOGICAL_BLOCK_SIZE);
 	blk_queue_io_min(vnswap_disk->queue, PAGE_SIZE);
 	blk_queue_io_opt(vnswap_disk->queue, PAGE_SIZE);
 	blk_queue_max_hw_sectors(vnswap_disk->queue, PAGE_SIZE / SECTOR_SIZE);
