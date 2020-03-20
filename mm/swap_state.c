@@ -528,8 +528,10 @@ struct page *swapin_readahead(swp_entry_t entry, gfp_t gfp_mask,
 
 	lru_add_drain();	/* Push any new pages onto the LRU now */
 skip:
-#endif
 	return read_swap_cache_async(entry, gfp_mask, vma, addr);
+#else
+	return read_swap_cache_async(entry, gfp_mask, vma, addr);
+#endif
 }
 
 int init_swap_address_space(unsigned int type, unsigned long nr_pages)
