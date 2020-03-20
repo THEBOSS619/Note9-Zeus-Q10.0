@@ -35,6 +35,7 @@
 #include <linux/crypto.h>
 #include <linux/mempool.h>
 #include <linux/zpool.h>
+#include <linux/workqueue.h>
 
 #include <linux/mm_types.h>
 #include <linux/page-flags.h>
@@ -79,7 +80,10 @@ static u64 zswap_reject_alloc_fail;
 static u64 zswap_reject_kmemcache_fail;
 /* Duplicate store was encountered (rare) */
 static u64 zswap_duplicate_entry;
-
+/* Shrinker work queue */
+static struct workqueue_struct *shrink_wq;
+/* Pool limit was hit, we need to calm down */
+static bool zswap_pool_reached_full;
 /* The number of zero pages currently stored in zswap */
 static atomic_t zswap_zero_pages = ATOMIC_INIT(0);
 
@@ -123,8 +127,13 @@ static struct kernel_param_ops zswap_zpool_param_ops = {
 module_param_cb(zpool, &zswap_zpool_param_ops, &zswap_zpool_type, 0644);
 
 /* The maximum percentage of memory that the compressed pool can occupy */
-static unsigned int zswap_max_pool_percent = 30;
+static unsigned int zswap_max_pool_percent = 20;
 module_param_named(max_pool_percent, zswap_max_pool_percent, uint, 0644);
+
+/* The threshold for accepting new pages after the max_pool_percent was hit */
+static unsigned int zswap_accept_thr_percent = 90; /* of max pool size */
+module_param_named(accept_threshold_percent, zswap_accept_thr_percent,
+		   uint, 0644);
 
 /* Enable/disable handling same-value filled pages (enabled by default) */
 static bool zswap_same_filled_pages_enabled = true;
@@ -164,7 +173,8 @@ struct zswap_pool {
 	struct crypto_comp * __percpu *tfm;
 	struct kref kref;
 	struct list_head list;
-	struct work_struct work;
+	struct work_struct release_work;
+	struct work_struct shrink_work;
 	struct hlist_node node;
 	char tfm_name[CRYPTO_MAX_ALG_NAME];
 };
@@ -224,8 +234,8 @@ struct zswap_header {
  */
 struct zswap_tree {
 	struct btree_head head;
-#ifdef CONFIG_ZSWAP_SAME_PAGE_SHARING
 	struct rb_root zhandleroot;
+#ifdef CONFIG_ZSWAP_SAME_PAGE_SHARING
 	void *buffer;
 #endif
 	spinlock_t lock;
@@ -266,6 +276,13 @@ static bool zswap_is_full(void)
 {
 	return totalram_pages * zswap_max_pool_percent / 100 <
 		DIV_ROUND_UP(zswap_pool_total_size, PAGE_SIZE);
+}
+
+static bool zswap_can_accept(void)
+{
+	return totalram_pages * zswap_accept_thr_percent / 100 *
+				zswap_max_pool_percent / 100 >
+			DIV_ROUND_UP(zswap_pool_total_size, PAGE_SIZE);
 }
 
 static void zswap_update_total_size(void)
@@ -616,6 +633,16 @@ static struct zswap_pool *__zswap_pool_current(void)
 	return pool;
 }
 
+static void shrink_worker(struct work_struct *w)
+{
+	struct zswap_pool *pool = container_of(w, typeof(*pool),
+						shrink_work);
+
+	if (zpool_shrink(pool->zpool, 1, NULL))
+		zswap_reject_reclaim_fail++;
+	zswap_pool_put(pool);
+}
+
 static struct zswap_pool *zswap_pool_current(void)
 {
 	assert_spin_locked(&zswap_pools_lock);
@@ -723,6 +750,7 @@ static struct zswap_pool *zswap_pool_create(char *type, char *compressor)
 	 */
 	kref_init(&pool->kref);
 	INIT_LIST_HEAD(&pool->list);
+	INIT_WORK(&pool->shrink_work, shrink_worker);
 
 	zswap_pool_debug("created", pool);
 
@@ -784,7 +812,8 @@ static int __must_check zswap_pool_get(struct zswap_pool *pool)
 
 static void __zswap_pool_release(struct work_struct *work)
 {
-	struct zswap_pool *pool = container_of(work, typeof(*pool), work);
+	struct zswap_pool *pool = container_of(work, typeof(*pool),
+						release_work);
 
 	synchronize_rcu();
 
@@ -807,8 +836,8 @@ static void __zswap_pool_empty(struct kref *kref)
 
 	list_del_rcu(&pool->list);
 
-	INIT_WORK(&pool->work, __zswap_pool_release);
-	schedule_work(&pool->work);
+	INIT_WORK(&pool->release_work, __zswap_pool_release);
+	schedule_work(&pool->release_work);
 
 	spin_unlock(&zswap_pools_lock);
 }
@@ -1007,7 +1036,7 @@ static int zswap_writeback_entry(struct zpool *pool, unsigned long handle)
 
 	/* find and ref zswap entry */
 	spin_lock(&tree->lock);
-	entry = zswap_entry_find_get(&tree->rbroot, offset);
+	entry = zswap_entry_find_get(&tree->zhandleroot, offset);
 	if (!entry) {
 		/* entry was invalidated */
 		spin_unlock(&tree->lock);
@@ -1066,7 +1095,7 @@ static int zswap_writeback_entry(struct zpool *pool, unsigned long handle)
 	*     because invalidate happened during writeback
 	*  search the tree and free the entry if find entry
 	*/
-	if (entry == zswap_rb_search(&tree->rbroot, offset))
+	if (entry == zswap_search(&tree->zhandleroot, offset))
 		zswap_entry_put(tree, entry);
 	spin_unlock(&tree->lock);
 
@@ -1088,28 +1117,8 @@ end:
 	return ret;
 }
 
-static int zswap_shrink(void)
-{
-	struct zswap_pool *pool;
-	int ret;
-
-	pool = zswap_pool_last_get();
-	if (!pool)
-		return -ENOENT;
-
-	ret = zpool_shrink(pool->zpool, 1, NULL);
-
-	zswap_pool_put(pool);
-
-	return ret;
-}
 #else
 static int zswap_writeback_entry(struct zpool *pool, unsigned long handle)
-{
-	return -EINVAL;
-}
-
-static int zswap_shrink(void)
 {
 	return -EINVAL;
 }
@@ -1199,21 +1208,24 @@ static int zswap_frontswap_store(unsigned type, pgoff_t offset,
 
 	/* reclaim space if needed */
 	if (zswap_is_full()) {
-		zswap_pool_limit_hit++;
-		if (zswap_shrink()) {
-			zswap_reject_reclaim_fail++;
-			ret = -ENOMEM;
-			goto reject;
-		}
 
-		/* A second zswap_is_full() check after
-		 * zswap_shrink() to make sure it's now
-		 * under the max_pool_percent
-		 */
-		if (zswap_is_full()) {
+		struct zswap_pool *pool;
+
+		zswap_pool_limit_hit++;
+		zswap_pool_reached_full = true;
+		pool = zswap_pool_last_get();
+		if (pool)
+			queue_work(shrink_wq, &pool->shrink_work);
+		ret = -ENOMEM;
+		goto reject;
+	}
+
+		if (zswap_pool_reached_full) {
+	       if (!zswap_can_accept()) {
 			ret = -ENOMEM;
 			goto reject;
-		}
+		} else
+			zswap_pool_reached_full = false;
 	}
 
 	/* allocate entry */
@@ -1682,6 +1694,10 @@ static int __init init_zswap(void)
 
 	list_add(&pool->list, &zswap_pools);
 
+	shrink_wq = create_workqueue("zswap-shrink");
+	if (!shrink_wq)
+		goto fallback_fail;
+
 	frontswap_register_ops(&zswap_frontswap_ops);
 	if (zswap_debugfs_init())
 		pr_warn("debugfs initialization failed\n");
@@ -1691,6 +1707,9 @@ static int __init init_zswap(void)
 
 pool_fail:
 	cpuhp_remove_state_nocalls(CPUHP_MM_ZSWP_POOL_PREPARE);
+fallback_fail:
+	if (pool)
+		zswap_pool_destroy(pool);
 hp_fail:
 	cpuhp_remove_state(CPUHP_MM_ZSWP_MEM_PREPARE);
 dstmem_fail:
