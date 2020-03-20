@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/arm64 4.9.216-LTO-GCMA-GCC10-DragonTC.CLANG.9.0.5 Kernel Configuration
+# Linux/arm64 4.9.217-LTO-GCMA-GCC10-DragonTC.CLANG.9.0.5 Kernel Configuration
 #
 CONFIG_ARM64=y
 CONFIG_64BIT=y
@@ -298,6 +298,9 @@ CONFIG_BLOCK=y
 # CONFIG_BLK_DEV_INTEGRITY is not set
 # CONFIG_BLK_CMDLINE_PARSER is not set
 # CONFIG_JOURNAL_DATA_TAG is not set
+CONFIG_BLK_WBT=y
+# CONFIG_BLK_WBT_SQ is not set
+CONFIG_BLK_WBT_MQ=y
 
 #
 # Partition Types
