@@ -83,16 +83,6 @@ static bool vtsk_is_duplicate(int vlen, struct task_struct *vtsk)
 	return false;
 }
 
-static unsigned long get_total_mm_pages(struct mm_struct *mm)
-{
-	unsigned long pages = 0;
-	int i;
-
-	for (i = 0; i < NR_MM_COUNTERS; i++)
-		pages += get_mm_counter(mm, i);
-
-	return pages;
-}
 
 static unsigned long find_victims(int *vindex, int adj_index)
 {
@@ -131,7 +121,7 @@ static unsigned long find_victims(int *vindex, int adj_index)
 		/* Store this potential victim away for later */
 		victims[*vindex].tsk = vtsk;
 		victims[*vindex].mm = vtsk->mm;
-		victims[*vindex].size = get_total_mm_pages(vtsk->mm);
+		victims[*vindex].size = get_mm_rss(vtsk->mm);
 		victims[*vindex].adj_index = adj_index;
 
 		/* Keep track of the number of pages that have been found */
