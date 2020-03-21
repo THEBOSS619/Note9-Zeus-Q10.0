@@ -309,10 +309,8 @@ static bool workqueue_freezing;		/* PL: have wqs started freezing? */
 /* PL: allowable cpus for unbound wqs and work items */
 static cpumask_var_t wq_unbound_cpumask;
 
-#if 0
 /* CPU where unbound work was last round robin scheduled from this CPU */
 static DEFINE_PER_CPU(int, wq_rr_cpu_last);
-#endif
 /*
  * Local execution of unbound work items is no longer guaranteed.  The
  * following always forces round-robin CPU selection on unbound work items
@@ -1356,7 +1354,6 @@ static bool is_chained_work(struct workqueue_struct *wq)
  * by wq_unbound_cpumask.  Otherwise, round robin among the allowed ones to
  * avoid perturbing sensitive tasks.
  */
-#if 0
 static int wq_select_unbound_cpu(int cpu)
 {
 	static bool printed_dbg_warning;
@@ -1384,7 +1381,6 @@ static int wq_select_unbound_cpu(int cpu)
 
 	return new_cpu;
 }
-#endif
 
 static void __queue_work(int cpu, struct workqueue_struct *wq,
 			 struct work_struct *work)
