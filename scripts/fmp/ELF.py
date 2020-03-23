@@ -175,9 +175,7 @@ class ELF:
         elif isinstance(sym_names, list):
             symbols = [self.get_symbol_by_name(sym_name) for sym_name in sym_names]
             return symbols
-        else:
-            raise ValueError
-        return None
+        raise ValueError("symbol {} not found".format(sym_names))
 
     def get_symbol_by_vaddr(self, vaddrs=None):
         """

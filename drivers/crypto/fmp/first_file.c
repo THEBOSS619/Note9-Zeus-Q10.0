@@ -9,11 +9,11 @@
  * (at your option) any later version.
  */
 
-__attribute__ ((section(".rodata"), unused))
+__attribute__ ((section(".rodata"), used))
 const unsigned char first_fmp_rodata = 0x10;
 
-__attribute__ ((section(".text"), unused))
+__attribute__ ((section(".text"), used))
 void first_fmp_text(void){}
 
-__attribute__ ((section(".init.text"), unused))
+__attribute__ ((section(".init.text"), used))
 void first_fmp_init(void){};

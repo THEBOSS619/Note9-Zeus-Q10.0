@@ -11,11 +11,11 @@
 
 #include <linux/init.h>
 
-__attribute__ ((section(".rodata"), unused))
+__attribute__ ((section(".rodata"), used))
 const unsigned char last_fmp_rodata = 0x20;
 
-__attribute__ ((section(".text"), unused))
+__attribute__ ((section(".text"), used))
 void last_fmp_text(void){}
 
-__attribute__ ((section(".init.text"), unused))
+__attribute__ ((section(".init.text"), used))
 void last_fmp_init(void){};
