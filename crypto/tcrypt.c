@@ -2150,11 +2150,15 @@ static int __init tcrypt_mod_init(void)
 	} else {
 		pr_info("FIPS : POST - Algorithm Tests Passed\n");
 		if (do_integrity_check() != 0) {
-#ifndef CONFIG_FUNCTION_TRACER
+#if !defined(CONFIG_FUNCTION_TRACER) && !defined(CONFIG_LTO_GCC)
 			pr_err("FIPS : POST - Integrity Check Failed\n");
 			set_in_fips_err();
-#else
+#endif
+#ifdef CONFIG_FUNCTION_TRACER
 			pr_err("FIPS : POST - Integrity Check bypassed due to ftrace debug mode\n");
+#endif
+#ifdef CONFIG_LTO_GCC
+			pr_err("FIPS : POST - Integrity Check bypassed due to GCC LTO\n");
 #endif
 		} else {
 			pr_info("FIPS : POST - Integrity Check Passed\n");
