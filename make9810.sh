@@ -34,9 +34,11 @@ TOOLCHAINS_DIRECTORY=/home/theboss/kernels/Note9-Zeus-Q10.0/toolchains/
 
 # Android Image Kitchen paths
 AIK_OREO_N960=/home/theboss/kernels/TW-N960-Q/
+AIK_OREO_N960N=/home/theboss/kernels/TW-N960N-Q/
 
 # Zip directories
 ZIP_OREO_N960=/home/theboss/kernels/zip-note/
+ZIP_OREO_N960N=/home/theboss/kernels/zip-noteN960N/
 
 # Password for AIK sudo
 PASSWORD=
@@ -225,6 +227,13 @@ if [ "$2" == "oreo" ] || [ "$2" == "apgk" ]; then
 		cd "$AIK_OREO_N960" || exit
 		echo "$PASSWORD" | sudo -S ./repackimg.sh
 		cp "$AIK_OREO_N960"image-new.img  "$ZIP_OREO_N960"boot.img
+		rm "$AIK_OREO_N960N"split_img/boot.img-dtb
+		rm "$AIK_OREO_N960N"split_img/boot.img-zImage
+		cp "$CROWN_KERNEL_DIRECTORY"arch/arm64/boot/Image "$AIK_OREO_N960N"split_img/boot.img-zImage
+		cp "$CROWN_KERNEL_DIRECTORY"arch/arm64/boot/dtb.img "$AIK_OREO_N960N"split_img/boot.img-dtb
+		cd "$AIK_OREO_N960N" || exit
+		echo "$PASSWORD" | sudo -S ./repackimg.sh
+		cp "$AIK_OREO_N960N"image-new.img  "$ZIP_OREO_N960N"bootN960N.img
 	fi
 else
 	echo "This is where we depart. You're on your own for AIK!"
