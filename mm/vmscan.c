@@ -1882,8 +1882,6 @@ static bool inactive_reclaimable_pages(struct lruvec *lruvec,
 	return false;
 }
 
-static inline bool need_memory_boosting(struct pglist_data *pgdat);
-
 /*
  * shrink_inactive_list() is a helper for shrink_node().  It returns the number
  * of reclaimed pages
@@ -1950,11 +1948,6 @@ shrink_inactive_list(unsigned long nr_to_scan, struct lruvec *lruvec,
 
 	if (nr_taken == 0)
 		return 0;
-
-	if (need_memory_boosting(pgdat)) {
-		force_reclaim = true;
-		ttu |= TTU_IGNORE_ACCESS;
-	}
 
 	nr_reclaimed = shrink_page_list(&page_list, pgdat, sc, ttu,
 				&nr_dirty, &nr_unqueued_dirty, &nr_congested,
@@ -2283,29 +2276,12 @@ enum scan_balance {
 	SCAN_FILE,
 };
 
-/* mem_boost throttles only kswapd's behavior */
-enum mem_boost {
-	NO_BOOST,
-	BOOST_MID = 1,
-	BOOST_HIGH = 2,
-};
-static int mem_boost_mode = NO_BOOST;
-static unsigned long last_mode_change;
-static bool memory_boosting_disabled = false;
-
-bool is_mem_boost_high(void)
-{
-	return mem_boost_mode == BOOST_HIGH;
-}
-
-#define MEM_BOOST_MAX_TIME (5 * HZ) /* 5 sec */
-
 #ifdef CONFIG_SYSFS
 enum rbin_alloc_policy {
 	RBIN_ALLOW = 0,
 	RBIN_DENY = 1,
 };
-
+#endif
 #ifdef CONFIG_RBIN
 static void set_rbin_alloc_policy(enum rbin_alloc_policy val)
 {
@@ -2322,130 +2298,6 @@ static void set_rbin_alloc_policy(enum rbin_alloc_policy val)
 #else
 static inline void set_rbin_alloc_policy(enum rbin_alloc_policy val) {}
 #endif
-
-void test_and_set_mem_boost_timeout(void)
-{
-	if ((mem_boost_mode != NO_BOOST) &&
-	    time_after(jiffies, last_mode_change + MEM_BOOST_MAX_TIME)) {
-		mem_boost_mode = NO_BOOST;
-		set_rbin_alloc_policy(RBIN_ALLOW);
-	}
-}
-
-static ssize_t mem_boost_mode_show(struct kobject *kobj,
-				    struct kobj_attribute *attr, char *buf)
-{
-	test_and_set_mem_boost_timeout();
-	return sprintf(buf, "%d\n", mem_boost_mode);
-}
-
-static ssize_t mem_boost_mode_store(struct kobject *kobj,
-				     struct kobj_attribute *attr,
-				     const char *buf, size_t count)
-{
-	int mode;
-	int err;
-
-	err = kstrtoint(buf, 10, &mode);
-	if (err || mode > BOOST_HIGH || mode < NO_BOOST)
-		return -EINVAL;
-
-	mem_boost_mode = mode;
-	pr_debug("memboost start\n");
-	last_mode_change = jiffies;
-	if (mem_boost_mode == BOOST_HIGH) {
-#ifdef CONFIG_ION_RBIN_HEAP
-		wake_ion_rbin_heap_prereclaim();
-#endif
-		set_rbin_alloc_policy(RBIN_DENY);
-	}
-
-	return count;
-}
-
-static ssize_t disable_mem_boost_show(struct kobject *kobj,
-				    struct kobj_attribute *attr, char *buf)
-{
-	int ret;
-
-	ret = memory_boosting_disabled ? 1 : 0;
-	return sprintf(buf, "%d\n", ret);
-}
-
-static ssize_t disable_mem_boost_store(struct kobject *kobj,
-				     struct kobj_attribute *attr,
-				     const char *buf, size_t count)
-{
-	int mode;
-	int err;
-
-	err = kstrtoint(buf, 10, &mode);
-	if (err || (mode != 0 && mode != 1))
-		return -EINVAL;
-
-	memory_boosting_disabled = mode ? true : false;
-
-	return count;
-}
-
-#define MEM_BOOST_ATTR(_name) \
-	static struct kobj_attribute _name##_attr = \
-		__ATTR(_name, 0644, _name##_show, _name##_store)
-MEM_BOOST_ATTR(mem_boost_mode);
-MEM_BOOST_ATTR(disable_mem_boost);
-
-static struct attribute *mem_boost_attrs[] = {
-	&mem_boost_mode_attr.attr,
-	&disable_mem_boost_attr.attr,
-	NULL,
-};
-
-static struct attribute_group mem_boost_attr_group = {
-	.attrs = mem_boost_attrs,
-	.name = "vmscan",
-};
-#endif
-
-static inline bool mem_boost_pgdat_wmark(struct pglist_data *pgdat)
-{
-	int z;
-	struct zone *zone;
-	unsigned long mark;
-
-	for (z = 0; z < MAX_NR_ZONES; z++) {
-		zone = &pgdat->node_zones[z];
-		if (!managed_zone(zone))
-			continue;
-		mark = low_wmark_pages(zone); //TODO: low, high, or (low + high)/2
-		if (zone_watermark_ok_safe(zone, 0, mark, 0))
-			return true;
-	}
-	return false;
-}
-
-static inline bool need_memory_boosting(struct pglist_data *pgdat)
-{
-	bool ret;
-
-	test_and_set_mem_boost_timeout();
-
-	if (memory_boosting_disabled)
-		return false;
-
-	switch (mem_boost_mode) {
-	case BOOST_HIGH:
-		ret = true;
-		break;
-	case BOOST_MID:
-		ret = mem_boost_pgdat_wmark(pgdat) ? false : true;
-		break;
-	case NO_BOOST:
-	default:
-		ret = false;
-		break;
-	}
-	return ret;
-}
 
 /*
  * Determine how aggressively the anon and file LRU lists should be
@@ -2532,7 +2384,7 @@ static void get_scan_count(struct lruvec *lruvec, struct mem_cgroup *memcg,
 		}
 	}
 
-	if (current_is_kswapd() && need_memory_boosting(pgdat)) {
+	if (current_is_kswapd()) {
 		scan_balance = SCAN_FILE;
 		goto out;
 	}
@@ -3429,13 +3281,9 @@ static void age_active_anon(struct pglist_data *pgdat,
 	} while (memcg);
 }
 
-#define MEM_BOOST_WMARK_SCALE_FACTOR 1
 static bool zone_balanced(struct zone *zone, int order, int classzone_idx)
 {
 	unsigned long mark = high_wmark_pages(zone);
-
-	if (current_is_kswapd() && need_memory_boosting(zone->zone_pgdat))
-		mark *= MEM_BOOST_WMARK_SCALE_FACTOR;
 
 	if (!zone_watermark_ok_safe(zone, order, mark, classzone_idx))
 		return false;
@@ -3916,9 +3764,6 @@ void wakeup_kswapd(struct zone *zone, int order, enum zone_type classzone_idx)
 	if (pgdat->kswapd_failures >= MAX_RECLAIM_RETRIES)
 		return;
 
-	if (need_memory_boosting(pgdat))
-		goto wakeup;
-
 	/* Only wake kswapd if all zones are unbalanced */
 	for (z = 0; z <= classzone_idx; z++) {
 		zone = pgdat->node_zones + z;
@@ -3928,7 +3773,7 @@ void wakeup_kswapd(struct zone *zone, int order, enum zone_type classzone_idx)
 		if (zone_balanced(zone, order, classzone_idx))
 			return;
 	}
-wakeup:
+
 	trace_mm_vmscan_wakeup_kswapd(pgdat->node_id, zone_idx(zone), order);
 	wake_up_interruptible(&pgdat->kswapd_wait);
 }
@@ -4063,10 +3908,6 @@ static int __init kswapd_init(void)
  		kswapd_run(nid);
 	if (kswapd_cpu_mask == NULL)
 		hotcpu_notifier(cpu_callback, 0);
-#ifdef CONFIG_SYSFS
-	if (sysfs_create_group(mm_kobj, &mem_boost_attr_group))
-		pr_err("vmscan: register mem boost sysfs failed\n");
-#endif
 	return 0;
 }
 
