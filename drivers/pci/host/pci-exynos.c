@@ -2414,7 +2414,7 @@ int exynos_pcie_poweron(int ch_num)
 			exynos_pcie->probe_ok = 1;
 		} else if (exynos_pcie->probe_ok) {
 			if (exynos_pcie->boot_cnt == 0) {
-				queue_delayed_work(system_power_efficient_wq, 
+				schedule_delayed_work(
 					&exynos_pcie->l1ss_boot_delay_work,
 					msecs_to_jiffies(40000));
 				exynos_pcie->boot_cnt++;
