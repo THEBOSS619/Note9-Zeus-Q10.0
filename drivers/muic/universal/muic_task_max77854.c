@@ -575,7 +575,7 @@ static int muic_probe(struct platform_device *pdev)
 
 #ifdef DEBUG_MUIC
 	INIT_DELAYED_WORK(&pmuic->usb_work, muic_show_debug_info);
-	queue_delayed_work(system_power_efficient_wq, &pmuic->usb_work, msecs_to_jiffies(10000));
+	schedule_delayed_work(&pmuic->usb_work, msecs_to_jiffies(10000));
 #endif
 
 
@@ -711,7 +711,7 @@ static int muic_resume(struct device *dev)
 {
 	muic_data_t *pmuic = dev_get_drvdata(dev);
 
-	queue_delayed_work(system_power_efficient_wq, &pmuic->usb_work, msecs_to_jiffies(1000));
+	schedule_delayed_work(&pmuic->usb_work, msecs_to_jiffies(1000));
 
 	return 0;
 }

@@ -683,7 +683,7 @@ void handle_timestamp_sync(struct ssp_data *data, char *pchRcvDataFrame, int *in
 
 	memcpy(&mcu_timestamp, pchRcvDataFrame + *index, sizeof(mcu_timestamp));
 	data->timestamp_offset = current_timestamp - mcu_timestamp;
-	queue_delayed_work(system_power_efficient_wq, &data->work_ssp_tiemstamp_sync, msecs_to_jiffies(100));
+	schedule_delayed_work(&data->work_ssp_tiemstamp_sync, msecs_to_jiffies(100));
 
 	*index += 8;
 }
