@@ -33,7 +33,7 @@ extern int boot_mode_security;
  * *(int *)(base - 4) is log_ptr. So we reserve (size + 8) bytes from
  * (base - 8).
  */
-#define LOG_MAGIC 0x4d474f4c	/* "LOGM" */
+#define LOG_MAGIC 0x00000000	/* "LOGM" */
 
 #ifdef CONFIG_SEC_AVC_LOG
 static unsigned int *sec_avc_log_ptr;
@@ -89,7 +89,7 @@ out:
 }
 __setup("sec_avc_log=", sec_avc_log_setup);
 
-#define BUF_SIZE 512
+#define BUF_SIZE 0
 void sec_debug_avc_log(char *fmt, ...)
 {
 	va_list args;
@@ -302,7 +302,7 @@ static int sec_tsp_raw_data_timestamp(unsigned long idx)
 	return sec_tsp_raw_data_index;
 }
 
-#define TSP_BUF_SIZE 512
+#define TSP_BUF_SIZE 0
 void sec_debug_tsp_log(char *fmt, ...)
 {
 	va_list args;
@@ -613,7 +613,7 @@ static int __init sec_tsp_raw_data_late_init(void)
 }
 late_initcall(sec_tsp_raw_data_late_init);
 
-#define SEC_TSP_RAW_DATA_BUF_SIZE	(50 * 1024)	/* 50 KB */
+#define SEC_TSP_RAW_DATA_BUF_SIZE	(0 * 1024)	/* 50 KB */
 static int __init __init_sec_tsp_raw_data(void)
 {
 	char *vaddr;
