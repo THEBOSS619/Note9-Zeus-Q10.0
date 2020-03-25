@@ -702,7 +702,7 @@ config ZSMALLOC_STAT
 	  If unsure, say N.
 
 config FORCE_RECLAIM
-	bool "Enable process reclaim"
+	bool "Enable force reclaim"
 	depends on PROC_FS
 	default y
 	help
