@@ -1073,17 +1073,17 @@ static int __init exynos_hpgov_parse_dt(void)
 	struct device_node *np = of_find_node_by_name(NULL, "hotplug_governor");
 
 	if (arg_overclock == 1) {
-		exynos_hpgov.single_change_ms = 25;
-		exynos_hpgov.dual_change_ms = 20;
-		exynos_hpgov.quad_change_ms = 10;
-		exynos_hpgov.big_heavy_thr = 500;
+		exynos_hpgov.single_change_ms = 40;
+		exynos_hpgov.dual_change_ms = 35;
+		exynos_hpgov.quad_change_ms = 30;
+		exynos_hpgov.big_heavy_thr = 700;
 		exynos_hpgov.lit_heavy_thr = 200;
-		exynos_hpgov.big_idle_thr = 125;
-		exynos_hpgov.lit_idle_thr = 75;
+		exynos_hpgov.big_idle_thr = 110;
+		exynos_hpgov.lit_idle_thr = 50;
 		exynos_hpgov.ldsum_heavy_thr = 800;
 		exynos_hpgov.ldsum_enabled = 0;
 		exynos_hpgov.skip_lit_enabled = 0;
-		exynos_hpgov.cl_busy_ratio = 65;
+		exynos_hpgov.cl_busy_ratio = 75;
 		exynos_hpgov.cal_id = ACPM_DVFS_CPUCL1;
 
 		} else {
@@ -1134,7 +1134,7 @@ static int __init exynos_hpgov_parse_dt(void)
 
 	if (arg_overclock == 1) {
 		exynos_hpgov.maxfreq_table[SINGLE] = 2964000;
-		exynos_hpgov.maxfreq_table[DUAL] = 2496000;
+		exynos_hpgov.maxfreq_table[DUAL] = 2652000;
 		exynos_hpgov.maxfreq_table[TRIPLE] = 2314000;
 		exynos_hpgov.maxfreq_table[QUAD] = 2314000;
 		exynos_hpgov.maxfreq_table[DISABLE] = 2314000;
