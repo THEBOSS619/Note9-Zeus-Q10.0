@@ -12,6 +12,7 @@
 #include <linux/moduleparam.h>
 #include <linux/slab.h>
 #include <linux/kthread.h>
+#include <linux/state_notifier.h>
 #include "../../kernel/sched/sched.h"
 
 #define ST_TA "top-app"
@@ -235,6 +236,9 @@ static void __cpu_input_boost_kick(struct boost_drv *b)
 	if (!(get_boost_state(b) & SCREEN_AWAKE))
 		return;
 
+	if (state_suspended)
+		return;
+
 	kthread_queue_work(&b->worker, &b->input_boost);
 }
 
@@ -254,6 +258,9 @@ static void __cpu_input_boost_kick_max(struct boost_drv *b,
 	unsigned long curr_expires, new_expires;
 
 	if (!(get_boost_state(b) & SCREEN_AWAKE))
+		return;
+
+	if (state_suspended)
 		return;
 
 	do {
