@@ -29,20 +29,6 @@
 #include <platform/exynos/gpu_integration_defs.h>
 #endif
 
-#if defined(CONFIG_SCHED_EMS)
-#include <linux/ems.h>
-static struct gb_qos_request gb_req = {
-	.name = "ems_boost",
-};
-#elif defined(CONFIG_SCHED_EHMP)
-#include <linux/ehmp.h>
-static struct gb_qos_request gb_req = {
-		.name = "ehmp_boost",
-};
-#elif defined(CONFIG_SCHED_HMP)
-extern int set_hmp_boost(int enable);
-#endif
-
 /* MALI_SEC_INTEGRATION */
 #include <mali_uk.h>
 #define KBASE_REG_CUSTOM_TMEM       (1ul << 19)
@@ -124,27 +110,6 @@ void gpu_destroy_context(void *ctx)
 #ifdef CONFIG_MALI_DVFS
 	gpu_dvfs_boost_lock(GPU_DVFS_BOOST_UNSET);
 #endif
-#if defined(CONFIG_SCHED_EMS) || defined(CONFIG_SCHED_EHMP)
-	platform = (struct exynos_context *) kbdev->platform_context;
-	mutex_lock(&platform->gpu_sched_hmp_lock);
-	if (platform->ctx_need_qos)
-	{
-		platform->ctx_need_qos = false;
-		gb_qos_update_request(&gb_req, 0);
-	}
-
-	mutex_unlock(&platform->gpu_sched_hmp_lock);
-#elif defined(CONFIG_SCHED_HMP)
-    platform = (struct exynos_context *) kbdev->platform_context;
-    mutex_lock(&platform->gpu_sched_hmp_lock);
-    if (platform->ctx_need_qos) {
-        platform->ctx_need_qos = false;
-        set_hmp_boost(0);
-        set_hmp_aggressive_up_migration(false);
-        set_hmp_aggressive_yield(false);
-    }
-    mutex_unlock(&platform->gpu_sched_hmp_lock);
-#endif
 #ifdef CONFIG_MALI_SEC_VK_BOOST
 	platform = (struct exynos_context *) kbdev->platform_context;
 	mutex_lock(&platform->gpu_vk_boost_lock);
@@ -199,27 +164,6 @@ int gpu_vendor_dispatch(struct kbase_context *kctx, u32 flags)
 #if defined(CONFIG_MALI_PM_QOS)
 			struct exynos_context *platform;
 			platform = (struct exynos_context *) kbdev->platform_context;
-#if (defined(CONFIG_SCHED_EMS) || defined(CONFIG_SCHED_EHMP))
-			mutex_lock(&platform->gpu_sched_hmp_lock);
-			if (!platform->ctx_need_qos) {
-				platform->ctx_need_qos = true;
-				/* set hmp boost */
-				gb_qos_update_request(&gb_req, 100);
-			}
-			mutex_unlock(&platform->gpu_sched_hmp_lock);
-			gpu_pm_qos_command(platform, GPU_CONTROL_PM_QOS_EGL_SET);
-#elif defined(CONFIG_SCHED_HMP)
-			mutex_lock(&platform->gpu_sched_hmp_lock);
-			if (!platform->ctx_need_qos) {
-				platform->ctx_need_qos = true;
-				/* set hmp boost */
-				set_hmp_boost(1);
-				set_hmp_aggressive_up_migration(true);
-				set_hmp_aggressive_yield(true);
-			}
-			mutex_unlock(&platform->gpu_sched_hmp_lock);
-			gpu_pm_qos_command(platform, GPU_CONTROL_PM_QOS_EGL_SET);
-#endif
 #endif /* CONFIG_MALI_PM_QOS */
 			break;
 		}
@@ -229,27 +173,6 @@ int gpu_vendor_dispatch(struct kbase_context *kctx, u32 flags)
 #if defined(CONFIG_MALI_PM_QOS)
 			struct exynos_context *platform;
 			platform = (struct exynos_context *) kbdev->platform_context;
-#if (defined(CONFIG_SCHED_EMS) || defined(CONFIG_SCHED_EHMP))
-			mutex_lock(&platform->gpu_sched_hmp_lock);
-			if (platform->ctx_need_qos) {
-				platform->ctx_need_qos = false;
-				/* unset hmp boost */
-				gb_qos_update_request(&gb_req, 0);
-			}
-			mutex_unlock(&platform->gpu_sched_hmp_lock);
-			gpu_pm_qos_command(platform, GPU_CONTROL_PM_QOS_EGL_RESET);
-#elif defined(CONFIG_SCHED_HMP)
-			mutex_lock(&platform->gpu_sched_hmp_lock);
-			if (platform->ctx_need_qos) {
-				platform->ctx_need_qos = false;
-				/* unset hmp boost */
-				set_hmp_boost(0);
-				set_hmp_aggressive_up_migration(false);
-				set_hmp_aggressive_yield(false);
-			}
-			mutex_unlock(&platform->gpu_sched_hmp_lock);
-			gpu_pm_qos_command(platform, GPU_CONTROL_PM_QOS_EGL_RESET);
-#endif
 #endif /* CONFIG_MALI_PM_QOS */
 			break;
 		}

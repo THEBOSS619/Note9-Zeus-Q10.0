@@ -788,7 +788,7 @@
 		samsung,power-domain = <&pd_embedded_g3d>;
 		g3d_genpd_name = "pd-embedded_g3d"; /*KC: pg-g3d, LT,MK: pd-embedded_g3d*/
 		#cooling-cells = <2>; /* min followed by max */
-		governor = "interactive";
+		governor = "default";
 		interactive_info = <455000 84 0>;
 		gpu_dvfs_table_size = <8 7>; /*<row col>*/
 		gpu_dvfs_table = <  598000    95  100   5  2093000  1950000      0
@@ -828,14 +828,14 @@
 		gpu_pmqos_mif_max_clock = <2093000>;
 		gpu_pmqos_mif_max_clock_base = <598000>;
 		gpu_cl_dvfs_start_base = <572000>;
-		gpu_debug_level = <3>; /*DEBUG(1) INFO(2) WARNING(3) ERROR(4)*/
-		gpu_trace_level = <8>; /*TRACE_ALL*/
+		gpu_debug_level = <0>; /*DEBUG(1) INFO(2) WARNING(3) ERROR(4)*/
+		gpu_trace_level = <0>; /*TRACE_ALL*/
 		gpu_mo_min_clock = <455000>;
 		gpu_boost_gpu_min_lock = <0>;
 		gpu_boost_egl_min_lock = <1872000>;
 		gpu_vk_boost_max_lock = <338000>;
 		gpu_vk_boost_mif_min_lock = <1794000>;
-		gpu_bts_support = <1>;
+		gpu_bts_support = <0>;
 		gpu_asv_cali_lock_val = <0>; /*Should check this value when MALI_ASV_CALIBRATION_SUPPORT is enabled*/
 		gpu_set_pmu_duration_reg = <0>; /* only for KC for now*/
 		gpu_set_pmu_duration_val = <0>; /* only for KC for now*/
