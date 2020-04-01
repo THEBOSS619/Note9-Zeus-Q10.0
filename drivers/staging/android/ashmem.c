@@ -85,13 +85,13 @@ struct ashmem_range {
 
 /* LRU list of unpinned pages, protected by list_lock */
 static LIST_HEAD(ashmem_lru_list);
-static DEFINE_RT_MUTEX(list_lock);
+static DEFINE_MUTEX(list_lock);
 
 /* long lru_count - The count of pages on our LRU list. */
 static atomic_long_t lru_count;
 
 /* mmap_lock - protects mmap operations */
-static DEFINE_RT_MUTEX(mmap_lock);
+static DEFINE_MUTEX(mmap_lock);
 
 static struct kmem_cache *ashmem_area_cachep __read_mostly;
 static struct kmem_cache *ashmem_range_cachep __read_mostly;
@@ -275,10 +275,10 @@ static int ashmem_release(struct inode *ignored, struct file *file)
 	struct ashmem_area *asma = file->private_data;
 	struct ashmem_range *range, *next;
 
-	rt_mutex_lock(&list_lock);
+	mutex_lock(&list_lock);
 	list_for_each_entry_safe(range, next, &asma->unpinned_list, unpinned)
 		range_del(range);
-	rt_mutex_unlock(&list_lock);
+	mutex_unlock(&list_lock);
 
 	if (asma->file)
 		fput(asma->file);
@@ -427,13 +427,13 @@ static int ashmem_mmap(struct file *file, struct vm_area_struct *vma)
 	if (!READ_ONCE(asma->file)) {
 		bool do_setup;
 
-		rt_mutex_lock(&mmap_lock);
+		mutex_lock(&mmap_lock);
 		if ((do_setup = !asma->file_is_setup)) {
 			ret = ashmem_file_setup(asma, vma);
 			if (!ret)
 				asma->file_is_setup = true;
 		}
-		rt_mutex_unlock(&mmap_lock);
+		mutex_unlock(&mmap_lock);
 
 		if (do_setup && ret)
 			return ret;
@@ -475,7 +475,7 @@ ashmem_shrink_scan(struct shrinker *shrink, struct shrink_control *sc)
 	if (!(sc->gfp_mask & __GFP_FS))
 		return SHRINK_STOP;
 
-	if (!rt_mutex_trylock(&list_lock))
+	if (!mutex_trylock(&list_lock))
 		return -1;
 
 	list_for_each_entry_safe(range, next, &ashmem_lru_list, lru) {
@@ -492,7 +492,7 @@ ashmem_shrink_scan(struct shrinker *shrink, struct shrink_control *sc)
 		if (--sc->nr_to_scan <= 0)
 			break;
 	}
-	rt_mutex_unlock(&list_lock);
+	mutex_unlock(&list_lock);
 	return freed;
 }
 
@@ -742,7 +742,7 @@ static int ashmem_pin_unpin(struct ashmem_area *asma, unsigned long cmd,
 	pgstart = pin.offset / PAGE_SIZE;
 	pgend = pgstart + (pin.len / PAGE_SIZE) - 1;
 
-	rt_mutex_lock(&list_lock);
+	mutex_lock(&list_lock);
 	switch (cmd) {
 	case ASHMEM_PIN:
 		ret = ashmem_pin(asma, pgstart, pgend);
@@ -757,7 +757,7 @@ static int ashmem_pin_unpin(struct ashmem_area *asma, unsigned long cmd,
 		ret = -EINVAL;
 		break;
 	}
-	rt_mutex_unlock(&list_lock);
+	mutex_unlock(&list_lock);
 
 	return ret;
 }
