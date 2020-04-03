@@ -2547,7 +2547,10 @@ static int decon_set_win_config(struct decon_device *decon,
 		decon_warn("decon-%d skip win_config(state:%s)\n",
 				decon->id, decon_state_names[decon->state]);
 #endif
-#endif
+#endif	
+		if (!state_suspended) {
+		devfreq_boost_kick(DEVFREQ_EXYNOS_MIF);
+	}
 		win_data->retire_fence = decon_create_fence(decon, &sync_file);
 		if (win_data->retire_fence < 0)
 			goto err;
