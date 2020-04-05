@@ -13,6 +13,7 @@
 #include <linux/gpio.h>
 #include <linux/mutex.h>
 #include <video/mipi_display.h>
+#include <linux/display_state.h>
 #include <linux/platform_device.h>
 
 #include "../disp_err.h"
@@ -22,6 +23,12 @@
 #include "../../panel/panel_drv.h"
 #include "lcd_ctrl.h"
 #include "decon_lcd.h"
+
+bool display_on = true;
+bool is_display_on()
+{
+	return display_on;
+}
 
 static struct v4l2_subdev *panel_sd;
 static DEFINE_MUTEX(cmd_lock);
@@ -434,6 +441,7 @@ static int common_lcd_displayon(struct dsim_device *dsim)
 		dsim_err("DSIM:ERR:%s:failed to display on\n", __func__);
 		return ret;
 	}
+	display_on = true;
 
 	return 0;
 }
@@ -447,6 +455,7 @@ static int common_lcd_suspend(struct dsim_device *dsim)
 		dsim_err("DSIM:ERR:%s:failed to sleep in\n", __func__);
 		return ret;
 	}
+	display_on = false;
 
 	return 0;
 }
