@@ -12,7 +12,7 @@
 #include <linux/sort.h>
 #include <linux/cpu_input_boost.h>
 #include <linux/devfreq_boost.h>
-#include <linux/state_notifier.h>
+#include <linux/display_state.h>
 #include <linux/vmpressure.h>
 
 /* Needed to prevent Android from thinking there's no LMK and thus rebooting */

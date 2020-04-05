@@ -39,7 +39,7 @@
 #include <linux/devfreq_boost.h>
 #include <linux/cpu_input_boost.h>
 
-#include <linux/state_notifier.h>
+#include <linux/display_state.h>
 #include <linux/oom.h>
 
 #define CREATE_TRACE_POINTS

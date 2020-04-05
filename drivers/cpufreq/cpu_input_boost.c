@@ -12,7 +12,7 @@
 #include <linux/moduleparam.h>
 #include <linux/slab.h>
 #include <linux/kthread.h>
-#include <linux/state_notifier.h>
+#include <linux/display_state.h>
 #include <linux/sched/sysctl.h>
 #include "../../kernel/sched/sched.h"
 
@@ -237,7 +237,7 @@ static void __cpu_input_boost_kick(struct boost_drv *b)
 	if (!(get_boost_state(b) & SCREEN_AWAKE))
 		return;
 
-	if (state_suspended)
+	if (is_display_on())
 		return;
 
 	kthread_queue_work(&b->worker, &b->input_boost);
@@ -261,7 +261,7 @@ static void __cpu_input_boost_kick_max(struct boost_drv *b,
 	if (!(get_boost_state(b) & SCREEN_AWAKE))
 		return;
 
-	if (state_suspended)
+	if (is_display_on())
 		return;
 
 	do {
@@ -487,7 +487,7 @@ static int cpu_notifier_cb(struct notifier_block *nb,
 	if (action != CPUFREQ_ADJUST)
 		return NOTIFY_OK;
 
-	if (state_suspended) {
+	if (is_display_on()) {
 		clear_boost_bit(b, INPUT_BOOST | MAX_BOOST | GENERAL_BOOST);
 		{
 			sysctl_sched_energy_aware = 1;
