@@ -2549,7 +2549,7 @@ static int decon_set_win_config(struct decon_device *decon,
 #endif
 #endif	
 		if (!state_suspended) {
-		devfreq_boost_kick(DEVFREQ_EXYNOS_MIF);
+		devfreq_boost_kick_max(DEVFREQ_EXYNOS_MIF, 10);
 	}
 		win_data->retire_fence = decon_create_fence(decon, &sync_file);
 		if (win_data->retire_fence < 0)
@@ -2575,7 +2575,7 @@ static int decon_set_win_config(struct decon_device *decon,
 	num_of_window = decon_get_active_win_count(decon, win_data);
 	if (num_of_window) {
 		if (!state_suspended) {
-		devfreq_boost_kick(DEVFREQ_EXYNOS_MIF);
+		devfreq_boost_kick_max(DEVFREQ_EXYNOS_MIF, 10);
 	}
 		win_data->retire_fence = decon_create_fence(decon, &sync_file);
 		if (win_data->retire_fence < 0)
@@ -2601,7 +2601,7 @@ static int decon_set_win_config(struct decon_device *decon,
 
 	if (num_of_window) {
 		if (!state_suspended) {
-		devfreq_boost_kick(DEVFREQ_EXYNOS_MIF);
+		devfreq_boost_kick_max(DEVFREQ_EXYNOS_MIF, 10);
 	}
 		fd_install(win_data->retire_fence, sync_file->file);
 #if defined(CONFIG_DPU_2_0_RELEASE_FENCES)
