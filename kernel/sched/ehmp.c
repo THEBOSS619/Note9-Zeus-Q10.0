@@ -17,6 +17,7 @@
 
 #include "sched.h"
 #include "tune.h"
+#include "sched-pelt.h"
 
 /**********************************************************************
  * extern functions                                                   *
@@ -58,15 +59,6 @@ static inline int task_fits(struct task_struct *p, long capacity)
 
 #define entity_is_cfs_rq(se)	(se->my_q)
 #define entity_is_task(se)	(!se->my_q)
-#ifdef CONFIG_PELT_HALFLIFE_32
-#define LOAD_AVG_MAX 47742 /* maximum possible load avg */
-#endif
-#ifdef CONFIG_PELT_HALFLIFE_16
-#define LOAD_AVG_MAX 24130
-#endif
-#ifdef CONFIG_PELT_HALFLIFE_8
-#define LOAD_AVG_MAX 12337
-#endif
 
 static unsigned long maxcap_val = 1024;
 static int maxcap_cpu = 0;
