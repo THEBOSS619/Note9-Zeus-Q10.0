@@ -715,69 +715,7 @@ static void mark_shallowest_cpu(int cpu, unsigned int *min_exit_latency,
 	cpumask_set_cpu(cpu, shallowest_cpus);
 }
 
-static int cpu_util_wake(int cpu, struct task_struct *p)
-{
-	struct cfs_rq *cfs_rq;
-	unsigned long util;
-
-#ifdef CONFIG_SCHED_WALT
-	/*
-	 * WALT does not decay idle tasks in the same manner
-	 * as PELT, so it makes little sense to subtract task
-	 * utilization from cpu utilization. Instead just use
-	 * cpu_util for this case.
-	 */
-	if (!walt_disabled && sysctl_sched_use_walt_cpu_util &&
-	    p->state == TASK_WAKING)
-		return cpu_util(cpu);
-#endif
-
-	/* Task has no contribution or is new */
-	if (cpu != task_cpu(p) || !READ_ONCE(p->se.avg.last_update_time))
-		return cpu_util(cpu);
-
-	cfs_rq = &cpu_rq(cpu)->cfs;
-	util = READ_ONCE(cfs_rq->avg.util_avg);
-
-	/* Discount task's blocked util from CPU's util */
-	util -= min_t(unsigned int, util, task_util(p));
-
-	/*
-	 * Covered cases:
-	 *
-	 * a) if *p is the only task sleeping on this CPU, then:
-	 *      cpu_util (== task_util) > util_est (== 0)
-	 *    and thus we return:
-	 *      cpu_util_wake = (cpu_util - task_util) = 0
-	 *
-	 * b) if other tasks are SLEEPING on this CPU, which is now exiting
-	 *    IDLE, then:
-	 *      cpu_util >= task_util
-	 *      cpu_util > util_est (== 0)
-	 *    and thus we discount *p's blocked utilization to return:
-	 *      cpu_util_wake = (cpu_util - task_util) >= 0
-	 *
-	 * c) if other tasks are RUNNABLE on that CPU and
-	 *      util_est > cpu_util
-	 *    then we use util_est since it returns a more restrictive
-	 *    estimation of the spare capacity on that CPU, by just
-	 *    considering the expected utilization of tasks already
-	 *    runnable on that CPU.
-	 *
-	 * Cases a) and b) are covered by the above code, while case c) is
-	 * covered by the following code when estimated utilization is
-	 * enabled.
-	 */
-	if (sched_feat(UTIL_EST))
-		util = max_t(unsigned long, util, READ_ONCE(cfs_rq->avg.util_est.enqueued));
-
-	/*
-	 * Utilization (estimated) can exceed the CPU capacity, thus let's
-	 * clamp to the maximum CPU capacity to ensure consistency with
-	 * the cpu_util call.
-	 */
-	return min(util, capacity_orig_of(cpu));
-}
+extern int cpu_util_wake(int cpu, struct task_struct *p);
 
 static int find_group_boost_target(struct task_struct *p)
 {
@@ -1741,13 +1679,13 @@ static int __init init_ontime(void)
 	min_residency_us = 8192;
 
 	of_property_read_u32(dn, "up-threshold", &prop);
-	up_threshold = prop;
+	up_threshold = 100;
 
 	of_property_read_u32(dn, "down-threshold", &prop);
-	down_threshold = prop;
+	down_threshold = 128;
 
 	of_property_read_u32(dn, "min-residency-us", &prop);
-	min_residency_us = prop;
+	min_residency_us = 8192;
 
 	return 0;
 }
@@ -1756,7 +1694,7 @@ pure_initcall(init_ontime);
 /**********************************************************************
  * cpu selection                                                      *
  **********************************************************************/
-int select_energy_cpu_brute(struct task_struct *p, int prev_cpu, int sync);
+extern int select_energy_cpu_brute(struct task_struct *p, int prev_cpu);
 
 int exynos_select_cpu_rt(struct sched_domain *sd, struct task_struct *p, bool boost)
 {
@@ -1894,7 +1832,7 @@ int exynos_select_cpu(struct task_struct *p, int prev_cpu, int sync)
 	sd = rcu_dereference(cpu_rq(prev_cpu)->sd);
 
 	if (sched_feat(ENERGY_AWARE) && sd && !_sd_overutilized(sd)) {
-		target_cpu = select_energy_cpu_brute(p, prev_cpu, sync);
+		target_cpu = select_energy_cpu_brute(p, prev_cpu);
 		if (cpu_selected(target_cpu))
 			goto check_ontime;
 	}
