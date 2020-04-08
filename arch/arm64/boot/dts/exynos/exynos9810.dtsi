@@ -3510,7 +3510,7 @@
 				thrd_mb = <253209>;
 				freq_mfc = <336000>;
 				freq_int = <267000>;
-				freq_mif = <546000>;
+				freq_mif = <421000>;
 				freq_cpu = <0>;
 				freq_kfc = <0>;
 				mo_value = <0>;
@@ -3522,7 +3522,7 @@
 				thrd_mb = <518600>;
 				freq_mfc = <400000>;
 				freq_int = <336000>;
-				freq_mif = <845000>;
+				freq_mif = <421000>;
 				freq_cpu = <0>;
 				freq_kfc = <0>;
 				mo_value = <0>;
@@ -3534,7 +3534,7 @@
 				thrd_mb = <1086358>;
 				freq_mfc = <534000>;
 				freq_int = <400000>;
-				freq_mif = <1352000>;
+				freq_mif = <546000>;
 				freq_cpu = <0>;
 				freq_kfc = <0>;
 				mo_value = <0>;
@@ -3546,7 +3546,7 @@
 				thrd_mb = <1694860>;
 				freq_mfc = <672000>;
 				freq_int = <534000>;
-				freq_mif = <1794000>;
+				freq_mif = <676000>;
 				freq_cpu = <0>;
 				freq_kfc = <0>;
 				mo_value = <0>;
@@ -3558,7 +3558,7 @@
 				thrd_mb = <2347751>;
 				freq_mfc = <672000>;
 				freq_int = <534000>;
-				freq_mif = <1014000>;
+				freq_mif = <845000>;
 				freq_cpu = <0>;
 				freq_kfc = <0>;
 				mo_value = <1>;
