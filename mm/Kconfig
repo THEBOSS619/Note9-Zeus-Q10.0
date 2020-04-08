@@ -962,3 +962,9 @@ config HAVE_LOW_MEMORY_KILLER
 	  Say 'y' if you have a user/kernel low memory killer and thus you
 	  want page allocator to provide sufficient time before it triggers
 	  Out of Memory killer.
+
+config VMPRESSURE_LEVEL_MED
+	int "Threshold to account memory pressure"
+	default 60
+	help
+	  This supports to adjust vmpressure_level_med threshold value
