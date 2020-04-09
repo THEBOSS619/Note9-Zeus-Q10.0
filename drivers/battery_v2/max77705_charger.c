@@ -1993,7 +1993,7 @@ static void max77705_enable_aicl_irq(struct max77705_charger_data *charger)
 	pr_info("%s enabled : %d\n", __func__, charger->irq_aicl_enabled);
 }
 
-bool unstable_power_detection = true;
+bool unstable_power_detection = false;
 
 static void max77705_chgin_isr_work(struct work_struct *work)
 {
