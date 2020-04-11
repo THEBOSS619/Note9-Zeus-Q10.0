@@ -33,12 +33,12 @@ CROWN_KERNEL_DIRECTORY=/home/theboss/kernels/Note9-Zeus-Q10.0/
 TOOLCHAINS_DIRECTORY=/home/theboss/kernels/Note9-Zeus-Q10.0/toolchains/
 
 # Android Image Kitchen paths
-AIK_OREO_N960=/home/theboss/kernels/TW-N960-Q/
-AIK_OREO_N960N=/home/theboss/kernels/TW-N960N-Q/
+AIK_N960=/home/theboss/kernels/AIK3-N960-Q/
+AIK_N960N=/home/theboss/kernels/AIK3-N960N-Q/
 
 # Zip directories
-ZIP_OREO_N960=/home/theboss/kernels/zip-note/
-ZIP_OREO_N960N=/home/theboss/kernels/zip-noteN960N/
+ZIP_N960=/home/theboss/kernels/zip-note/
+ZIP_N960N=/home/theboss/kernels/zip-noteN960N/
 
 # Password for AIK sudo
 PASSWORD=
@@ -167,7 +167,9 @@ elif [ "$3" == "gcc-10" ]; then
 	export CC="ccache "$TOOLCHAINS_DIRECTORY"DragonTC-CLANG-9.0.5/bin/clang"
 	export CLANG_TRIPLE="ccache "$TOOLCHAINS_DIRECTORY"GCC-10/bin/aarch64-linux-elf-"
 elif [ "$3" == "gcc-4.9" ]; then
-	export CROSS_COMPILE="ccache "$TOOLCHAINS_DIRECTORY"aarch64-linux-android-4.9/bin/aarch64-linux-android-"
+	export CROSS_COMPILE="ccache "$TOOLCHAINS_DIRECTORY"GCC-4.9/bin/aarch64-linux-android-"
+	export PLATFORM_VERSION=10.0.0
+	export ANDROID_MAJOR_VERSION=q
 else
 	echo "Did not export a known toolchain... Defaulting to GCC 4.9"
 	echo "Correct syntax is as follows: $ ./make9810.sh <device-variant> <branch> <gcc-version> <oc / uc> <test / release>"
@@ -181,14 +183,11 @@ fi
 if [ "$2" == "oreo" ]; then
 	if [ "$1" == "crownlte" ] && [ "$4" == "oc" ]; then
 		sed -i "s/-THEBOSS-Zeus-OC-/-THEBOSS-Zeus-OC-N9-"$OREO_VERSION"/g" "$CROWN_KERNEL_DIRECTORY"arch/arm64/configs/exynos9810-crownlte_defconfig
-		sed -i "s/-THEBOSS-Zeus-OC-/-THEBOSS-Zeus-OC-N9-"$OREO_VERSION"/g" "$CROWN_KERNEL_DIRECTORY"arch/arm64/boot/dts/include/dt-bindings/soc/samsung/crown_conf.h
 		oreo_oc_crown
 	elif [ "$1" == "crownlte" ] && [ "$4" == "oc" ]; then
 		sed -i "s/-THEBOSS-Zeus-OC-/-THEBOSS-Zeus-OC-N9-"$OREO_VERSION"/g" "$CROWN_KERNEL_DIRECTORY"arch/arm64/configs/exynos9810-crownlte_defconfig
-		sed -i "s/-THEBOSS-Zeus-OC-/-THEBOSS-Zeus-OC-N9-"$OREO_VERSION"/g" "$CROWN_KERNEL_DIRECTORY"arch/arm64/boot/dts/include/dt-bindings/soc/samsung/crown_conf.h
 	elif [ "$1" == "crownlte" ] && [ "$4" != "uc" ]; then
 		sed -i "s/-THEBOSS-Zeus-OC-/-THEBOSS-Zeus-OC-N9-"$OREO_VERSION"/g" "$CROWN_KERNEL_DIRECTORY"arch/arm64/configs/exynos9810-crownlte_defconfig
-		sed -i "s/-THEBOSS-Zeus-OC-/-THEBOSS-Zeus-OC-N9-"$OREO_VERSION"/g" "$CROWN_KERNEL_DIRECTORY"arch/arm64/boot/dts/include/dt-bindings/soc/samsung/crown_conf.h
 	else
 		echo "Invalid device or OC configuration detected... Please check your inputs."
 	fi
@@ -220,20 +219,20 @@ git reset --hard
 
 if [ "$2" == "oreo" ] || [ "$2" == "apgk" ]; then
 	if [ "$1" == "crownlte" ]; then
-		rm "$AIK_OREO_N960"split_img/boot.img-dtb
-		rm "$AIK_OREO_N960"split_img/boot.img-zImage
-		cp "$CROWN_KERNEL_DIRECTORY"arch/arm64/boot/Image "$AIK_OREO_N960"split_img/boot.img-zImage
-		cp "$CROWN_KERNEL_DIRECTORY"arch/arm64/boot/dtb.img "$AIK_OREO_N960"split_img/boot.img-dtb
-		cd "$AIK_OREO_N960" || exit
-		echo "$PASSWORD" | sudo -S ./repackimg.sh
-		cp "$AIK_OREO_N960"image-new.img  "$ZIP_OREO_N960"boot.img
-		rm "$AIK_OREO_N960N"split_img/boot.img-dtb
-		rm "$AIK_OREO_N960N"split_img/boot.img-zImage
-		cp "$CROWN_KERNEL_DIRECTORY"arch/arm64/boot/Image "$AIK_OREO_N960N"split_img/boot.img-zImage
-		cp "$CROWN_KERNEL_DIRECTORY"arch/arm64/boot/dtb.img "$AIK_OREO_N960N"split_img/boot.img-dtb
-		cd "$AIK_OREO_N960N" || exit
-		echo "$PASSWORD" | sudo -S ./repackimg.sh
-		cp "$AIK_OREO_N960N"image-new.img  "$ZIP_OREO_N960N"bootN960N.img
+		rm "$AIK_N960"dtb.img
+		rm "$AIK_N960"zImage
+		cp "$CROWN_KERNEL_DIRECTORY"arch/arm64/boot/Image "$AIK_N960"zImage
+		cp "$CROWN_KERNEL_DIRECTORY"arch/arm64/boot/dtb.img "$AIK_N960"dtb.img
+		cd "$AIK_N960" || exit
+		echo "$PASSWORD" | zip -r9 UPDATE-AnyKernel3.zip * -x .git README.md *placeholder
+		cp "$AIK_N960"UPDATE-AnyKernel3.zip  "$ZIP_N960"ZeusKernelQ.zip
+		rm "$AIK_N960N"dtb.img
+		rm "$AIK_N960N"zImage
+		cp "$CROWN_KERNEL_DIRECTORY"arch/arm64/boot/Image "$AIK_N960N"zImage
+		cp "$CROWN_KERNEL_DIRECTORY"arch/arm64/boot/dtb.img "$AIK_N960N"dtb.img
+		cd "$AIK_N960N" || exit
+		echo "$PASSWORD" | zip -r9 UPDATE-AnyKernel3.zip * -x .git README.md *placeholder
+		cp "$AIK_N960N"UPDATE-AnyKernel3.zip  "$ZIP_N960N"ZeusKernelQ.zip
 	fi
 else
 	echo "This is where we depart. You're on your own for AIK!"
