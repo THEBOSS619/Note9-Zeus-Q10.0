@@ -47,7 +47,7 @@
 
 #define DEK_LOG_COUNT		100
 
-//extern void ecryptfs_mm_drop_cache(int userid, int engineid);
+extern void ecryptfs_mm_drop_cache(int userid, int engineid);
 
 /* Log buffer */
 struct log_struct
@@ -493,7 +493,7 @@ static int dek_on_boot(dek_arg_on_boot *evt) {
 }
 
 static int dek_on_device_locked(dek_arg_on_device_locked *evt) {
-    //int user_id = evt->user_id;
+    int user_id = evt->user_id;
 	int engine_id = evt->engine_id;
 
 	del_kek(engine_id, KEK_TYPE_SYM);
@@ -501,7 +501,7 @@ static int dek_on_device_locked(dek_arg_on_device_locked *evt) {
 	del_kek(engine_id, KEK_TYPE_DH_PRIV);
 	del_kek(engine_id, KEK_TYPE_ECDH256_PRIV);
 
-	//ecryptfs_mm_drop_cache(user_id, engine_id);
+	ecryptfs_mm_drop_cache(user_id, engine_id);
 
 #ifdef CONFIG_SDP_KEY_DUMP
     if(get_sdp_sysfs_key_dump()) {
@@ -770,7 +770,7 @@ static long dek_do_ioctl_evt(unsigned int minor, unsigned int cmd,
 			goto err;
 		}
 
-		//ecryptfs_mm_drop_cache(evt->user_id, evt->engine_id);
+		ecryptfs_mm_drop_cache(evt->user_id, evt->engine_id);
 		ret = 0;
 		dek_add_to_log(evt->engine_id, "Disk cache clean up");
 		break;
