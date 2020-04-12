@@ -552,8 +552,7 @@ out:
 static void exynos_ufs_set_features(struct ufs_hba *hba, u32 hw_rev)
 {
 	/* caps */
-	hba->caps = UFSHCD_CAP_CLK_GATING |
-			UFSHCD_CAP_HIBERN8_WITH_CLK_GATING |
+	hba->caps = UFSHCD_CAP_HIBERN8_WITH_CLK_GATING |
 			UFSHCD_CAP_INTR_AGGR;
 
 	/* quirks of common driver */
