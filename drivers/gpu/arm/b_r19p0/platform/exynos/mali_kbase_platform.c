@@ -257,6 +257,10 @@ static int gpu_dvfs_update_config_data_from_dt(struct kbase_device *kbdev)
 	gpu_update_config_data_string(np, "governor", &of_string);
 	if (!strncmp("default", of_string, strlen("default"))) {
 		platform->governor_type = G3D_DVFS_GOVERNOR_DEFAULT;
+		gpu_update_config_data_int_array(np, "interactive_info", of_data_int_array, 3);
+		platform->interactive.highspeed_clock = of_data_int_array[0] == 0 ? 500 : (u32) of_data_int_array[0];
+		platform->interactive.highspeed_load  = of_data_int_array[1] == 0 ? 100 : (u32) of_data_int_array[1];
+		platform->interactive.highspeed_delay = of_data_int_array[2] == 0 ? 0 : (u32) of_data_int_array[2];
 	}
 
 #if 0
