@@ -5306,7 +5306,7 @@ enqueue_task_fair(struct rq *rq, struct task_struct *p, int flags)
 	 * estimated utilization, before we update schedutil.
 	 */
 	util_est_enqueue(&rq->cfs, p);
-
+#if defined(CONFIG_ENERGY_MODEL)
 	/*
 	 * If in_iowait is set, the code below may not trigger any cpufreq
 	 * utilization updates, so do it here explicitly with the IOWAIT flag
@@ -5316,7 +5316,7 @@ enqueue_task_fair(struct rq *rq, struct task_struct *p, int flags)
 	 */
 	if (iowait_boosted(p))
 		cpufreq_update_util(rq, SCHED_CPUFREQ_IOWAIT);
-
+#endif
 	for_each_sched_entity(se) {
 		if (se->on_rq)
 			break;
