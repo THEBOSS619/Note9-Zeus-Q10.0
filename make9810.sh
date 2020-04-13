@@ -33,12 +33,10 @@ CROWN_KERNEL_DIRECTORY=/home/theboss/kernels/Note9-Zeus-Q10.0/
 TOOLCHAINS_DIRECTORY=/home/theboss/kernels/Note9-Zeus-Q10.0/toolchains/
 
 # Android Image Kitchen paths
-AIK_N960=/home/theboss/kernels/AIK3-N960-Q/
-AIK_N960N=/home/theboss/kernels/AIK3-N960N-Q/
+AIK_N960=/home/theboss/kernels/Note9-Zeus-Q10.0/AIK3-N960-Q/
 
 # Zip directories
-ZIP_N960=/home/theboss/kernels/zip-note/
-ZIP_N960N=/home/theboss/kernels/zip-noteN960N/
+ZIP_N960=/home/theboss/kernels/
 
 # Password for AIK sudo
 PASSWORD=
@@ -226,13 +224,6 @@ if [ "$2" == "oreo" ] || [ "$2" == "apgk" ]; then
 		cd "$AIK_N960" || exit
 		echo "$PASSWORD" | zip -r9 UPDATE-AnyKernel3.zip * -x .git README.md *placeholder
 		cp "$AIK_N960"UPDATE-AnyKernel3.zip  "$ZIP_N960"ZeusKernelQ.zip
-		rm "$AIK_N960N"dtb.img
-		rm "$AIK_N960N"zImage
-		cp "$CROWN_KERNEL_DIRECTORY"arch/arm64/boot/Image "$AIK_N960N"zImage
-		cp "$CROWN_KERNEL_DIRECTORY"arch/arm64/boot/dtb.img "$AIK_N960N"dtb.img
-		cd "$AIK_N960N" || exit
-		echo "$PASSWORD" | zip -r9 UPDATE-AnyKernel3.zip * -x .git README.md *placeholder
-		cp "$AIK_N960N"UPDATE-AnyKernel3.zip  "$ZIP_N960N"ZeusKernelQ.zip
 	fi
 else
 	echo "This is where we depart. You're on your own for AIK!"
