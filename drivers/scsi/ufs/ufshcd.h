@@ -804,6 +804,12 @@ static inline bool ufshcd_can_fake_clkgating(struct ufs_hba *hba)
 #define ufshcd_readl(hba, reg)	\
 	readl((hba)->mmio_base + (reg))
 
+static inline bool ufshcd_is_auto_hibern8_supported(struct ufs_hba *hba)
+{
+	return !!((hba->capabilities & MASK_AUTO_HIBERN8_SUPPORT) &&
+		!(hba->quirks & UFSHCD_QUIRK_BROKEN_AUTO_HIBERN8));
+}
+
 /**
  * ufshcd_rmwl - read modify write into a register
  * @hba - per adapter instance
