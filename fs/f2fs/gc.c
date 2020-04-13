@@ -16,6 +16,7 @@
 #include <linux/fb.h>
 #include <linux/pm_wakeup.h>
 #include <linux/power_supply.h>
+#include <linux/ratelimit.h>
 
 #include "f2fs.h"
 #include "node.h"
@@ -150,7 +151,7 @@ do_gc:
 			sbi->rapid_gc = false;
 			rapid_gc_set_wakelock();
 			sbi->gc_mode = GC_NORMAL;
-			f2fs_info(sbi,
+			pr_info_ratelimited("F2FS: "
 				"No more rapid GC victim found, "
 				"sleeping for %u ms", wait_ms);
 
@@ -159,7 +160,7 @@ do_gc:
 			 * that would not be read again anytime soon.
 			 */
 			mm_drop_caches(3);
-			f2fs_info(sbi, "dropped caches");
+			pr_info_ratelimited("F2FS: dropped caches");
 		}
 
 			/*
@@ -252,8 +253,7 @@ static void f2fs_start_rapid_gc(void)
 			wake_up_interruptible_all(&sbi->gc_thread->gc_wait_queue_head);
 			wake_up_discard_thread(sbi, true);
 		} else {
-			f2fs_info(sbi,
-					"Invalid blocks lower than %d%%, "
+			pr_info_ratelimited("F2FS: Invalid blocks lower than %d%%,"
 					"skipping rapid GC (%u / (%u - %u))",
 					RAPID_GC_LIMIT_INVALID_BLOCK,
 					invalid_blocks,
@@ -353,7 +353,7 @@ void __init f2fs_init_rapid_gc(void)
 
 void __exit f2fs_destroy_rapid_gc(void)
 {
-	msm_drm_unregister_client(&fb_notifier_block);
+	fb_unregister_client(&fb_notifier_block);
 	wakeup_source_trash(&gc_wakelock);
 }
 
@@ -1431,7 +1431,6 @@ int f2fs_gc(struct f2fs_sb_info *sbi, bool sync,
 	unsigned long long last_skipped = sbi->skipped_atomic_files[FG_GC];
 	unsigned long long first_skipped;
 	unsigned int skipped_round = 0, round = 0;
-	struct super_block *sb = sbi->sb;
 
 	trace_f2fs_gc_begin(sb, sync, background,
 				get_pages(sbi, F2FS_DIRTY_NODES),
