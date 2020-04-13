@@ -633,6 +633,8 @@ struct ufs_hba {
 	#define UFSHCI_QUIRK_SKIP_INTR_AGGR			UFS_BIT(10)
 	#define UFSHCD_QUIRK_GET_GENERRCODE_DIRECT		UFS_BIT(11)
 	#define UFSHCD_QUIRK_UNRESET_INTR_AGGR			UFS_BIT(12)
+	/* Auto hibern8 support is broken */
+	#define UFSHCD_QUIRK_BROKEN_AUTO_HIBERN8		UFS_BIT(13)
 
 	unsigned int quirks;	/* Deviations from standard UFSHCI spec. */
 
