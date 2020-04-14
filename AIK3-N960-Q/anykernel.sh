@@ -83,6 +83,13 @@ if [ ! -e /vendor/etc/fstab.samsungexynos9810~ ]; then
 	backup_file /vendor/etc/fstab.samsungexynos9810;
 fi;
 
+ui_print ""
+ui_print "Removing mcRegistry..."
+ui_print ""
+
+rm -f /vendor/app/mcRegistry/ffffffffd0000000000000000000000a.tlbin;
+rm -f /vendor/app/mcRegistry/ffffffffd00000000000000000000062.tlbin;
+
 ui_print "Patching fstab for F2FS Support";
 
 cp -af /tmp/anykernel/ramdisk/fstab.samsungexynos9810 /vendor/etc/;
@@ -93,6 +100,12 @@ ui_print "Copying vendor script";
 cp -f $home/vendor/etc/init/init.services.rc /vendor/etc/init;
 
 mv -f $home/dtb.img $split_img/extra;
+
+ui_print " "
+ui_print "Kernel flashing finished..."
+ui_print "Welcome to Zeus world "
+ui_print "Being Best kernel is not an option"
+ui_print "But it is a necessity... Enjoy "
 
 write_boot;
 ## end install
