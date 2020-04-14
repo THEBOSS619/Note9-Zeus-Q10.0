@@ -27,6 +27,7 @@
 #include <linux/uh.h>
 #include <linux/rkp.h>
 #endif
+#include <linux/sched/clock.h>
 
 struct fimc_is_lib_support gPtr_lib_support;
 struct mutex gPtr_bin_load_ctrl;

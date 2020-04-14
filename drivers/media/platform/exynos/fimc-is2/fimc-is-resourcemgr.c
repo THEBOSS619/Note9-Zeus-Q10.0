@@ -35,6 +35,7 @@
 #ifdef CONFIG_CMU_EWF
 #include <soc/samsung/cmu_ewf.h>
 #endif
+#include <linux/sched/clock.h>
 
 #include <linux/of_fdt.h>
 #include <linux/of_reserved_mem.h>

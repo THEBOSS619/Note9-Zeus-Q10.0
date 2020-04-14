@@ -10,6 +10,7 @@
 
 #include "acpm_dvfs.h"
 #include "cmucal.h"
+#include <linux/sched/clock.h>
 
 #ifndef CONFIG_ARM_EXYNOS_DEVFREQ
 #define PM_QOS_BUS_THROUGHPUT (11)

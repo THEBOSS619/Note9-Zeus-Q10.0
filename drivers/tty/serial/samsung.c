@@ -50,6 +50,7 @@
 #include <linux/sched.h>
 #include <linux/exynos-ss.h>
 #include <asm/irq.h>
+#include <linux/sched/clock.h>
 
 #include "samsung.h"
 #include "../../pinctrl/core.h"

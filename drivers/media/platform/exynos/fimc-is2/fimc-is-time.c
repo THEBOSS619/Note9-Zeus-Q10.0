@@ -14,6 +14,7 @@
 #include <linux/kernel.h>
 #include <linux/errno.h>
 #include <linux/time.h>
+#include <linux/sched/clock.h>
 
 #include "fimc-is-time.h"
 #include "fimc-is-groupmgr.h"

@@ -35,6 +35,7 @@
 #include <sound/samsung/mailbox.h>
 #include <sound/samsung/vts.h>
 #include <soc/samsung/exynos-pmu.h>
+#include <linux/sched/clock.h>
 
 #include "vts.h"
 #include "vts_log.h"

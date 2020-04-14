@@ -21,6 +21,7 @@
 #include <linux/slab.h>
 #include <linux/exynos-ss.h>
 #include <linux/sched.h>
+#include <linux/sched/clock.h>
 
 #include "acpm.h"
 #include "acpm_ipc.h"

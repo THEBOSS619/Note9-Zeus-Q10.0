@@ -13,6 +13,8 @@
 #ifndef __S5P_MFC_DEBUG_H
 #define __S5P_MFC_DEBUG_H __FILE__
 
+#include <linux/sched/clock.h>
+
 #define DEBUG
 
 #ifdef DEBUG

@@ -13,6 +13,7 @@
 #include "sfr/fimc-is-sfr-isp-v310.h"
 #include "fimc-is-err.h"
 #include <soc/samsung/bcm.h>
+#include <linux/sched/clock.h>
 
 int debug_irq_ddk;
 module_param(debug_irq_ddk, int, 0644);

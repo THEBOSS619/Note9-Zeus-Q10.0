@@ -14,6 +14,7 @@
 #include "fimc-is-param.h"
 #include "fimc-is-err.h"
 #include <linux/videodev2_exynos_media.h>
+#include <linux/sched/clock.h>
 
 spinlock_t	shared_output_slock;
 static ulong hw_mcsc_out_configured = 0xFFFF;

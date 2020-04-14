@@ -34,7 +34,7 @@
 #include "iva_ram_dump.h"
 #include "iva_vdma.h"
 #include "iva_pmu.h"
-
+#include <linux/sched/clock.h>
 #undef DEBUG
 
 #undef CHECK_PARAM_REGION_ALIGN

@@ -19,6 +19,7 @@
 #include <linux/slab.h>
 #include <linux/exynos-ss.h>
 #include <soc/samsung/exynos-pmu.h>
+#include <linux/sched/clock.h>
 
 #define RESET_SEQUENCER_CONFIGURATION		(0x0500)
 

@@ -11,6 +11,7 @@
 #include "fimc-is-hw-vra.h"
 #include "../interface/fimc-is-interface-ischain.h"
 #include "fimc-is-err.h"
+#include <linux/sched/clock.h>
 
 void fimc_is_hw_vra_save_debug_info(struct fimc_is_hw_ip *hw_ip,
 	struct fimc_is_lib_vra *lib_vra, int debug_point)

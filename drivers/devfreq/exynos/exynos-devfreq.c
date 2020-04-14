@@ -28,6 +28,7 @@
 #include <linux/sched.h>
 #include <linux/exynos-wd.h>
 #include <linux/devfreq_boost.h>
+#include <linux/sched/clock.h>
 
 #include <soc/samsung/exynos-devfreq.h>
 #include <soc/samsung/tmu.h>

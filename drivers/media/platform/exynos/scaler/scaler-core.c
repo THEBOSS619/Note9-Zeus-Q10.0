@@ -16,6 +16,7 @@
 #include <linux/platform_device.h>
 #include <linux/of.h>
 #include <linux/interrupt.h>
+#include <linux/sched/clock.h>
 #include <linux/clk.h>
 #include <linux/slab.h>
 #include <linux/pm_runtime.h>

@@ -29,6 +29,7 @@
 #include <linux/debugfs.h>
 #include <soc/samsung/acpm_ipc_ctrl.h>
 #include "exynos_acpm_tmu.h"
+#include <linux/sched/clock.h>
 
 static unsigned int acpm_tmu_ch_num, acpm_tmu_size;
 

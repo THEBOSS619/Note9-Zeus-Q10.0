@@ -33,6 +33,7 @@
 #include <sound/tlv.h>
 #include <sound/samsung/abox.h>
 #include <sound/samsung/vts.h>
+#include <linux/sched/clock.h>
 
 #include <soc/samsung/exynos-pmu.h>
 #include <soc/samsung/exynos-itmon.h>

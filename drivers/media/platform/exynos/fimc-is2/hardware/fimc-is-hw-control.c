@@ -30,6 +30,7 @@
 #include "fimc-is-hw-srdz.h"
 #include "fimc-is-hw-dm.h"
 #include "fimc-is-interface-library.h"
+#include <linux/sched/clock.h>
 
 #define INTERNAL_SHOT_EXIST	(1)
 
