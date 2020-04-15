@@ -15,7 +15,7 @@
 
 #include <linux/sched/clock.h>
 
-#define DEBUG
+//#define DEBUG
 
 #ifdef DEBUG
 
@@ -35,6 +35,8 @@ extern unsigned int otf_dump;
 	} while (0)
 #else
 #define mfc_debug(fmt, args...)
+extern unsigned int nal_q_disable;
+extern unsigned int nal_q_parallel_disable;
 #endif
 
 #define mfc_debug_enter() mfc_debug(5, "enter\n")
