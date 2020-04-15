@@ -4881,8 +4881,8 @@ void show_free_areas(unsigned int filter)
 		global_node_page_state(NR_FILE_DIRTY),
 		global_node_page_state(NR_WRITEBACK),
 		global_node_page_state(NR_UNSTABLE_NFS),
-		global_page_state(NR_SLAB_RECLAIMABLE),
-		global_page_state(NR_SLAB_UNRECLAIMABLE),
+		global_zone_page_state(NR_SLAB_RECLAIMABLE),
+		global_zone_page_state(NR_SLAB_UNRECLAIMABLE),
 		global_node_page_state(NR_FILE_MAPPED),
 		global_node_page_state(NR_SHMEM),
 		global_zone_page_state(NR_PAGETABLE),
@@ -4890,7 +4890,7 @@ void show_free_areas(unsigned int filter)
 		global_zone_page_state(NR_FREE_PAGES),
 		free_pcp,
 		global_zone_page_state(NR_FREE_CMA_PAGES),
-		global_page_state(NR_FREE_RBIN_PAGES));
+		global_zone_page_state(NR_FREE_RBIN_PAGES));
 
 	for_each_online_pgdat(pgdat) {
 		printk("Node %d"

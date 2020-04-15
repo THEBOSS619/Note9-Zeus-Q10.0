@@ -27,13 +27,9 @@
 
 
 /*
- * Handle rename of global_page_state "c41f012ade0b95b0a6e25c7150673e0554736165 mm: rename global_page_state to global_zone_page_state"
+ * Handle rename of global_zone_page_state "c41f012ade0b95b0a6e25c7150673e0554736165 mm: rename global_zone_page_state to global_zone_page_state"
  */
-#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 14, 0)
-#define GLOBAL_ZONE_PAGE_STATE(item)    global_page_state(item)
-#else
 #define GLOBAL_ZONE_PAGE_STATE(item)    global_zone_page_state(item)
-#endif
 
 #define GLOBAL_NODE_PAGE_STATE(item)    global_node_page_state(item)
 
