@@ -27,8 +27,6 @@
 #include <linux/vmalloc.h>
 #include <linux/device.h>
 #include <linux/oom.h>
-#include <linux/sched/task.h>
-#include <linux/sched/mm.h>
 
 #include "internal.h"
 
@@ -90,8 +88,7 @@ static int hpa_killer(void)
 
 		tasksize = get_mm_rss(p->mm);
 		tasksize += get_mm_counter(p->mm, MM_SWAPENTS);
-		tasksize += atomic_long_read(&p->mm->nr_ptes);
-		tasksize += mm_nr_pmds(p->mm);
+		tasksize += mm_pgtables_bytes(p->mm);
 		current_adj = p->signal->oom_score_adj;
 
 		task_unlock(p);
