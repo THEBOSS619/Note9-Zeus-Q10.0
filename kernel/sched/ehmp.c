@@ -17,7 +17,7 @@
 
 #include "sched.h"
 #include "tune.h"
-#include "sched-pelt.h"
+#include "pelt.h"
 
 /**********************************************************************
  * extern functions                                                   *
@@ -1584,8 +1584,6 @@ static void ontime_update_next_balance(int cpu, struct ontime_avg *oa)
 	 */
 	cpu_rq(smp_processor_id())->next_balance = jiffies;
 }
-
-#define cap_scale(v, s) ((v)*(s) >> SCHED_CAPACITY_SHIFT)
 
 u32 __accumulate_pelt_segments(u64 periods, u32 d1, u32 d3);
 

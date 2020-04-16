@@ -572,6 +572,7 @@ struct rt_rq {
 	unsigned long		rt_nr_total;
 	int			overloaded;
 	struct plist_head	pushable_tasks;
+	struct sched_avg avg;
 	struct sched_rt_entity *curr;
 	atomic_long_t removed_util_avg;
 	atomic_long_t removed_load_avg;

@@ -35,6 +35,7 @@
 #endif
 #include <linux/ologk.h>
 #include <trace/events/power.h>
+#include <linux/sched/cpufreq.h>
 
 static LIST_HEAD(cpufreq_policy_list);
 
@@ -1144,17 +1145,6 @@ static int cpufreq_add_policy_cpu(struct cpufreq_policy *policy, unsigned int cp
 	/* Has this CPU been taken care of already? */
 	if (cpumask_test_cpu(cpu, policy->cpus))
 		return 0;
-
-#if defined (CONFIG_CPU_FREQ_GOV_SCHEDUTIL)
-	/*
-	 * If current governor is schedutil and hp governor is enabled,
-	 * using sugov_fast_start for reducing hp time
-	 */
-	if (((cpu != policy->cpu) && !cpufreq_suspended) &&
-		(policy->governor && !strncasecmp(policy->governor->name, "schedutil", CPUFREQ_NAME_LEN)))
-		if (sugov_fast_start(policy, cpu))
-				return 0;
-#endif
 
 	down_write(&policy->rwsem);
 	if (has_target())

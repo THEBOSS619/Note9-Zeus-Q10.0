@@ -13,7 +13,6 @@
 #include "walt.h"
 #include <trace/events/sched.h>
 #include "tune.h"
-#include "sched-pelt.h"
 
 #include "pelt.h"
 
@@ -264,87 +263,6 @@ int alloc_rt_sched_group(struct task_group *tg, struct task_group *parent)
 #ifdef CONFIG_SMP
 
 #define entity_is_task(se)	(!se->my_q)
-#define cap_scale(v, s) ((v)*(s) >> SCHED_CAPACITY_SHIFT)
-
-u64 decay_load(u64 val, u64 n);
-u32 accumulate_sum(u64 delta, int cpu, struct sched_avg *sa,
-	       unsigned long weight, int running, struct cfs_rq *cfs_rq);
-
-/*
- * We can represent the historical contribution to runnable average as the
- * coefficients of a geometric series.  To do this we sub-divide our runnable
- * history into segments of approximately 1ms (1024us); label the segment that
- * occurred N-ms ago p_N, with p_0 corresponding to the current period, e.g.
- *
- * [<- 1024us ->|<- 1024us ->|<- 1024us ->| ...
- *      p0            p1           p2
- *     (now)       (~1ms ago)  (~2ms ago)
- *
- * Let u_i denote the fraction of p_i that the entity was runnable.
- *
- * We then designate the fractions u_i as our co-efficients, yielding the
- * following representation of historical load:
- *   u_0 + u_1*y + u_2*y^2 + u_3*y^3 + ...
- *
- * We choose y based on the with of a reasonably scheduling period, fixing:
- *   y^32 = 0.5
- *
- * This means that the contribution to load ~32ms ago (u_32) will be weighted
- * approximately half as much as the contribution to load within the last ms
- * (u_0).
- *
- * When a period "rolls over" and we have new u_0`, multiplying the previous
- * sum again by y is sufficient to update:
- *   load_avg = u_0` + y*(u_0 + u_1*y + u_2*y^2 + ... )
- *            = u_0 + u_1*y + u_2*y^2 + ... [re-labeling u_i --> u_{i+1}]
- */
-static __always_inline int
-__update_load_avg(u64 now, int cpu, struct sched_avg *sa,
-		  unsigned long weight, int running, struct cfs_rq *cfs_rq)
-{
-	u64 delta;
-
-	delta = now - sa->last_update_time;
-	/*
-	 * This should only happen when time goes backwards, which it
-	 * unfortunately does during sched clock init when we swap over to TSC.
-	 */
-	if ((s64)delta < 0) {
-		sa->last_update_time = now;
-		return 0;
-	}
-
-	/*
-	 * Use 1024ns as the unit of measurement since it's a reasonable
-	 * approximation of 1us and fast to compute.
-	 */
-	delta >>= 10;
-	if (!delta)
-		return 0;
-	sa->last_update_time = now;
-
-	/*
-	 * Now we know we crossed measurement unit boundaries. The *_avg
-	 * accrues by two steps:
-	 *
-	 * Step 1: accumulate *_sum since last_update_time. If we haven't
-	 * crossed period boundaries, finish.
-	 */
-	if (!accumulate_sum(delta, cpu, sa, weight, running, cfs_rq))
-		return 0;
-
-	/*
-	 * Step 2: update *_avg.
-	 */
-	sa->load_avg = div_u64(sa->load_sum, LOAD_AVG_MAX);
-	if (cfs_rq) {
-		cfs_rq->runnable_load_avg =
-			div_u64(cfs_rq->runnable_load_sum, LOAD_AVG_MAX);
-	}
-	sa->util_avg = sa->util_sum / LOAD_AVG_MAX;
-
-	return 1;
-}
 
 void rt_rq_util_change(struct rt_rq *rt_rq)
 {
@@ -420,65 +338,6 @@ static inline void propagate_rt_entity_load_avg(struct sched_rt_entity *rt_se, s
 {
 }
 #endif
-
-int update_rt_rq_load_avg(u64 now, int cpu, struct rt_rq *rt_rq, bool update_freq)
-{
-	int decayed, removed_util = 0;
-	struct sched_avg *sa = &rt_rq->avg;
-	struct rq *rq = rt_rq->rq;
-
-	if (atomic_long_read(&rt_rq->removed_util_avg)) {
-		long r = atomic_long_xchg(&rt_rq->removed_util_avg, 0);
-		sub_positive(&sa->util_avg, r);
-		sub_positive(&sa->util_sum, r * LOAD_AVG_MAX);
-		removed_util = 1;
-#ifdef CONFIG_RT_GROUP_SCHED
-		/* Set propagate_avg for task group load propagate */
-		rt_rq->propagate_avg = 1;
-#endif
-	}
-
-	if (atomic_long_read(&rt_rq->removed_load_avg)) {
-		long r = atomic_long_xchg(&rt_rq->removed_load_avg, 0);
-		sub_positive(&sa->load_avg, r);
-		sub_positive(&sa->load_sum, r * LOAD_AVG_MAX);
-#ifdef CONFIG_RT_GROUP_SCHED
-		/* Set propagate_avg for task group load propagate */
-		rt_rq->propagate_avg = 1;
-#endif
-	}
-
-	decayed = __update_load_avg(now, cpu, sa, scale_load_down(NICE_0_LOAD),
-			rt_rq->curr != NULL, NULL);
-
-#ifndef CONFIG_64BIT
-	smp_wmb();
-	rt_rq->load_last_update_time_copy = sa->last_update_time;
-#endif
-	if (update_freq && (decayed || removed_util))
-		rt_rq_util_change(rt_rq);
-
-	if (rt_rq == &rq->rt)
-		trace_sched_rt_load_avg_cpu(cpu_of(rq), rt_rq);
-
-	return decayed;
-}
-
-void update_rt_load_avg(u64 now, struct sched_rt_entity *rt_se, struct rt_rq *rt_rq, int cpu)
-{
-	/*
-	 * Track task load average for carrying it to new CPU after migrated.
-	 */
-	if (rt_se->avg.last_update_time)
-		__update_load_avg(now, cpu, &rt_se->avg, scale_load_down(NICE_0_LOAD),
-				rt_rq->curr == rt_se, NULL);
-
-	update_rt_rq_load_avg(now, cpu, rt_rq, true);
-	propagate_rt_entity_load_avg(rt_se, rt_rq);
-
-	if (entity_is_task(rt_se))
-		trace_sched_rt_load_avg_task(rt_task_of(rt_se), &rt_se->avg);
-}
 
 static void pull_rt_task(struct rq *this_rq);
 
@@ -619,16 +478,6 @@ static void dequeue_pushable_task(struct rq *rq, struct task_struct *p)
 
 #else
 static inline void rt_rq_util_change(struct rt_rq *rt_rq)
-{
-}
-
-static inline
-int update_rt_rq_load_avg(u64 now, int cpu, struct rt_rq *rt_rq, bool update_freq)
-{
-	return 0;
-}
-static inline
-void update_rt_load_avg(u64 now, struct sched_rt_entity *rt_se, struct rt_rq *rt_rq, int cpu)
 {
 }
 
@@ -1630,7 +1479,6 @@ static void __enqueue_rt_entity(struct sched_rt_entity *rt_se, unsigned int flag
 	struct rt_prio_array *array = &rt_rq->active;
 	struct rt_rq *group_rq = group_rt_rq(rt_se);
 	struct list_head *queue = array->queue + rt_se_prio(rt_se);
-	u64 now = rq_clock_task(rq_of_rt_rq(rt_rq));
 
 	/*
 	 * Don't enqueue the group if its throttled, or when empty.
@@ -1656,8 +1504,6 @@ static void __enqueue_rt_entity(struct sched_rt_entity *rt_se, unsigned int flag
 	}
 	rt_se->on_rq = 1;
 
-	update_rt_load_avg(now, rt_se, rt_rq, cpu_of(rq_of_rt_rq(rt_rq)));
-
 	if (rt_entity_is_task(rt_se) && !rt_se->avg.last_update_time)
 		attach_entity_load_avg(&rq_of_rt_se(rt_se)->rt, rt_se);
 
@@ -1668,15 +1514,12 @@ static void __dequeue_rt_entity(struct sched_rt_entity *rt_se, unsigned int flag
 {
 	struct rt_rq *rt_rq = rt_rq_of_se(rt_se);
 	struct rt_prio_array *array = &rt_rq->active;
-	u64 now = rq_clock_task(rq_of_rt_rq(rt_rq));
 
 	if (move_entity(flags)) {
 		WARN_ON_ONCE(!rt_se->on_list);
 		__delist_rt_entity(rt_se, array);
 	}
 	rt_se->on_rq = 0;
-
-	update_rt_load_avg(now, rt_se, rt_rq, cpu_of(rq_of_rt_rq(rt_rq)));
 
 	dec_rt_tasks(rt_se, rt_rq);
 }
@@ -1760,8 +1603,6 @@ enqueue_task_rt(struct rq *rq, struct task_struct *p, int flags)
 
 	if (flags & ENQUEUE_WAKEUP)
 		rt_se->timeout = 0;
-
-	update_rt_rq_load_avg(rq_clock_task(rq), cpu_of(rq), &rq->rt, 0);
 
 	enqueue_rt_entity(rt_se, flags);
 	walt_inc_cumulative_runnable_avg(rq, p);
@@ -2097,8 +1938,6 @@ void set_task_rq_rt(struct sched_rt_entity *rt_se,
 		p_last_update_time = prev->avg.last_update_time;
 		n_last_update_time = next->avg.last_update_time;
 #endif
-		__update_load_avg(p_last_update_time, cpu_of(rq_of_rt_rq(prev)),
-				&rt_se->avg, 0, 0, NULL);
 
 		rt_se->avg.last_update_time = n_last_update_time;
 	}
@@ -2136,8 +1975,6 @@ static void sync_entity_load_avg(struct sched_rt_entity *rt_se)
 	u64 last_update_time;
 
 	last_update_time = rt_rq_last_update_time(rt_rq);
-	__update_load_avg(last_update_time, cpu_of(rq_of_rt_rq(rt_rq)),
-				&rt_se->avg, 0, 0, NULL);
 }
 
 /*
@@ -2167,9 +2004,7 @@ static void attach_task_rt_rq(struct task_struct *p)
 {
 	struct sched_rt_entity *rt_se = &p->rt;
 	struct rt_rq *rt_rq = rt_rq_of_se(rt_se);
-	u64 now = rq_clock_task(rq_of_rt_rq(rt_rq));
 
-	update_rt_load_avg(now, rt_se, rt_rq, cpu_of(rq_of_rt_rq(rt_rq)));
 	attach_entity_load_avg(rt_rq, rt_se);
 }
 
@@ -2177,9 +2012,7 @@ static void detach_task_rt_rq(struct task_struct *p)
 {
 	struct sched_rt_entity *rt_se = &p->rt;
 	struct rt_rq *rt_rq = rt_rq_of_se(rt_se);
-	u64 now = rq_clock_task(rq_of_rt_rq(rt_rq));
 
-	update_rt_load_avg(now, rt_se, rt_rq, cpu_of(rq_of_rt_rq(rt_rq)));
 	detach_entity_load_avg(rt_rq, rt_se);
 }
 
@@ -2349,12 +2182,10 @@ static struct task_struct *_pick_next_task_rt(struct rq *rq)
 	struct sched_rt_entity *rt_se;
 	struct task_struct *p;
 	struct rt_rq *rt_rq  = &rq->rt;
-	u64 now = rq_clock_task(rq_of_rt_rq(rt_rq));
 
 	do {
 		rt_se = pick_next_rt_entity(rq, rt_rq);
 		BUG_ON(!rt_se);
-		update_rt_load_avg(now, rt_se, rt_rq, cpu_of(rq_of_rt_rq(rt_rq)));
 		rt_rq->curr = rt_se;
 		rt_rq = group_rt_rq(rt_se);
 	} while (rt_rq);
@@ -2435,8 +2266,6 @@ pick_next_task_rt(struct rq *rq, struct task_struct *prev, struct rq_flags *rf)
 static void put_prev_task_rt(struct rq *rq, struct task_struct *p)
 {
 	struct sched_rt_entity *rt_se = &p->rt;
-	struct rt_rq *rt_rq = rt_rq_of_se(rt_se);
-	u64 now = rq_clock_task(rq_of_rt_rq(rt_rq));
 
 	update_curr_rt(rq);
 
@@ -2451,8 +2280,6 @@ static void put_prev_task_rt(struct rq *rq, struct task_struct *p)
 
 	for_each_sched_rt_entity(rt_se) {
 		struct rt_rq *rt_rq = rt_rq_of_se(rt_se);
-		if (rt_se->on_rq)
-			update_rt_load_avg(now, rt_se, rt_rq, cpu_of(rq_of_rt_rq(rt_rq)));
 
 		rt_rq->curr = NULL;
 	}
@@ -3738,15 +3565,9 @@ static void watchdog(struct rq *rq, struct task_struct *p)
 static void task_tick_rt(struct rq *rq, struct task_struct *p, int queued)
 {
 	struct sched_rt_entity *rt_se = &p->rt;
-	u64 now = rq_clock_task(rq);
 
 	update_curr_rt(rq);
 	update_rt_rq_load_avg(rq_clock_pelt(rq), rq, 1);
-
-	for_each_sched_rt_entity(rt_se) {
-		struct rt_rq *rt_rq = rt_rq_of_se(rt_se);
-
-	}
 
 	watchdog(rq, p);
 

@@ -64,8 +64,6 @@ struct sugov_cpu {
 	unsigned int iowait_boost_max;
 	u64 last_update;
 
-	struct sched_walt_cpu_load walt_load;
-
 	/* The fields below are only needed when sharing a policy. */
 	unsigned long util_cfs;
 	unsigned long util_dl;
@@ -216,7 +214,6 @@ static unsigned int get_next_freq(struct sugov_policy *sg_policy,
 				policy->cpuinfo.max_freq : policy->cur;
 
 	freq = (freq + (freq >> 2)) * util / max;
-	trace_sugov_next_freq(policy->cpu, util, max, freq);
 
 	if (freq == sg_policy->cached_raw_freq && !sg_policy->need_freq_update)
 		return sg_policy->next_freq;
@@ -796,15 +793,12 @@ static int sugov_init(struct cpufreq_policy *policy)
 		goto stop_kthread;
 	}
 
-	tunables->up_rate_limit_us =
-				CONFIG_SCHEDUTIL_UP_RATE_LIMIT;
-	tunables->down_rate_limit_us =
-				CONFIG_SCHEDUTIL_DOWN_RATE_LIMIT;
+	tunables->up_rate_limit_us = 5000;
+	tunables->down_rate_limit_us = 5000;
 
 	tunables->iowait_boost_enable = true;
 	policy->governor_data = sg_policy;
 	sg_policy->tunables = tunables;
-	stale_ns = sched_ravg_window + (sched_ravg_window >> 3);
 
 	sugov_tunables_restore(policy);
 
@@ -959,4 +953,4 @@ static int __init sugov_register(void)
 {
 	return cpufreq_register_governor(&schedutil_gov);
 }
-core_initcall(sugov_register);
+fs_initcall(sugov_register);
