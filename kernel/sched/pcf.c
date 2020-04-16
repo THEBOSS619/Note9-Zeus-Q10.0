@@ -9,7 +9,7 @@
 
 #include "../sched.h"
 
-static int cpu_util_wake(int cpu, struct task_struct *p)
+static int cpu_util_without(int cpu, struct task_struct *p)
 {
 	unsigned long util, capacity;
 
@@ -89,7 +89,7 @@ int select_perf_cpu(struct task_struct *p)
 		 * computations. Since a high performance cpu has a large capacity,
 		 * cpu having a high performance is likely to be selected.
 		 */
-		wake_util = cpu_util_wake(cpu, p);
+		wake_util = cpu_util_without(cpu, p);
 		if ((capacity_orig - wake_util) < max_spare_cap)
 			continue;
 

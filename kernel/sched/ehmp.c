@@ -715,7 +715,7 @@ static void mark_shallowest_cpu(int cpu, unsigned int *min_exit_latency,
 	cpumask_set_cpu(cpu, shallowest_cpus);
 }
 
-extern int cpu_util_wake(int cpu, struct task_struct *p);
+extern int cpu_util_without(int cpu, struct task_struct *p);
 
 static int find_group_boost_target(struct task_struct *p)
 {
@@ -741,7 +741,7 @@ static int find_group_boost_target(struct task_struct *p)
 	}
 
 	for_each_cpu_and(cpu, tsk_cpus_allowed(p), sched_group_cpus(sd->groups)) {
-		unsigned long util = cpu_util_wake(cpu, p);
+		unsigned long util = cpu_util_without(cpu, p);
 
 		if (idle_cpu(cpu)) {
 			struct cpuidle_state *idle;
@@ -822,7 +822,7 @@ find_boost_target(struct sched_domain *sd, struct task_struct *p,
 			if (!cpu_online(i))
 				continue;
 
-			wake_util = cpu_util_wake(i, p);
+			wake_util = cpu_util_without(i, p);
 			new_util = wake_util + task_util(p);
 			new_util = max(min_util, new_util);
 
@@ -921,7 +921,7 @@ static int find_prefer_idle_target(struct sched_domain *sd,
 			if (!cpu_online(i))
 				continue;
 
-			wake_util = cpu_util_wake(i, p);
+			wake_util = cpu_util_without(i, p);
 			new_util = wake_util + task_util(p);
 			new_util = max(min_util, new_util);
 
@@ -1720,7 +1720,7 @@ int exynos_select_cpu_rt(struct sched_domain *sd, struct task_struct *p, bool bo
 			if (!cpu_online(i))
 				continue;
 
-			wake_util = cpu_util_wake(i, p);
+			wake_util = cpu_util_without(i, p);
 			new_util = wake_util + task_util(p);
 			new_util = max(min_util, new_util);
 
