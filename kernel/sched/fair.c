@@ -7129,7 +7129,7 @@ int cpu_util_without(int cpu, struct task_struct *p)
 	    estimated -= min_t(unsigned int, estimated,
 		       (_task_util_est(p) | UTIL_AVG_UNCHANGED));
 	}
-	util = max(util, estimated);
+	util = max_t(unsigned long, util, estimated);
     }
 
 	/*
@@ -9475,7 +9475,6 @@ void update_group_capacity(struct sched_domain *sd, int cpu)
 		 */
 
 		for_each_cpu(cpu, sched_group_cpus(sdg)) {
-			unsigned long cpu_cap = capacity_of(cpu);
 
 			min_capacity = min(capacity, min_capacity);
 			max_capacity = max(capacity, max_capacity);
@@ -9489,7 +9488,6 @@ void update_group_capacity(struct sched_domain *sd, int cpu)
 		group = child->groups;
 		do {
 			struct sched_group_capacity *sgc = group->sgc;
-			cpumask_t *cpus = sched_group_cpus(group);
 
 			capacity += sgc->capacity;
 			min_capacity = min(sgc->min_capacity, min_capacity);
@@ -9913,8 +9911,7 @@ static inline void update_sd_lb_stats(struct lb_env *env, struct sd_lb_stats *sd
 		 * capacity or if per-cpu capacity isn't higher.
 		 */
 		if (sgs->group_type == group_misfit_task &&
-		    (!group_has_capacity(env, &sds->local_stat) ||
-		     !group_smaller_cpu_capacity(sg, sds->local)))
+		    (!group_has_capacity(env, &sds->local_stat)))
 			sgs->group_type = group_other;
 
 		if (update_sd_pick_busiest(env, sds, sg, sgs)) {
@@ -10338,8 +10335,7 @@ static struct sched_group *find_busiest_group(struct lb_env *env)
 		 * might end up to just move the imbalance on another group
 		 */
 		if ((busiest->group_type != group_overloaded) &&
-		    (local->idle_cpus <= (busiest->idle_cpus + 1)) &&
-		    !group_smaller_cpu_capacity(sds.busiest, sds.local))
+		    (local->idle_cpus <= (busiest->idle_cpus + 1)))
 			goto out_balanced;
 	} else {
 		/*

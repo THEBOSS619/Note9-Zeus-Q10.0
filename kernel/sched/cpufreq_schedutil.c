@@ -75,7 +75,6 @@ struct sugov_cpu {
 };
 
 static DEFINE_PER_CPU(struct sugov_cpu, sugov_cpu);
-static unsigned int stale_ns;
 static DEFINE_PER_CPU(struct sugov_tunables *, cached_tunables);
 
 /************************ Governor internals ***********************/
@@ -115,24 +114,6 @@ static bool sugov_should_update_freq(struct sugov_policy *sg_policy, u64 time)
 
 	delta_ns = time - sg_policy->last_freq_update_time;
 	return delta_ns >= sg_policy->freq_update_delay_ns;
-}
-
-static bool sugov_up_down_rate_limit(struct sugov_policy *sg_policy, u64 time,
-				     unsigned int next_freq)
-{
-	s64 delta_ns;
-
-	delta_ns = time - sg_policy->last_freq_update_time;
-
-	if (next_freq > sg_policy->next_freq &&
-	    delta_ns < sg_policy->up_rate_delay_ns)
-		return true;
-
-	if (next_freq < sg_policy->next_freq &&
-	    delta_ns < sg_policy->down_rate_delay_ns)
-		return true;
-
-	return false;
 }
 
 static bool sugov_update_next_freq(struct sugov_policy *sg_policy, u64 time,
@@ -531,7 +512,6 @@ static void sugov_update_single(struct update_util_data *hook, u64 time,
 {
 	struct sugov_cpu *sg_cpu = container_of(hook, struct sugov_cpu, update_util);
 	struct sugov_policy *sg_policy = sg_cpu->sg_policy;
-	struct cpufreq_policy *policy = sg_policy->policy;
 	unsigned long util, max;
 	unsigned int next_f;
 	bool busy;

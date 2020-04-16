@@ -2411,6 +2411,8 @@ walt_task_in_cum_window_demand(struct rq *rq, struct task_struct *p)
 
 #if defined(CONFIG_ENERGY_MODEL) && defined(CONFIG_CPU_FREQ_GOV_SCHEDUTIL)
 #define perf_domain_span(pd) (to_cpumask(((pd)->em_pd->cpus)))
+#else /* CONFIG_CPU_FREQ_GOV_SCHEDUTIL */
+#define perf_domain_span(pd) NULL
 #endif
 
 static inline bool energy_aware(void)
@@ -2422,14 +2424,6 @@ static inline unsigned long cpu_util_rt(struct rq *rq)
 {
 	return READ_ONCE(rq->avg_rt.util_avg);
 }
-
-#else /* CONFIG_CPU_FREQ_GOV_SCHEDUTIL */
-#define perf_domain_span(pd) NULL
-static inline unsigned long schedutil_energy_util(int cpu, unsigned long cfs)
-{
-	return cfs;
-}
-#endif
 
 static inline void sched_irq_work_queue(struct irq_work *work)
 {
