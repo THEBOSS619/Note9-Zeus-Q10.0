@@ -372,7 +372,7 @@ got_gpio:
 		gpiod_export(gpios[i].desc, false);
 
 		/* Update initial jack status */
-		queue_delayed_work(system_power_efficient_wq, &gpios[i].work,
+		schedule_delayed_work(&gpios[i].work,
 				      msecs_to_jiffies(gpios[i].debounce_time));
 	}
 
