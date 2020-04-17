@@ -687,7 +687,6 @@ static void timekeeping_update(struct timekeeper *tk, unsigned int action)
 static void timekeeping_forward_now(struct timekeeper *tk)
 {
 	u64 cycle_now, delta;
-	u64 nsec;
 
 	cycle_now = tk_clock_read(&tk->tkr_mono);
 	delta = clocksource_delta(cycle_now, tk->tkr_mono.cycle_last, tk->tkr_mono.mask);

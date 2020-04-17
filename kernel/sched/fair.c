@@ -9912,7 +9912,8 @@ static inline void update_sd_lb_stats(struct lb_env *env, struct sd_lb_stats *sd
 		 * capacity or if per-cpu capacity isn't higher.
 		 */
 		if (sgs->group_type == group_misfit_task &&
-		    (!group_has_capacity(env, &sds->local_stat)))
+		    (!group_has_capacity(env, &sds->local_stat) ||
+		     !group_smaller_min_cpu_capacity(sg, sds->local)))
 			sgs->group_type = group_other;
 
 		if (update_sd_pick_busiest(env, sds, sg, sgs)) {
@@ -10336,7 +10337,8 @@ static struct sched_group *find_busiest_group(struct lb_env *env)
 		 * might end up to just move the imbalance on another group
 		 */
 		if ((busiest->group_type != group_overloaded) &&
-		    (local->idle_cpus <= (busiest->idle_cpus + 1)))
+		    (local->idle_cpus <= (busiest->idle_cpus + 1)) &&
+		    !group_smaller_min_cpu_capacity(sds.busiest, sds.local))
 			goto out_balanced;
 	} else {
 		/*
