@@ -505,6 +505,7 @@ struct cfs_rq {
 	 * CFS load tracking
 	 */
 	struct sched_avg avg;
+	u64 runnable_load_sum;
 #ifndef CONFIG_64BIT
 	u64 load_last_update_time_copy;
 #endif
