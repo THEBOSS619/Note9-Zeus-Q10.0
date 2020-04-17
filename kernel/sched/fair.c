@@ -6709,6 +6709,16 @@ static inline int find_idlest_cpu(struct sched_domain *sd, struct task_struct *p
 	if (!cpumask_intersects(sched_domain_span(sd), &p->cpus_allowed))
 		return prev_cpu;
 
+	if (sd && !(sd_flag & SD_BALANCE_FORK)) {
+		/*
+		 * We're going to need the task's util for capacity_spare_wake
+		 * in find_idlest_group. Sync it up to prev_cpu's
+		 * last_update_time.
+		 */
+		sync_entity_load_avg(&p->se);
+	}
+
+
 	while (sd) {
 		struct sched_group *group;
 		struct sched_domain *tmp;
@@ -7603,14 +7613,13 @@ int select_energy_cpu_brute(struct task_struct *p, int prev_cpu)
 #else
 	prefer_idle = 0;
 #endif
+	sync_entity_load_avg(&p->se);
 
 	sd = rcu_dereference(per_cpu(sd_ea, prev_cpu));
 	if (!sd) {
 		target_cpu = prev_cpu;
 		goto out;
 	}
-
-	sync_entity_load_avg(&p->se);
 
 	/* Find a cpu with sufficient capacity */
 	next_cpu = find_best_target(p, &backup_cpu, boosted, prefer_idle);
@@ -8034,15 +8043,6 @@ select_task_rq_fair(struct task_struct *p, int prev_cpu, int sd_flag, int wake_f
 
  		if (wake_affine(affine_sd, p, prev_cpu, sync))
 			new_cpu = cpu;
-	}
-
-	if (sd && !(sd_flag & SD_BALANCE_FORK)) {
-		/*
-		 * We're going to need the task's util for capacity_spare_wake
-		 * in find_idlest_group. Sync it up to prev_cpu's
-		 * last_update_time.
-		 */
-		sync_entity_load_avg(&p->se);
 	}
 
 	if (!sd) {
