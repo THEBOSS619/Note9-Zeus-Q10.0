@@ -740,7 +740,7 @@ static int find_group_boost_target(struct task_struct *p)
 		}
 	}
 
-	for_each_cpu_and(cpu, tsk_cpus_allowed(p), sched_group_cpus(sd->groups)) {
+	for_each_cpu_and(cpu, &p->cpus_allowed, sched_group_cpus(sd->groups)) {
 		unsigned long util = cpu_util_without(cpu, p);
 
 		if (idle_cpu(cpu)) {
@@ -816,7 +816,7 @@ find_boost_target(struct sched_domain *sd, struct task_struct *p,
 	do {
 		int i;
 
-		for_each_cpu_and(i, tsk_cpus_allowed(p), sched_group_cpus(sg)) {
+		for_each_cpu_and(i, &p->cpus_allowed, sched_group_cpus(sg)) {
 			unsigned long new_util, wake_util;
 
 			if (!cpu_online(i))
@@ -915,7 +915,7 @@ static int find_prefer_idle_target(struct sched_domain *sd,
 	do {
 		int i;
 
-		for_each_cpu_and(i, tsk_cpus_allowed(p), sched_group_cpus(sg)) {
+		for_each_cpu_and(i, &p->cpus_allowed, sched_group_cpus(sg)) {
 			unsigned long new_util, wake_util;
 
 			if (!cpu_online(i))
@@ -1166,7 +1166,7 @@ ontime_pick_heavy_task(struct sched_entity *se, struct cpumask *dst_cpus,
 			goto next_entity;
 
 		if (ontime_load_avg(p) > max_util_avg &&
-		    cpumask_intersects(dst_cpus, tsk_cpus_allowed(p))) {
+		    cpumask_intersects(dst_cpus, &p->cpus_allowed)) {
 			heaviest_task = p;
 			max_util_avg = ontime_load_avg(p);
 			*boost_migration = 0;
@@ -1194,7 +1194,7 @@ ontime_pick_vip_task(struct sched_entity *se, int src_cpu, int dst_cpu)
 		return NULL;
 
 	p = task_of(se);
-	if (cpumask_test_cpu(dst_cpu, tsk_cpus_allowed(p))) {
+	if (cpumask_test_cpu(dst_cpu, &p->cpus_allowed)) {
 		vip_task = p;
 		max_util_avg = ontime_load_avg(p);
 	}
@@ -1208,7 +1208,7 @@ ontime_pick_vip_task(struct sched_entity *se, int src_cpu, int dst_cpu)
 		p = task_of(se);
 
 		if (ontime_load_avg(p) > max_util_avg &&
-		    cpumask_test_cpu(dst_cpu, tsk_cpus_allowed(p))) {
+		    cpumask_test_cpu(dst_cpu, &p->cpus_allowed)) {
 			vip_task = p;
 			max_util_avg = ontime_load_avg(p);
 		}
@@ -1251,7 +1251,7 @@ DEFINE_PER_CPU(struct ontime_env, ontime_env);
 
 static int can_migrate(struct task_struct *p, struct ontime_env *env)
 {
-	if (!cpumask_test_cpu(env->dst_cpu, tsk_cpus_allowed(p)))
+	if (!cpumask_test_cpu(env->dst_cpu, &p->cpus_allowed))
 		return 0;
 
 	if (task_running(env->src_rq, p))
@@ -1545,7 +1545,7 @@ static int ontime_wakeup_migration(struct task_struct *p, int target_cpu)
 	if (!sd)
 		return target_cpu;
 
-	dest_cpu = ontime_select_target_cpu(sd->groups, tsk_cpus_allowed(p));
+	dest_cpu = ontime_select_target_cpu(sd->groups, &p->cpus_allowed);
 	if (cpu_selected(dest_cpu)) {
 		include_ontime_task(p);
 		target_cpu = dest_cpu;
@@ -1714,7 +1714,7 @@ int exynos_select_cpu_rt(struct sched_domain *sd, struct task_struct *p, bool bo
 	do {
 		int i;
 
-		for_each_cpu_and(i, tsk_cpus_allowed(p), sched_group_cpus(sg)) {
+		for_each_cpu_and(i, &p->cpus_allowed, sched_group_cpus(sg)) {
 			unsigned long new_util, wake_util;
 
 			if (!cpu_online(i))
@@ -1815,7 +1815,7 @@ int exynos_select_cpu(struct task_struct *p, int prev_cpu, int sync)
 	if (sysctl_sched_sync_hint_enable && sync) {
 		int cpu = smp_processor_id();
 
-		if (cpumask_test_cpu(cpu, tsk_cpus_allowed(p))) {
+		if (cpumask_test_cpu(cpu, &p->cpus_allowed)) {
 			target_cpu = cpu;
 			goto unlock;
 		}

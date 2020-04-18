@@ -501,15 +501,6 @@ static int uid_cputime_open(struct inode *inode, struct file *file)
 	} while_each_thread(temp, task);
 	rcu_read_unlock();
 
-	hash_for_each(hash_table, bkt, uid_entry, hash) {
-	u64 total_utime = uid_entry->utime +
-			    uid_entry->active_utime;
-	u64 total_stime = uid_entry->stime +
-			    uid_entry->active_stime;
-	seq_printf(m, "%d: %llu %llu\n", uid_entry->uid,
-			ktime_to_us(total_utime), ktime_to_us(total_stime));
-	}
-
 	rt_mutex_unlock(&uid_lock);
 	return seq_open(file, &uid_seqops);
 }

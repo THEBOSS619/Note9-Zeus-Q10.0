@@ -405,7 +405,7 @@ static void inc_rt_migration(struct sched_rt_entity *rt_se, struct rt_rq *rt_rq)
 	rt_rq = &rq_of_rt_rq(rt_rq)->rt;
 
 	rt_rq->rt_nr_total++;
-	if (tsk_nr_cpus_allowed(p) > 1)
+	if (p->nr_cpus_allowed > 1)
 		rt_rq->rt_nr_migratory++;
 
 	update_rt_migration(rt_rq);
@@ -422,7 +422,7 @@ static void dec_rt_migration(struct sched_rt_entity *rt_se, struct rt_rq *rt_rq)
 	rt_rq = &rq_of_rt_rq(rt_rq)->rt;
 
 	rt_rq->rt_nr_total--;
-	if (tsk_nr_cpus_allowed(p) > 1)
+	if (p->nr_cpus_allowed > 1)
 		rt_rq->rt_nr_migratory--;
 
 	update_rt_migration(rt_rq);
@@ -1613,7 +1613,7 @@ enqueue_task_rt(struct rq *rq, struct task_struct *p, int flags)
 	enqueue_rt_entity(rt_se, flags);
 	walt_inc_cumulative_runnable_avg(rq, p);
 
-	if (!task_current(rq, p) && tsk_nr_cpus_allowed(p) > 1)
+	if (!task_current(rq, p) && p->nr_cpus_allowed > 1)
 		enqueue_pushable_task(rq, p);
 
 	*per_cpu_ptr(&incoming_rt_task, cpu_of(rq)) = false;
@@ -2278,7 +2278,7 @@ static void put_prev_task_rt(struct rq *rq, struct task_struct *p)
 	 * The previous task needs to be made eligible for pushing
 	 * if it is still active
 	 */
-	if (on_rt_rq(&p->rt) && tsk_nr_cpus_allowed(p) > 1)
+	if (on_rt_rq(&p->rt) && p->nr_cpus_allowed > 1)
 		enqueue_pushable_task(rq, p);
 
 	for_each_sched_rt_entity(rt_se) {
@@ -2386,7 +2386,7 @@ static int find_victim_rt_rq(struct task_struct *task, struct sched_group *sg, i
 	target_rtweight = task->rt.avg.util_avg * weight_from_rtprio(task->prio);
 	min_rtweight = target_rtweight;
 
-	for_each_cpu_and(i, sg_cpus, tsk_cpus_allowed(task)) {
+	for_each_cpu_and(i, sg_cpus, &task->cpus_allowed) {
 		struct task_struct *victim = cpu_rq(i)->curr;
 
 		if (victim->nr_cpus_allowed < 2)
@@ -2663,7 +2663,7 @@ static int find_best_rt_target(struct task_struct* task, int cpu,
 		 * Iterate from higher cpus for boosted tasks.
 		 */
 		int i = boosted ? NR_CPUS-iter_cpu-1 : iter_cpu;
-		if (!cpu_online(i) || !cpumask_test_cpu(i, tsk_cpus_allowed(task)))
+		if (!cpu_online(i) || !cpumask_test_cpu(i, &task->cpus_allowed))
 			continue;
 
 		new_util = cpu_util(i) + task_util(task);
@@ -2853,7 +2853,7 @@ static int find_lowest_rq(struct task_struct *task, int sync)
 	if (unlikely(!lowest_mask))
 		return -1;
 
-	if (tsk_nr_cpus_allowed(task) == 1)
+	if (task->nr_cpus_allowed == 1)
 		return -1; /* No other targets possible */
 
 	/* Constructing cpumask of lowest priorities */
@@ -2872,7 +2872,7 @@ static int find_lowest_rq(struct task_struct *task, int sync)
 	 */
 	if (sysctl_sched_sync_hint_enable && sync) {
 		cpumask_t search_cpus;
-		cpumask_and(&search_cpus, tsk_cpus_allowed(task), lowest_mask);
+		cpumask_and(&search_cpus, &task->cpus_allowed, lowest_mask);
 		if (cpumask_test_cpu(cpu, &search_cpus))
 			return cpu;
 	}
@@ -3015,7 +3015,7 @@ static struct task_struct *pick_next_pushable_task(struct rq *rq)
 
 	BUG_ON(rq->cpu != task_cpu(p));
 	BUG_ON(task_current(rq, p));
-	BUG_ON(tsk_nr_cpus_allowed(p) <= 1);
+	BUG_ON(p->nr_cpus_allowed <= 1);
 
 	BUG_ON(!task_on_rq_queued(p));
 	BUG_ON(!rt_task(p));

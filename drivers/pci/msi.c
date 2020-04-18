@@ -534,7 +534,6 @@ error_attrs:
 static struct msi_desc *
 msi_setup_entry(struct pci_dev *dev, int nvec, const struct irq_affinity *affd)
 {
-	static const struct irq_affinity default_affd;
 	struct cpumask *masks = NULL;
 	struct msi_desc *entry;
 	u16 control;
@@ -676,7 +675,6 @@ static int msix_setup_entries(struct pci_dev *dev, void __iomem *base,
 			      struct msix_entry *entries, int nvec,
 			      const struct irq_affinity *affd)
 {
-	static const struct irq_affinity default_affd;
 	struct cpumask *curmsk, *masks = NULL;
 	struct msi_desc *entry;
 	int ret, i;
@@ -1051,7 +1049,6 @@ EXPORT_SYMBOL(pci_msi_enabled);
 static int __pci_enable_msi_range(struct pci_dev *dev, int minvec, int maxvec,
 				  const struct irq_affinity *affd)
 {
-	static const struct irq_affinity default_affd;
 	int nvec;
 	int rc;
 
@@ -1114,7 +1111,6 @@ static int __pci_enable_msix_range(struct pci_dev *dev,
 				   struct msix_entry *entries, int minvec,
 				   int maxvec, const struct irq_affinity *affd)
 {
-	static const struct irq_affinity default_affd;
 	int rc, nvec = maxvec;
 
 	if (maxvec < minvec)

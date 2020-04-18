@@ -1225,7 +1225,7 @@ static enum hrtimer_restart tick_sched_timer(struct hrtimer *timer)
 	 */
 	if (regs)
 		tick_sched_handle(ts, regs);
-	} else {
+	else {
 		ts->next_tick = 0;
 	}
 

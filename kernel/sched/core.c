@@ -1078,7 +1078,7 @@ static inline bool is_per_cpu_kthread(struct task_struct *p)
  */
 static inline bool is_cpu_allowed(struct task_struct *p, int cpu)
 {
-	if (!cpumask_test_cpu(cpu, tsk_cpus_allowed(p)))
+	if (!cpumask_test_cpu(cpu, &p->cpus_allowed))
 		return false;
 
 	if (is_per_cpu_kthread(p))
@@ -1686,8 +1686,8 @@ static int select_fallback_rq(int cpu, struct task_struct *p)
 	cpumask_and(&target_mask, cpu_active_mask, cpu_coregroup_mask(cpu));
 	if (cpumask_empty(&target_mask))
 		cpumask_setall(&target_mask);
-	else if (!cpumask_intersects(&target_mask, tsk_cpus_allowed(p)))
-		cpumask_copy(&target_mask, tsk_cpus_allowed(p));
+	else if (!cpumask_intersects(&target_mask, &p->cpus_allowed))
+		cpumask_copy(&target_mask, &p->cpus_allowed);
 
 	if (nid != -1) {
 		nodemask = cpumask_of_node(nid);
@@ -1776,7 +1776,7 @@ int select_task_rq(struct task_struct *p, int cpu, int sd_flags, int wake_flags,
 	 * [ this allows ->select_task() to simply return task_cpu(p) and
 	 *   not worry about this generic constraint ]
 	 */
-	if (unlikely(!cpumask_test_cpu(cpu, tsk_cpus_allowed(p)) ||
+	if (unlikely(!cpumask_test_cpu(cpu, &p->cpus_allowed) ||
 		     !cpu_online(cpu)))
 		cpu = select_fallback_rq(task_cpu(p), p);
 
@@ -3902,7 +3902,7 @@ static inline int rt_effective_prio(struct task_struct *p, int prio)
 void rt_mutex_setprio(struct task_struct *p, struct task_struct *pi_task)
 {
 	int prio, oldprio, queued, running, queue_flag =
-		DEQUEUE_SAVE | DEQUEUE_MOVE | DEQUEUE_NOCLOCK;
+		DEQUEUE_SAVE | DEQUEUE_MOVE;
 	const struct sched_class *prev_class;
 	struct rq_flags rf;
 	struct rq *rq;
@@ -8108,7 +8108,6 @@ void __init sched_init_smp(void)
 	init_sched_rt_class();
 	init_sched_dl_class();
 
-	sched_clock_init_late();
 	sched_init_smt();
 
 	sched_smp_initialized = true;
