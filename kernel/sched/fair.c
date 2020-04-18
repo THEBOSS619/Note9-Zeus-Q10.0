@@ -8987,6 +8987,7 @@ static void update_blocked_averages(int cpu)
 	struct cfs_rq *cfs_rq, *pos;
 	unsigned long flags;
 	const struct sched_class *curr_class;
+	bool done = true;
 
 	raw_spin_lock_irqsave(&rq->lock, flags);
 	update_rq_clock(rq);
@@ -9471,7 +9472,6 @@ static inline void update_cpu_stats_if_tickless(struct rq *rq)
 
 		raw_spin_lock(&rq->lock);
 		update_rq_clock(rq);
-		cpu_load_update_idle(rq);
 		update_cfs_rq_load_avg(rq->clock_task, &rq->cfs);
 		raw_spin_unlock(&rq->lock);
 	}
@@ -9692,10 +9692,8 @@ static inline void update_sd_lb_stats(struct lb_env *env, struct sd_lb_stats *sd
 {
 	struct sched_group *sg = env->sd->groups;
 	struct sg_lb_stats tmp_sgs;
-	int load_idx, prefer_sibling = 0;
+	int prefer_sibling = 0;
 	bool overload = false, overutilized = false, misfit_task = false;
-
-	load_idx = get_sd_load_idx(env->sd, env->idle);
 
 	do {
 		struct sg_lb_stats *sgs = &tmp_sgs;
@@ -9711,7 +9709,7 @@ static inline void update_sd_lb_stats(struct lb_env *env, struct sd_lb_stats *sd
 				update_group_capacity(env->sd, env->dst_cpu);
 		}
 
-		update_sg_lb_stats(env, sg, load_idx, local_group, sgs,
+		update_sg_lb_stats(env, sg, 0, local_group, sgs,
 						&overload, &overutilized,
 						&misfit_task);
 

@@ -1766,6 +1766,11 @@ cpu_has_rt_task(int cpu)
 	return rq->rt.rt_nr_running > 0 || per_cpu(incoming_rt_task, cpu);
 }
 
+static inline bool rt_task_fits_capacity(struct task_struct *p, int cpu)
+{
+	return true;
+}
+
 #ifdef CONFIG_SMP
 static int find_lowest_rq(struct task_struct *task, int sync);
 
@@ -3509,7 +3514,7 @@ static void switched_to_rt(struct rq *rq, struct task_struct *p)
 	if (task_on_rq_queued(p) && rq->curr != p) {
 #ifdef CONFIG_SMP
 		if (p->nr_cpus_allowed > 1 && rq->rt.overloaded)
-			rt_queue_push_tasks(rq);
+			queue_push_tasks(rq);
 #endif /* CONFIG_SMP */
 		if (p->prio < rq->curr->prio && cpu_online(cpu_of(rq)))
 			resched_curr(rq);

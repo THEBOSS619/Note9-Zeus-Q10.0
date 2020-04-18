@@ -6780,7 +6780,7 @@ static inline void check_sched_energy_data(int cpu, sched_domain_energy_f fn,
 	}
 }
 
-static void init_sched_energy(int cpu, struct sched_domain *sd,
+static void __maybe_unused init_sched_energy(int cpu, struct sched_domain *sd,
 			      sched_domain_energy_f fn)
 {
 	if (!(fn && fn(cpu)))
@@ -7575,7 +7575,7 @@ next_level:
 	return asym_tl;
 }
 
-static void update_asym_cpucapacity(int cpu)
+static void __maybe_unused update_asym_cpucapacity(int cpu)
 {
 	int enable = false;
 
