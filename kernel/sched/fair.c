@@ -9127,7 +9127,6 @@ static int detach_tasks(struct lb_env *env)
 			break;
 		}
 
-#if 1
 		if (sched_feat(HISI_FILTER) && energy_aware() &&
 		    (capacity_orig_of(env->dst_cpu) > capacity_orig_of(env->src_cpu))) {
 			p = hisi_get_heaviest_task(p, env->dst_cpu);
@@ -9144,7 +9143,6 @@ static int detach_tasks(struct lb_env *env)
 				goto next;
 
 		}
-#endif
 
 		if (!can_migrate_task(p, env))
 			goto next;
