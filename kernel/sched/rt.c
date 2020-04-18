@@ -13,6 +13,7 @@
 #include "walt.h"
 #include <trace/events/sched.h>
 #include "tune.h"
+#include <linux/ehmp.h>
 
 #include "pelt.h"
 
@@ -2337,7 +2338,6 @@ static inline int weight_from_rtprio(int prio)
 		return ((rtprio_to_weight[idx] + rtprio_to_weight[idx+1]) >> 1);
 }
 
-extern int exynos_select_cpu_rt(struct sched_domain *sd, struct task_struct *p, bool boost);
 extern unsigned long task_util(struct task_struct *p);
 
 unsigned int frt_boost_threshold;

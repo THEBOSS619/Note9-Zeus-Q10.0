@@ -72,8 +72,6 @@ static inline int exynos_need_active_balance(enum cpu_idle_type idle,
 static inline unsigned long global_boost(void) { return 0; }
 static inline int find_second_max_cap(void) { return -EINVAL; }
 
-static inline int exynos_select_cpu(struct task_struct *p,
-						int prev_cpu) { return -EINVAL; }
 static inline int exynos_select_cpu(struct task_struct *p, int prev_cpu,
 					int sync) { return -EINVAL; }
 
@@ -90,7 +88,9 @@ static inline void ehmp_update_max_cpu_capacity(int cpu, unsigned long val) { }
 static inline void ehmp_update_overutilized(int cpu, unsigned long capacity) { }
 static inline bool ehmp_trigger_lb(int src_cpu, int dst_cpu) { return false; }
 
+static inline void request_kernel_prefer_perf(int grp_idx, int enable) { }
+static inline int exynos_select_cpu_rt(struct sched_domain *sd, struct task_struct *p, bool boost)  { return 0; }
+
 static inline void gb_qos_update_request(struct gb_qos_request *req, u32 new_value) { }
 
-extern void request_kernel_prefer_perf(int grp_idx, int enable) { }
 #endif /* CONFIG_SCHED_EHMP */
