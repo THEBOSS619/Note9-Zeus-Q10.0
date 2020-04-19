@@ -257,6 +257,7 @@
 			freq-energy-model;
 			cpu-idle-states = <&BOOTCL_CPU_SLEEP>;
 			sched-energy-costs = <&CPU_COST_1 &CLUSTER_COST_1>;
+			sched-energy-data = <&ANANKE_ENERGY>;
 		};
 		cpu1: cpu@0001 {
 			device_type = "cpu";
@@ -266,6 +267,7 @@
 			freq-energy-model;
 			cpu-idle-states = <&BOOTCL_CPU_SLEEP>;
 			sched-energy-costs = <&CPU_COST_1 &CLUSTER_COST_1>;
+			sched-energy-data = <&ANANKE_ENERGY>;
 		};
 		cpu2: cpu@0002 {
 			device_type = "cpu";
@@ -275,6 +277,7 @@
 			freq-energy-model;
 			cpu-idle-states = <&BOOTCL_CPU_SLEEP>;
 			sched-energy-costs = <&CPU_COST_1 &CLUSTER_COST_1>;
+			sched-energy-data = <&ANANKE_ENERGY>;
 		};
 		cpu3: cpu@0003 {
 			device_type = "cpu";
@@ -284,6 +287,7 @@
 			freq-energy-model;
 			cpu-idle-states = <&BOOTCL_CPU_SLEEP>;
 			sched-energy-costs = <&CPU_COST_1 &CLUSTER_COST_1>;
+			sched-energy-data = <&ANANKE_ENERGY>;
 		};
 		cpu4: cpu@0100 {
 			device_type = "cpu";
@@ -293,6 +297,7 @@
 			freq-energy-model;
 			cpu-idle-states = <&NONBOOTCL_CPU_SLEEP>;
 			sched-energy-costs = <&CPU_COST_0 &CLUSTER_COST_0>;
+			sched-energy-data = <&MEERKAT_ENERGY>;
 		};
 		cpu5: cpu@0101 {
 			device_type = "cpu";
@@ -302,6 +307,7 @@
 			freq-energy-model;
 			cpu-idle-states = <&NONBOOTCL_CPU_SLEEP>;
 			sched-energy-costs = <&CPU_COST_0 &CLUSTER_COST_0>;
+			sched-energy-data = <&MEERKAT_ENERGY>;
 		};
 		cpu6: cpu@0102 {
 			device_type = "cpu";
@@ -311,6 +317,7 @@
 			freq-energy-model;
 			cpu-idle-states = <&NONBOOTCL_CPU_SLEEP>;
 			sched-energy-costs = <&CPU_COST_0 &CLUSTER_COST_0>;
+			sched-energy-data = <&MEERKAT_ENERGY>;
 		};
 		cpu7: cpu@0103 {
 			device_type = "cpu";
@@ -320,6 +327,7 @@
 			freq-energy-model;
 			cpu-idle-states = <&NONBOOTCL_CPU_SLEEP>;
 			sched-energy-costs = <&CPU_COST_0 &CLUSTER_COST_0>;
+			sched-energy-data = <&MEERKAT_ENERGY>;
 		};
 		idle-states {
 			entry-method = "arm,psci";
@@ -344,6 +352,28 @@
 				status = "okay";
 			};
 		};
+
+		energy-data {
+			ANANKE_ENERGY: ananke-energy {
+				capacity-mips = <272>;
+				power-coefficient = <160>;
+				capacity-mips-s = <215>;
+				power-coefficient-s = <130>;
+
+				capacity-weight = <1>;
+				energy-weight = <1>;
+			};
+			MEERKAT_ENERGY: meerkat-energy {
+				capacity-mips = <785>;
+				power-coefficient = <760>;
+				capacity-mips-s = <365>;
+				power-coefficient-s = <506>;
+
+				capacity-weight = <1>;
+				energy-weight = <3>;
+			};
+		};
+
 		energy-costs {
 			CPU_COST_0: core-core0{
 				busy-cost-data = <
