@@ -1035,6 +1035,12 @@ isolate_migratepages_range(struct compact_control *cc, unsigned long start_pfn,
 static bool suitable_migration_target(struct compact_control *cc,
 							struct page *page)
 {
+	int migratetype = get_pageblock_migratetype(page);
+
+	/* Don't interfere with memory hot-remove or the min_free_kbytes blocks */
+	if (migratetype == MIGRATE_HIGHATOMIC)
+		return false;
+
 	if (cc->ignore_block_suitable)
 		return true;
 

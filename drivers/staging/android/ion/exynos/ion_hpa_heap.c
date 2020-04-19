@@ -177,17 +177,6 @@ static struct ion_heap_ops ion_hpa_ops = {
 	.unmap_kernel = ion_heap_unmap_kernel,
 };
 
-static int hpa_heap_debug_show(struct ion_heap *heap, struct seq_file *s,
-			       void *unused)
-{
-	struct ion_hpa_heap *hpa_heap = to_hpa_heap(heap);
-
-	seq_printf(s, "\n[%s] unprotect error: count %lu, size %lu\n",
-		   heap->name, hpa_heap->unprot_count, hpa_heap->unprot_size);
-
-	return 0;
-}
-
 struct ion_heap *ion_hpa_heap_create(struct ion_platform_heap *data)
 {
 	struct ion_hpa_heap *heap;
@@ -198,7 +187,6 @@ struct ion_heap *ion_hpa_heap_create(struct ion_platform_heap *data)
 
 	heap->heap.ops = &ion_hpa_ops;
 	heap->heap.type = ION_HEAP_TYPE_HPA;
-	heap->heap.debug_show = hpa_heap_debug_show;
 	pr_info("%s: HPA heap %s(%d) is created\n", __func__,
 			data->name, data->id);
 	return &heap->heap;
