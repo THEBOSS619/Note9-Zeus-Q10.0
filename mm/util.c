@@ -600,7 +600,7 @@ int __vm_enough_memory(struct mm_struct *mm, long pages, int cap_sys_admin)
 		return 0;
 
 	if (sysctl_overcommit_memory == OVERCOMMIT_GUESS) {
-		if (pages > totalram_pages + total_swap_pages)
+		if (pages > totalram_pages() + total_swap_pages)
 			goto error;
 		return 0;
 	}
