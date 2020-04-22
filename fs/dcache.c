@@ -90,7 +90,7 @@ static struct notifier_block dcache_state_notif;
  *     dentry2->d_lock
  */
 #define DEFAULT_VFS_CACHE_PRESSURE 400
-#define DEFAULT_VFS_SUSPEND_CACHE_PRESSURE 385
+#define DEFAULT_VFS_SUSPEND_CACHE_PRESSURE 400
 int sysctl_vfs_cache_pressure __read_mostly, resume_cache_pressure;
 int sysctl_vfs_suspend_cache_pressure __read_mostly, suspend_cache_pressure;
 EXPORT_SYMBOL_GPL(sysctl_vfs_cache_pressure);
