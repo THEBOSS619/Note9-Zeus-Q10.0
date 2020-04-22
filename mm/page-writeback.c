@@ -120,8 +120,8 @@ unsigned long vm_dirty_bytes = 50 * 1024 * 1024;
 /*
  * The interval between `kupdate'-style writebacks
  */
-#define DEFAULT_DIRTY_WRITEBACK_INTERVAL 750 /* centiseconds */
-#define DEFAULT_SUSPEND_DIRTY_WRITEBACK_INTERVAL 1500 /* centiseconds */
+#define DEFAULT_DIRTY_WRITEBACK_INTERVAL 1000 /* centiseconds */
+#define DEFAULT_SUSPEND_DIRTY_WRITEBACK_INTERVAL 2000 /* centiseconds */
 unsigned int dirty_writeback_interval,
 	resume_dirty_writeback_interval;
 unsigned int sleep_dirty_writeback_interval,
