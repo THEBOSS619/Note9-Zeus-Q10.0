@@ -5664,6 +5664,8 @@ static unsigned long __cpu_norm_util(unsigned long util, unsigned long capacity)
 	return (util << SCHED_CAPACITY_SHIFT)/capacity;
 }
 
+int cpu_util_without(int cpu, struct task_struct *p);
+
 static unsigned long group_max_util(struct energy_env *eenv, int cpu_idx)
 {
 	unsigned long max_util = 0;
@@ -6681,7 +6683,7 @@ static int select_idle_cpu(struct task_struct *p, struct sched_domain *sd, int t
 	for_each_cpu_wrap(cpu, cpus, target) {
 		if (!--nr)
 			return -1;
-		if (idle_cpu(cpu)) || sched_idle_cpu(cpu)
+		if (idle_cpu(cpu) || sched_idle_cpu(cpu))
 			break;
 	}
 
@@ -9400,9 +9402,6 @@ group_is_overloaded(unsigned int imbalance_pct, struct sg_lb_stats *sgs)
 	if (sgs->sum_nr_running <= sgs->group_weight)
 		return false;
 
-	if (env->idle == CPU_NEWLY_IDLE || env->idle == CPU_IDLE)
-		return true;
-
 	if ((sgs->group_capacity * 100) <
 			(sgs->group_util * imbalance_pct))
 		return true;
@@ -9513,12 +9512,12 @@ static inline void update_sg_lb_stats(struct lb_env *env,
 			int local_group, struct sg_lb_stats *sgs,
 			bool *overload, bool *overutilized, bool *misfit_task)
 {
-	int i, nr_running, local_group;
+	int i, nr_running;
 	unsigned int sg_cpu;
 
 	memset(sgs, 0, sizeof(*sgs));
 
-	local_group = cpumask_test_cpu(env->dst_cpu, sched_group_span(group));
+	local_group = cpumask_test_cpu(env->dst_cpu, sched_group_cpus(group));
 
 	for_each_cpu_and(i, sched_group_cpus(group), env->cpus) {
 		struct rq *rq = cpu_rq(i);
@@ -9808,7 +9807,7 @@ static inline void update_sg_wakeup_stats(struct sched_domain *sd,
 
 	memset(sgs, 0, sizeof(*sgs));
 
-	for_each_cpu(i, sched_group_span(group)) {
+	for_each_cpu(i, sched_group_cpus(group)) {
 		struct rq *rq = cpu_rq(i);
 		unsigned int local;
 
@@ -9922,12 +9921,12 @@ find_idlest_group(struct sched_domain *sd, struct task_struct *p,
 		int local_group;
 
 		/* Skip over this group if it has no CPUs allowed */
-		if (!cpumask_intersects(sched_group_span(group),
+		if (!cpumask_intersects(sched_group_cpus(group),
 					&p->cpus_allowed))
 			continue;
 
 		local_group = cpumask_test_cpu(this_cpu,
-					       sched_group_span(group));
+					       sched_group_cpus(group));
 
 		if (local_group) {
 			sgs = &local_sgs;
@@ -10017,7 +10016,7 @@ find_idlest_group(struct sched_domain *sd, struct task_struct *p,
 			if (cpu_to_node(this_cpu) == p->numa_preferred_nid)
 				return NULL;
 
-			idlest_cpu = cpumask_first(sched_group_span(idlest));
+			idlest_cpu = cpumask_first(sched_group_cpus(idlest));
 			if (cpu_to_node(idlest_cpu) == p->numa_preferred_nid)
 				return idlest;
 #endif
@@ -10053,6 +10052,7 @@ find_idlest_group(struct sched_domain *sd, struct task_struct *p,
 
 static inline void update_sd_lb_stats(struct lb_env *env, struct sd_lb_stats *sds)
 {
+	struct sched_domain *child = env->sd->child;
 	struct sched_group *sg = env->sd->groups;
 	struct sg_lb_stats tmp_sgs;
 	bool overload = false, overutilized = false, misfit_task = false;
