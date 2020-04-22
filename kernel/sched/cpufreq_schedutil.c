@@ -69,6 +69,7 @@ struct sugov_cpu {
 	/* The fields below are only needed when sharing a policy. */
 	unsigned long bw_dl;
 	unsigned long max;
+	unsigned long util;
 
 	/* The field below is for single-CPU policies only. */
 #ifdef CONFIG_NO_HZ_COMMON

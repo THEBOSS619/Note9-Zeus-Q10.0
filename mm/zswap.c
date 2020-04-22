@@ -283,7 +283,7 @@ static bool zswap_is_full(void)
 
 static bool zswap_can_accept(void)
 {
-	return totalram_pages * zswap_accept_thr_percent / 100 *
+	return totalram_pages() * zswap_accept_thr_percent / 100 *
 				zswap_max_pool_percent / 100 >
 			DIV_ROUND_UP(zswap_pool_total_size, PAGE_SIZE);
 }
