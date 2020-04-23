@@ -1732,30 +1732,6 @@ static void schedtune_dequeue_rt(struct rq *rq, struct task_struct *p)
 }
 
 /*
- * Determine if destination CPU explicity disable softirqs,
- * this is different from CPUs which are running softirqs.
- * pc is the preempt count to check.
- */
-static bool softirq_masked(int pc)
-{
-	return !!((pc & SOFTIRQ_MASK)>= SOFTIRQ_DISABLE_OFFSET);
-}
-
-static bool is_top_app_cpu(int cpu)
-{
-	bool boosted = (schedtune_cpu_boost(cpu) > 0);
-
-	return boosted;
-}
-
-static bool is_top_app(struct task_struct *cur)
-{
-	bool boosted = (schedtune_task_boost(cur) > 0);
-
-	return boosted;
-}
-
-/*
  * Return whether the given cpu has (or will shortly have) an RT task
  * ready to run. NB: This is a heuristic and is subject to races.
  */
