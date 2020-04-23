@@ -43,7 +43,7 @@
 #include <linux/mmc/mmc.h>
 #include <linux/mmc/sd.h>
 
-#include <linux/uaccess.h>
+#include <asm/uaccess.h>
 
 #include "queue.h"
 #include "block.h"
@@ -66,7 +66,7 @@ MODULE_ALIAS("mmc:block");
 #define INAND_CMD38_ARG_SECERASE 0x80
 #define INAND_CMD38_ARG_SECTRIM1 0x81
 #define INAND_CMD38_ARG_SECTRIM2 0x88
-#define MMC_BLK_TIMEOUT_MS  (20 * 1000)        /* 20sec timeout */
+#define MMC_BLK_TIMEOUT_MS  (20 * 1000)        /* 20 sec timeout */
 #define MMC_SANITIZE_REQ_TIMEOUT 240000
 #define MMC_EXTRACT_INDEX_FROM_ARG(x) ((x & 0x00FF0000) >> 16)
 
@@ -644,8 +644,7 @@ static struct mmc_blk_ioc_data *mmc_blk_ioctl_copy_from_kernel(
 		goto out;
 	}
 
-	if (icmd)
-		memcpy(&idata->ic, icmd, sizeof(idata->ic));
+	memcpy(&idata->ic, icmd, sizeof(idata->ic));
 
 	idata->buf_bytes = (u64) idata->ic.blksz * idata->ic.blocks;
 	if (idata->buf_bytes > MMC_IOC_MAX_BYTES) {
