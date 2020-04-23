@@ -1316,6 +1316,7 @@ static void cpufreq_policy_free(struct cpufreq_policy *policy, bool notify)
 static int cpufreq_online(unsigned int cpu)
 {
 	struct cpufreq_policy *policy;
+	struct device_node *np = of_get_cpu_node(cpu, NULL);
 	bool new_policy;
 	unsigned long flags;
 	unsigned int j;

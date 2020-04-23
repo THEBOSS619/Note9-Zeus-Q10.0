@@ -223,7 +223,7 @@ static int scale(struct exynos_cpufreq_domain *domain,
 {
 	int ret;
 	struct cpufreq_freqs freqs = {
-		.cpu		= policy->cpu,
+		.policy		= policy,
 		.old		= domain->old,
 		.new		= target_freq,
 		.flags		= 0,
