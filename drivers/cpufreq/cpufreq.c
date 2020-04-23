@@ -1192,9 +1192,10 @@ static int cpufreq_add_policy_cpu(struct cpufreq_policy *policy, unsigned int cp
 	return ret;
 }
 
-static void refresh_frequency_limits(struct cpufreq_policy *policy)
+static int refresh_frequency_limits(struct cpufreq_policy *policy)
 {
 	struct cpufreq_policy new_policy;
+	int ret;
 
 	if (!policy_is_inactive(policy)) {
 		new_policy = *policy;
@@ -1204,6 +1205,9 @@ static void refresh_frequency_limits(struct cpufreq_policy *policy)
 		new_policy.max = policy->user_policy.max;
 		cpufreq_set_policy(policy, &new_policy);
 	}
+	ret = cpufreq_set_policy(policy, &new_policy);
+
+	return ret;
 }
 
 static void handle_update(struct work_struct *work)
@@ -2581,12 +2585,13 @@ static int cpufreq_set_policy(struct cpufreq_policy *policy,
  *	Useful for policy notifiers which have different necessities
  *	at different times.
  */
-void cpufreq_update_policy(unsigned int cpu)
+int cpufreq_update_policy(unsigned int cpu)
 {
 	struct cpufreq_policy *policy = cpufreq_cpu_acquire(cpu);
+	int ret;
 
 	if (!policy)
-		return;
+		return -ENODEV;
 
 	/*
 	 * BIOS might change freq behind our back
@@ -2596,10 +2601,11 @@ void cpufreq_update_policy(unsigned int cpu)
 	    (cpufreq_suspended || WARN_ON(!cpufreq_verify_current_freq(policy, false))))
 		goto unlock;
 
-	refresh_frequency_limits(policy);
+	ret = refresh_frequency_limits(policy);
 
 unlock:
 	cpufreq_cpu_release(policy);
+	return ret;
 }
 EXPORT_SYMBOL(cpufreq_update_policy);
 
