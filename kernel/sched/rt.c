@@ -447,7 +447,7 @@ static inline void queue_push_tasks(struct rq *rq)
 	queue_balance_callback(rq, &per_cpu(rt_push_head, rq->cpu), push_rt_tasks);
 }
 
-static inline void queue_pull_task(struct rq *rq)
+static inline void rt_queue_pull_task(struct rq *rq)
 {
 	queue_balance_callback(rq, &per_cpu(rt_pull_head, rq->cpu), pull_rt_task);
 }
@@ -1814,7 +1814,6 @@ select_task_rq_rt(struct task_struct *p, int cpu, int sd_flag, int flags,
 {
 	struct task_struct *curr, *tgt_task;
 	struct rq *rq;
-	bool may_not_preempt;
 	int target;
 	int sync = flags & WF_SYNC;	
 
@@ -1828,22 +1827,10 @@ select_task_rq_rt(struct task_struct *p, int cpu, int sd_flag, int flags,
 	curr = READ_ONCE(rq->curr); /* unlocked access */
 
 	/*
-	 * Check once for losing a race with the other core's irq handler.
-	 * This does not happen frequently, but it can avoid delaying
-	 * the execution of the RT task in those cases.
-	 */
-	if (target != -1) {
-		tgt_task = READ_ONCE(cpu_rq(target)->curr);
-		if (task_may_not_preempt(tgt_task, target))
-			target = find_lowest_rq(p, sync);
-	}
-
-	/*
 	 * Possible race. Don't bother moving it if the
 	 * destination CPU is not running a lower priority task.
 	 */
-	if (target != -1 &&
-	    (may_not_preempt || p->prio < cpu_rq(target)->rt.highest_prio.curr))
+	if (target != -1 && p->prio < cpu_rq(target)->rt.highest_prio.curr)
 		cpu = target;
 	*per_cpu_ptr(&incoming_rt_task, cpu) = true;
 	rcu_read_unlock();
@@ -1871,39 +1858,6 @@ static inline void clear_victim_flag(struct task_struct *p)
 {
 }
 #endif
-
-/*
- * Return whether the task on the given cpu is currently non-preemptible
- * while handling a potentially long softint, or if the task is likely
- * to block preemptions soon because (a) it is a ksoftirq thread that is
- * handling slow softints, (b) it is idle and therefore likely to start
- * processing the irq's immediately, (c) the cpu is currently handling
- * hard irq's and will soon move on to the softirq handler.
- */
-bool
-task_may_not_preempt(struct task_struct *task, int cpu)
-{
-	__u32 softirqs = per_cpu(active_softirqs, cpu) |
-			 __IRQ_STAT(cpu, __softirq_pending);
-	struct task_struct *cpu_ksoftirqd = per_cpu(ksoftirqd, cpu);
-	int task_pc = 0;
-
-	if (task) {
-		if (is_top_app(task))
-			return true;
-		task_pc = task_preempt_count(task);
-		}
-
-	if (is_top_app_cpu(cpu))
-		return true;
-
-	if (softirq_masked(task_pc))
-		return true;
-
-	return ((softirqs & LONG_SOFTIRQ_MASK) &&
-		(task == cpu_ksoftirqd || is_idle_task(task) ||
-		  (task_pc & (HARDIRQ_MASK | SOFTIRQ_MASK))));
-}
 
 #ifdef CONFIG_RT_GROUP_SCHED
 /*
@@ -3472,7 +3426,7 @@ static void switched_from_rt(struct rq *rq, struct task_struct *p)
 	if (!task_on_rq_queued(p) || rq->rt.rt_nr_running)
 		return;
 
-	queue_pull_task(rq);
+	rt_queue_pull_task(rq);
 }
 
 void __init init_sched_rt_class(void)
@@ -3538,7 +3492,7 @@ prio_changed_rt(struct rq *rq, struct task_struct *p, int oldprio)
 		 * may need to pull tasks to this runqueue.
 		 */
 		if (oldprio < p->prio)
-			queue_pull_task(rq);
+			rt_queue_pull_task(rq);
 
 		/*
 		 * If there's a higher priority task waiting to run
