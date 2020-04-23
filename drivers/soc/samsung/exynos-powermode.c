@@ -756,8 +756,7 @@ static int exynos_powermode_cpufreq_transition(struct notifier_block *nb,
 				unsigned long val, void *data)
 {
 #ifdef CONFIG_ARM64_EXYNOS_CPUIDLE
-	struct cpufreq_freqs *freq = data;
-	int cpu = freq->cpu;
+	int cpu = 0;
 
 	/*
 	 * Boot cluster does not support cluster power down.
