@@ -12,6 +12,7 @@
 #include <linux/slab.h>
 #include <linux/module.h>
 #include <linux/blkdev.h>
+#include <linux/backing-dev.h>
 #include <linux/freezer.h>
 #include <linux/kthread.h>
 #include <linux/scatterlist.h>
@@ -22,6 +23,7 @@
 #include <linux/mmc/card.h>
 #include <linux/mmc/host.h>
 #include <linux/sched/rt.h>
+
 #include "queue.h"
 #include "block.h"
 
@@ -55,12 +57,13 @@ static int mmc_queue_thread(void *d)
 {
 	struct mmc_queue *mq = d;
 	struct request_queue *q = mq->queue;
-
 	struct sched_param scheduler_params = {0};
-	scheduler_params.sched_priority = 1;
 
-	sched_setscheduler(current, SCHED_FIFO, &scheduler_params);
-
+	if (mq->card && (mq->card->type != MMC_TYPE_SD)) {
+		scheduler_params.sched_priority = 1;
+		sched_setscheduler(current, SCHED_FIFO, &scheduler_params);
+	}
+	
 	current->flags |= PF_MEMALLOC;
 
 	down(&mq->thread_sem);
@@ -160,7 +163,7 @@ static struct scatterlist *mmc_alloc_sg(int sg_len, int *err)
 {
 	struct scatterlist *sg;
 
-	sg = kmalloc_array(sg_len, sizeof(struct scatterlist), GFP_KERNEL);
+	sg = kmalloc(sizeof(struct scatterlist)*sg_len, GFP_KERNEL);
 	if (!sg)
 		*err = -ENOMEM;
 	else {
@@ -313,8 +316,7 @@ int mmc_init_queue(struct mmc_queue *mq, struct mmc_card *card,
 		 * function is called. It is effective for slow external sdcard.
 		 */
 		mq->queue->nr_requests = BLKDEV_MAX_RQ / 8;
-		if (mq->queue->nr_requests < 32)
-			mq->queue->nr_requests = 32;
+		if (mq->queue->nr_requests < 32) mq->queue->nr_requests = 32;
 #ifdef CONFIG_LARGE_DIRTY_BUFFER
 		/* apply more throttle on external sdcard */
 		mq->queue->backing_dev_info.capabilities |= BDI_CAP_STRICTLIMIT;
@@ -371,9 +373,10 @@ void mmc_cleanup_queue(struct mmc_queue *mq)
 
 #ifdef CONFIG_LARGE_DIRTY_BUFFER
 	/* Restore bdi min/max ratio before device removal */
-	bdi_set_min_ratio(&mq->queue->backing_dev_info, 0);
-	bdi_set_max_ratio(&mq->queue->backing_dev_info, 100);
+	bdi_set_min_ratio(&q->backing_dev_info, 0);
+	bdi_set_max_ratio(&q->backing_dev_info, 100);
 #endif
+
 	/* Empty the queue */
 	spin_lock_irqsave(q->queue_lock, flags);
 	q->queuedata = NULL;
