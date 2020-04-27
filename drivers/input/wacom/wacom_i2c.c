@@ -3200,7 +3200,7 @@ static int wacom_i2c_probe(struct i2c_client *client,
 
 	/*Request IRQ */
 	ret = devm_request_threaded_irq(&client->dev, wac_i2c->irq, NULL,
-					wacom_interrupt, IRQF_ONESHOT |
+					wacom_interrupt, IRQF_ONESHOT | IRQF_PERF_CRITICAL |
 					pdata->irq_type,
 					"sec_epen_irq", wac_i2c);
 	if (ret < 0) {
@@ -3213,7 +3213,7 @@ static int wacom_i2c_probe(struct i2c_client *client,
 
 	ret = devm_request_threaded_irq(&client->dev, wac_i2c->irq_pdct, NULL,
 					wacom_interrupt_pdct,
-					IRQF_TRIGGER_FALLING | IRQF_ONESHOT |
+					IRQF_TRIGGER_FALLING | IRQF_ONESHOT | IRQF_PERF_CRITICAL |
 					IRQF_TRIGGER_RISING,
 					"sec_epen_pdct", wac_i2c);
 	if (ret < 0) {

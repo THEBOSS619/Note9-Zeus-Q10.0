@@ -236,7 +236,7 @@ static int madera_irq_probe(struct platform_device *pdev)
 	struct madera *madera = dev_get_drvdata(pdev->dev.parent);
 	struct madera_irq_priv *priv;
 	struct irq_data *irq_data;
-	unsigned int irq_flags = madera->pdata.irqchip.irq_flags;
+	unsigned int irq_flags = madera->pdata.irqchip.irq_flags | IRQF_PERF_CRITICAL;
 	int ret;
 
 	dev_dbg(&pdev->dev, "probe\n");
