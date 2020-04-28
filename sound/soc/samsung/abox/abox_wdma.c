@@ -32,7 +32,6 @@
 #include <sound/samsung/abox.h>
 #include "abox_util.h"
 #include "abox_gic.h"
-#include "abox_dbg.h"
 #include "abox_vss.h"
 #include "abox_mmapfd.h"
 #include "abox.h"
@@ -100,7 +99,6 @@ static void abox_wdma_disable_barrier(struct device *dev,
 		struct abox_platform_data *data)
 {
 	int id = data->id;
-	struct abox_data *abox_data = data->abox_data;
 	u64 timeout = local_clock() + ABOX_DMA_TIMEOUT_NS;
 
 	while (abox_wdma_enabled(data)) {
@@ -109,7 +107,6 @@ static void abox_wdma_disable_barrier(struct device *dev,
 			continue;
 		}
 		dev_warn_ratelimited(dev, "WDMA disable timeout[%d]\n", id);
-		abox_dbg_dump_simple(dev, abox_data, "WDMA disable timeout");
 		break;
 	}
 }
@@ -388,7 +385,7 @@ static int abox_wdma_open(struct snd_pcm_substream *substream)
 		ret = abox_request_l2c_sync(dev, abox_data, dev, true);
 		if (ret < 0)
 			return ret;
-		ret = abox_vss_notify_call(dev, abox_data, 1);
+		ret = abox_vss_notify_call(dev, 1);
 		if (ret < 0)
 			dev_warn(dev, "call notify failed: %d\n", ret);
 	}
@@ -436,7 +433,7 @@ static int abox_wdma_close(struct snd_pcm_substream *substream)
 		ret = abox_request_l2c(dev, abox_data, dev, false);
 		if (ret < 0)
 			return ret;
-		ret = abox_vss_notify_call(dev, abox_data, 0);
+		ret = abox_vss_notify_call(dev, 0);
 		if (ret < 0)
 			dev_warn(dev, "call notify failed: %d\n", ret);
 	}

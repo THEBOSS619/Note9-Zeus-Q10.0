@@ -19,7 +19,6 @@
 
 #include "abox_util.h"
 #include "abox.h"
-#include "abox_log.h"
 
 #define SMART_FAILSAFE
 

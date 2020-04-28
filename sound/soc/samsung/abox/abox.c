@@ -40,9 +40,6 @@
 #include "../../../../drivers/iommu/exynos-iommu.h"
 
 #include "abox_util.h"
-#include "abox_dbg.h"
-#include "abox_log.h"
-#include "abox_dump.h"
 #include "abox_gic.h"
 #include "abox_failsafe.h"
 #include "abox_if.h"
@@ -97,11 +94,6 @@ static void update_mask_value(void __iomem *sfr,
 
 #define DEFAULT_CPU_GEAR_ID		(0xAB0CDEFA)
 #define TEST_CPU_GEAR_ID		(DEFAULT_CPU_GEAR_ID + 1)
-#define DEFAULT_LIT_FREQ_ID		DEFAULT_CPU_GEAR_ID
-#define DEFAULT_BIG_FREQ_ID		DEFAULT_CPU_GEAR_ID
-#define DEFAULT_HMP_BOOST_ID		DEFAULT_CPU_GEAR_ID
-#define DEFAULT_INT_FREQ_ID		DEFAULT_CPU_GEAR_ID
-#define DEFAULT_MIF_FREQ_ID		DEFAULT_CPU_GEAR_ID
 #define AUD_PLL_RATE_KHZ		(1179648)
 #define AUD_PLL_RATE_HZ_BYPASS		(26000000)
 #define AUDIF_RATE_HZ			(24576000)
@@ -131,9 +123,6 @@ static int abox_iommu_fault_handler(
 		struct iommu_domain *domain, struct device *dev,
 		unsigned long fault_addr, int fault_flags, void *token)
 {
-	struct abox_data *data = token;
-
-	abox_dbg_print_gpr(&data->pdev->dev, data);
 	return 0;
 }
 
@@ -158,7 +147,6 @@ static void exynos_abox_panic_handler(void)
 		}
 		has_run = true;
 
-		abox_dbg_dump_gpr(dev, data, ABOX_DBG_DUMP_KERNEL, "panic");
 		abox_cpu_pm_ipc(dev, false);
 		writel(0x504E4943, data->sram_base + data->sram_size -
 				sizeof(u32));
@@ -167,7 +155,6 @@ static void exynos_abox_panic_handler(void)
 		abox_cpu_power(true);
 		abox_cpu_enable(true);
 		mdelay(100);
-		abox_dbg_dump_mem(dev, data, ABOX_DBG_DUMP_KERNEL, "panic");
 	} else {
 		dev_info(dev, "%s: dump is skipped due to no power\n",
 				__func__);
@@ -566,10 +553,6 @@ static int __abox_process_ipc(struct device *dev, struct abox_data *data,
 				writel(0, tx_ack);
 				goto unlock;
 			}
-
-			if (tout_cnt == 1)
-				abox_dbg_dump_simple(dev, data,
-						"Transaction timeout");
 
 			if ((tout_cnt % IPC_RETRY) == 0) {
 				abox_failsafe_report(dev);
@@ -3525,311 +3508,33 @@ void abox_clear_cpu_gear_requests(struct device *dev, struct abox_data *data)
 	}
 }
 
-static void abox_change_int_freq_work_func(struct work_struct *work)
-{
-	struct abox_data *data = container_of(work, struct abox_data,
-			change_int_freq_work);
-	struct device *dev = &data->pdev->dev;
-	struct abox_qos_request *request;
-	unsigned int freq = 0;
-
-	dev_dbg(dev, "%s\n", __func__);
-
-	for (request = data->int_requests; request - data->int_requests <
-			ARRAY_SIZE(data->int_requests) && request->id;
-			request++) {
-		if (freq < request->value)
-			freq = request->value;
-
-		dev_dbg(dev, "id=%x, value=%u, freq=%u\n", request->id,
-				request->value, freq);
-	}
-
-	if (data->int_freq != freq) {
-		data->int_freq = freq;
-		pm_qos_update_request(&abox_pm_qos_int, data->int_freq);
-
-		dev_info(dev, "pm qos request int: req=%dkHz ret=%dkHz\n", freq,
-				pm_qos_request(abox_pm_qos_int.pm_qos_class));
-	}
-}
-
 int abox_request_int_freq(struct device *dev, struct abox_data *data,
 		unsigned int id, unsigned int int_freq)
 {
-	struct abox_qos_request *request;
-
-	dev_info(dev, "%s(%x, %u)\n", __func__, id, int_freq);
-
-	if (!id)
-		id = DEFAULT_INT_FREQ_ID;
-
-	for (request = data->int_requests; request - data->int_requests <
-			ARRAY_SIZE(data->int_requests) && request->id &&
-			request->id != id; request++) {
-	}
-
-	request->value = int_freq;
-	wmb(); /* value is read after id in reading function */
-	request->id = id;
-
-	if (request - data->int_requests >= ARRAY_SIZE(data->int_requests)) {
-		dev_err(dev, "%s: out of index. id=%x, int_freq=%u\n", __func__,
-				id, int_freq);
-		return -ENOMEM;
-	}
-
-	schedule_work(&data->change_int_freq_work);
-
 	return 0;
-}
-
-static void abox_change_mif_freq_work_func(struct work_struct *work)
-{
-	struct abox_data *data = container_of(work, struct abox_data,
-			change_mif_freq_work);
-	struct device *dev = &data->pdev->dev;
-	struct abox_qos_request *request;
-	unsigned int freq = 0;
-
-	dev_dbg(dev, "%s\n", __func__);
-
-	for (request = data->mif_requests; request - data->mif_requests <
-			ARRAY_SIZE(data->mif_requests) && request->id;
-			request++) {
-		if (freq < request->value)
-			freq = request->value;
-
-		dev_dbg(dev, "id=%x, value=%u, freq=%u\n", request->id,
-				request->value, freq);
-	}
-
-	if (data->mif_freq != freq) {
-		data->mif_freq = freq;
-		pm_qos_update_request(&abox_pm_qos_mif, data->mif_freq);
-
-		dev_info(dev, "pm qos request mif: req=%dkHz ret=%dkHz\n", freq,
-				pm_qos_request(abox_pm_qos_mif.pm_qos_class));
-	}
 }
 
 static int abox_request_mif_freq(struct device *dev, struct abox_data *data,
 		unsigned int id, unsigned int mif_freq)
 {
-	struct abox_qos_request *request;
-
-	dev_info(dev, "%s(%x, %u)\n", __func__, id, mif_freq);
-
-	if (!id)
-		id = DEFAULT_MIF_FREQ_ID;
-
-	for (request = data->mif_requests; request - data->mif_requests <
-			ARRAY_SIZE(data->mif_requests) && request->id &&
-			request->id != id; request++) {
-	}
-
-	request->value = mif_freq;
-	wmb(); /* value is read after id in reading function */
-	request->id = id;
-
-	if (request - data->mif_requests >= ARRAY_SIZE(data->mif_requests)) {
-		dev_err(dev, "%s: out of index. id=%x, mif_freq=%u\n", __func__,
-				id, mif_freq);
-		return -ENOMEM;
-	}
-
-	schedule_work(&data->change_mif_freq_work);
-
 	return 0;
-}
-
-static void abox_change_lit_freq_work_func(struct work_struct *work)
-{
-	struct abox_data *data = container_of(work, struct abox_data,
-			change_lit_freq_work);
-	struct device *dev = &data->pdev->dev;
-	size_t array_size = ARRAY_SIZE(data->lit_requests);
-	struct abox_qos_request *request;
-	unsigned int freq = 0;
-
-	dev_dbg(dev, "%s\n", __func__);
-
-	for (request = data->lit_requests;
-			request - data->lit_requests < array_size &&
-			request->id; request++) {
-		if (freq < request->value)
-			freq = request->value;
-
-		dev_dbg(dev, "id=%x, value=%u, freq=%u\n", request->id,
-				request->value, freq);
-	}
-
-	if (data->lit_freq != freq) {
-		data->lit_freq = freq;
-		pm_qos_update_request(&abox_pm_qos_lit, data->lit_freq);
-
-		dev_info(dev, "pm qos request lit: req=%dkHz ret=%dkHz\n", freq,
-				pm_qos_request(abox_pm_qos_lit.pm_qos_class));
-	}
 }
 
 int abox_request_lit_freq(struct device *dev, struct abox_data *data,
 		unsigned int id, unsigned int freq)
 {
-	size_t array_size = ARRAY_SIZE(data->lit_requests);
-	struct abox_qos_request *request;
-
-	if (!id)
-		id = DEFAULT_LIT_FREQ_ID;
-
-	for (request = data->lit_requests;
-			request - data->lit_requests < array_size &&
-			request->id && request->id != id; request++) {
-	}
-
-	if ((request->id == id) && (request->value == freq))
-		return 0;
-
-	request->value = freq;
-	wmb(); /* value is read after id in reading function */
-	request->id = id;
-
-	dev_info(dev, "%s(%x, %u)\n", __func__, id, freq);
-
-	if (request - data->lit_requests >= ARRAY_SIZE(data->lit_requests)) {
-		dev_err(dev, "%s: out of index. id=%x, freq=%u\n",
-				__func__, id, freq);
-		return -ENOMEM;
-	}
-
-	schedule_work(&data->change_lit_freq_work);
-
 	return 0;
-}
-
-static void abox_change_big_freq_work_func(struct work_struct *work)
-{
-	struct abox_data *data = container_of(work, struct abox_data,
-			change_big_freq_work);
-	struct device *dev = &data->pdev->dev;
-	size_t array_size = ARRAY_SIZE(data->big_requests);
-	struct abox_qos_request *request;
-	unsigned int freq = 0;
-
-	dev_dbg(dev, "%s\n", __func__);
-
-	for (request = data->big_requests;
-			request - data->big_requests < array_size &&
-			request->id; request++) {
-		if (freq < request->value)
-			freq = request->value;
-
-		dev_dbg(dev, "id=%x, value=%u, freq=%u\n", request->id,
-				request->value, freq);
-	}
-
-	if (data->big_freq != freq) {
-		data->big_freq = freq;
-		pm_qos_update_request(&abox_pm_qos_big, data->big_freq);
-
-		dev_info(dev, "pm qos request big: req=%dkHz ret=%dkHz\n", freq,
-				pm_qos_request(abox_pm_qos_big.pm_qos_class));
-	}
 }
 
 int abox_request_big_freq(struct device *dev, struct abox_data *data,
 		unsigned int id, unsigned int freq)
 {
-	size_t array_size = ARRAY_SIZE(data->big_requests);
-	struct abox_qos_request *request;
-
-	if (!id)
-		id = DEFAULT_BIG_FREQ_ID;
-
-	for (request = data->big_requests;
-			request - data->big_requests < array_size &&
-			request->id && request->id != id; request++) {
-	}
-
-	if ((request->id == id) && (request->value == freq))
-		return 0;
-
-	dev_info(dev, "%s(%x, %u)\n", __func__, id, freq);
-
-	request->value = freq;
-	wmb(); /* value is read after id in reading function */
-	request->id = id;
-
-	if (request - data->big_requests >= ARRAY_SIZE(data->big_requests)) {
-		dev_err(dev, "%s: out of index. id=%x, freq=%u\n",
-				__func__, id, freq);
-		return -ENOMEM;
-	}
-
-	schedule_work(&data->change_big_freq_work);
-
 	return 0;
-}
-
-static void abox_change_hmp_boost_work_func(struct work_struct *work)
-{
-	struct abox_data *data = container_of(work, struct abox_data,
-			change_hmp_boost_work);
-	struct device *dev = &data->pdev->dev;
-	size_t array_size = ARRAY_SIZE(data->hmp_requests);
-	struct abox_qos_request *request;
-	unsigned int on = 0;
-
-	dev_dbg(dev, "%s\n", __func__);
-
-	for (request = data->hmp_requests;
-			request - data->hmp_requests < array_size &&
-			request->id; request++) {
-		if (request->value)
-			on = request->value;
-
-		dev_dbg(dev, "id=%x, value=%u, on=%u\n", request->id,
-				request->value, on);
-	}
-
-	if (data->hmp_boost != on) {
-		dev_info(dev, "request hmp boost: %d\n", on);
-
-		data->hmp_boost = on;
-	}
 }
 
 int abox_request_hmp_boost(struct device *dev, struct abox_data *data,
 		unsigned int id, unsigned int on)
 {
-	size_t array_size = ARRAY_SIZE(data->hmp_requests);
-	struct abox_qos_request *request;
-
-	if (!id)
-		id = DEFAULT_HMP_BOOST_ID;
-
-	for (request = data->hmp_requests;
-			request - data->hmp_requests < array_size &&
-			request->id && request->id != id; request++) {
-	}
-
-	if ((request->id == id) && (request->value == on))
-		return 0;
-
-	dev_info(dev, "%s(%x, %u)\n", __func__, id, on);
-
-	request->value = on;
-	wmb(); /* value is read after id in reading function */
-	request->id = id;
-
-	if (request - data->hmp_requests >= ARRAY_SIZE(data->hmp_requests)) {
-		dev_err(dev, "%s: out of index. id=%x, on=%u\n",
-				__func__, id, on);
-		return -ENOMEM;
-	}
-
-	schedule_work(&data->change_hmp_boost_work);
-
 	return 0;
 }
 
@@ -4558,7 +4263,6 @@ static void abox_system_ipc_handler(struct device *dev,
 		struct abox_data *data, ABOX_IPC_MSG *msg)
 {
 	struct IPC_SYSTEM_MSG *system_msg = &msg->msg.system;
-	int ret;
 
 	dev_dbg(dev, "msgtype=%d\n", system_msg->msgtype);
 
@@ -4601,32 +4305,12 @@ static void abox_system_ipc_handler(struct device *dev,
 		}
 		break;
 	case ABOX_REPORT_LOG:
-		ret = abox_log_register_buffer(dev, system_msg->param1,
-				abox_addr_to_kernel_addr(data,
-				system_msg->param2));
-		if (ret < 0) {
-			dev_err(dev, "log buffer registration failed: %u, %u\n",
-					system_msg->param1, system_msg->param2);
-		}
 		break;
 	case ABOX_FLUSH_LOG:
 		break;
 	case ABOX_REPORT_DUMP:
-		ret = abox_dump_register_buffer(dev, system_msg->param1,
-				system_msg->bundle.param_bundle,
-				abox_addr_to_kernel_addr(data,
-				system_msg->param2),
-				abox_addr_to_phys_addr(data,
-				system_msg->param2),
-				system_msg->param3);
-		if (ret < 0) {
-			dev_err(dev, "dump buffer registration failed: %u, %u\n",
-					system_msg->param1, system_msg->param2);
-		}
 		break;
 	case ABOX_FLUSH_DUMP:
-		abox_dump_period_elapsed(system_msg->param1,
-				system_msg->param2);
 		break;
 	case ABOX_END_CLAIM_SRAM:
 		data->ima_claimed = true;
@@ -4676,29 +4360,8 @@ static void abox_system_ipc_handler(struct device *dev,
 		switch (system_msg->param1) {
 		case 1:
 		case 2:
-			abox_dbg_print_gpr_from_addr(dev, data,
-					abox_addr_to_kernel_addr(data,
-					system_msg->bundle.param_s32[0]));
-			abox_dbg_dump_gpr_from_addr(dev,
-					abox_addr_to_kernel_addr(data,
-					system_msg->bundle.param_s32[0]),
-					ABOX_DBG_DUMP_FIRMWARE, type);
-			abox_dbg_dump_mem(dev, data, ABOX_DBG_DUMP_FIRMWARE,
-					type);
-#ifdef CONFIG_SND_SOC_SAMSUNG_AUDIO
-			abox_debug_string_update(system_msg->param1,
-				abox_addr_to_kernel_addr(data, system_msg->bundle.param_s32[0]));
-#endif
 			break;
 		default:
-			abox_dbg_print_gpr(dev, data);
-			abox_dbg_dump_gpr(dev, data, ABOX_DBG_DUMP_FIRMWARE,
-					type);
-			abox_dbg_dump_mem(dev, data, ABOX_DBG_DUMP_FIRMWARE,
-					type);
-#ifdef CONFIG_SND_SOC_SAMSUNG_AUDIO
-			abox_debug_string_update(system_msg->param1, NULL);
-#endif
 			break;
 		}
 		abox_failsafe_report(dev);
@@ -4834,8 +4497,6 @@ static irqreturn_t abox_irq_handler(int irq, void *dev_id)
 		break;
 	}
 out:
-	abox_log_schedule_flush_all(dev);
-
 	dev_dbg(dev, "%s: exit\n", __func__);
 	return IRQ_HANDLED;
 }
@@ -5640,7 +5301,6 @@ static int abox_disable(struct device *dev)
 			dev_warn(dev, "calliope suspend time out during S2R\n");
 		}
 	}
-	abox_log_drain_all(dev);
 	abox_request_dram_on(pdev, dev, false);
 	abox_save_register(data);
 	abox_cfg_gpio(dev, "sleep");
@@ -5841,7 +5501,6 @@ static int abox_modem_notifier(struct notifier_block *nb,
 	case MODEM_EVENT_RESET:
 	case MODEM_EVENT_EXIT:
 	case MODEM_EVENT_WATCHDOG:
-		abox_debug_string_update(TYPE_ABOX_VSSERROR, NULL);
 		break;
 #endif
 	}
@@ -5994,12 +5653,6 @@ static int samsung_abox_probe(struct platform_device *pdev)
 	}
 	INIT_WORK(&data->ipc_work, abox_process_ipc);
 	INIT_WORK(&data->change_cpu_gear_work, abox_change_cpu_gear_work_func);
-	INIT_WORK(&data->change_int_freq_work, abox_change_int_freq_work_func);
-	INIT_WORK(&data->change_mif_freq_work, abox_change_mif_freq_work_func);
-	INIT_WORK(&data->change_lit_freq_work, abox_change_lit_freq_work_func);
-	INIT_WORK(&data->change_big_freq_work, abox_change_big_freq_work_func);
-	INIT_WORK(&data->change_hmp_boost_work,
-			abox_change_hmp_boost_work_func);
 	INIT_WORK(&data->register_component_work,
 			abox_register_component_work_func);
 	INIT_WORK(&data->boot_done_work, abox_boot_done_work_func);
