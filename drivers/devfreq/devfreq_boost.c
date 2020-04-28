@@ -10,6 +10,7 @@
 #include <linux/input.h>
 #include <linux/kthread.h>
 #include <linux/moduleparam.h>
+#include <linux/display_state.h>
 #include <linux/compiler.h>
 
 #define MAX_USER_RT_PRIO        100
@@ -26,9 +27,11 @@ enum {
 
 unsigned long devfreq_boost_freq = CONFIG_DEVFREQ_EXYNOS_MIF_BOOST_FREQ;
 unsigned short devfreq_boost_dur = CONFIG_DEVFREQ_INPUT_BOOST_DURATION_MS;
+unsigned long devfreq_unboost_freq = 421000;
 
 module_param(devfreq_boost_freq, long, 0644);
 module_param(devfreq_boost_dur, short, 0644);
+module_param(devfreq_unboost_freq, long, 0644);
 
 struct boost_dev {
 	struct devfreq *df;
@@ -70,6 +73,9 @@ static void __devfreq_boost_kick(struct boost_dev *b)
 	if (!READ_ONCE(b->df) || test_bit(SCREEN_OFF, &b->state))
 		return;
 
+	if (is_display_on())
+		return;
+
 	set_bit(INPUT_BOOST, &b->state);
 	if (!mod_delayed_work(system_unbound_wq, &b->input_unboost,
 		msecs_to_jiffies(devfreq_boost_dur)))
@@ -90,6 +96,9 @@ static void __devfreq_boost_kick_max(struct boost_dev *b,
 	unsigned long curr_expires, new_expires;
 
 	if (!READ_ONCE(b->df) || test_bit(SCREEN_OFF, &b->state))
+		return;
+
+	if (is_display_on())
 		return;
 
 	do {
@@ -134,8 +143,11 @@ static void devfreq_input_unboost(struct work_struct *work)
 {
 	struct boost_dev *b = container_of(to_delayed_work(work),
 					   typeof(*b), input_unboost);
+	struct devfreq *df = b->df;
 
 	clear_bit(INPUT_BOOST, &b->state);
+	clear_bit(MAX_BOOST, &b->state);
+	min(devfreq_unboost_freq , df->max_freq);
 	wake_up(&b->boost_waitq);
 }
 
@@ -143,8 +155,11 @@ static void devfreq_max_unboost(struct work_struct *work)
 {
 	struct boost_dev *b = container_of(to_delayed_work(work),
 					   typeof(*b), max_unboost);
+	struct devfreq *df = b->df;
 
 	clear_bit(MAX_BOOST, &b->state);
+	clear_bit(INPUT_BOOST, &b->state);
+	min(devfreq_unboost_freq , df->max_freq);
 	wake_up(&b->boost_waitq);
 }
 
