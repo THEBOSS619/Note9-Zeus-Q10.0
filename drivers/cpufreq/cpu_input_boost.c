@@ -122,22 +122,44 @@ struct boost_drv {
 static struct boost_drv *boost_drv_g __read_mostly;
 static int boost_slot;
 
-static u32 get_boost_freq(struct boost_drv *b, u32 cpu, u32 state)
+static u32 get_boost_freq(struct boost_drv *b, struct cpufreq_policy *policy, u32 state)
 {
+	u32 freq;
+
 	if (state & INPUT_BOOST) {
-		if (cpumask_test_cpu(cpu, cpu_lp_mask))
+		if (cpumask_test_cpu(policy->cpu, cpu_lp_mask))
 			return input_boost_freq_lp;
 
-	if (cpu_rq(cpu)->nr_running > 1)
+	if (cpu_rq(policy->cpu)->nr_running > 1)
 		return input_boost_freq_hp;
 	else
 		return 0;
 	}
 
-	if (cpumask_test_cpu(cpu, cpu_lp_mask))
+	if (cpumask_test_cpu(policy->cpu, cpu_lp_mask)) {
+		freq = CONFIG_INPUT_BOOST_FREQ_LP;
+	} else {
+		freq = CONFIG_INPUT_BOOST_FREQ_PERF;
+
+	return min(freq, policy->max);
+}
+
+	if (cpumask_test_cpu(policy->cpu, cpu_lp_mask))
 		return general_boost_freq_lp;
 
 	return general_boost_freq_hp;
+}
+
+static u32 get_max_boost_freq(struct cpufreq_policy *policy)
+{
+	u32 freq;
+
+	if (cpumask_test_cpu(policy->cpu, cpu_lp_mask))
+		freq = CONFIG_INPUT_BOOST_FREQ_LP;
+	else
+		freq = CONFIG_INPUT_BOOST_FREQ_PERF;
+
+	return min(freq, policy->max);
 }
 
 static u32 get_min_freq(struct boost_drv *b, u32 cpu, u32 state)
@@ -502,7 +524,7 @@ static int cpu_notifier_cb(struct notifier_block *nb,
 	/* Boost CPU to max frequency for max boost */
 	if (state & MAX_BOOST) {
 		sysctl_sched_energy_aware = 0;
-		policy->min = policy->max;
+		policy->min = get_max_boost_freq(policy);
 		return NOTIFY_OK;
 	}
 
@@ -511,8 +533,8 @@ static int cpu_notifier_cb(struct notifier_block *nb,
 	 * unboosting, set policy->min to the absolute min freq for the CPU.
 	 */
 	if (state & INPUT_BOOST || state & GENERAL_BOOST) {
-		boost_freq = get_boost_freq(b, policy->cpu, state);
-		policy->min = min(policy->max, boost_freq);
+		boost_freq = get_boost_freq(b, policy, state);
+		policy->min = get_boost_freq(b, policy, state);
 	} else {
 		min_freq = get_min_freq(b, policy->cpu, state);
 		policy->min = max(policy->cpuinfo.min_freq, min_freq);
