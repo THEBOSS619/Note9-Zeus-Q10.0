@@ -258,7 +258,7 @@ static void __cpu_input_boost_kick(struct boost_drv *b)
 	if (!(get_boost_state(b) & SCREEN_AWAKE))
 		return;
 
-	if (is_display_on())
+	if (!(is_display_on()))
 		return;
 
 	kthread_queue_work(&b->worker, &b->input_boost);
@@ -282,7 +282,7 @@ static void __cpu_input_boost_kick_max(struct boost_drv *b,
 	if (!(get_boost_state(b) & SCREEN_AWAKE))
 		return;
 
-	if (is_display_on())
+	if (!(is_display_on()))
 		return;
 
 	do {
@@ -307,6 +307,11 @@ void cpu_input_boost_kick_max(unsigned int duration_ms)
 		return;
 
 	__cpu_input_boost_kick_max(b, duration_ms);
+}
+
+void cpu_input_boost_kick_wake(void)
+{
+	cpu_input_boost_kick_max(CONFIG_WAKE_BOOST_DURATION_MS);
 }
 
 static void __cpu_input_boost_kick_general(struct boost_drv *b,
@@ -546,6 +551,7 @@ static int fb_notifier_cb(struct notifier_block *nb,
 	/* Boost when the screen turns on and unboost when it turns off */
 	if (*blank == FB_BLANK_UNBLANK) {
 		set_boost_bit(b, SCREEN_AWAKE);
+		__cpu_input_boost_kick_max(b, CONFIG_WAKE_BOOST_DURATION_MS);
 		if (b->ta_stune_boost_default != INT_MIN)
 			set_stune_boost(ST_TA, b->ta_stune_boost_default, NULL);
 		if (b->fg_stune_boost_default != INT_MIN)
