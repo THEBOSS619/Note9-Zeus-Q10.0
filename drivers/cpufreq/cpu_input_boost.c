@@ -13,7 +13,6 @@
 #include <linux/slab.h>
 #include <linux/kthread.h>
 #include <linux/display_state.h>
-#include <linux/sched/sysctl.h>
 #include "../../kernel/sched/sched.h"
 
 #define ST_TA "top-app"
@@ -509,21 +508,10 @@ static int cpu_notifier_cb(struct notifier_block *nb,
 	if (action != CPUFREQ_ADJUST)
 		return NOTIFY_OK;
 
-	if (is_display_on()) {
-		clear_boost_bit(b, INPUT_BOOST | MAX_BOOST | GENERAL_BOOST);
-		{
-			sysctl_sched_energy_aware = 1;
-			return idle_min_freq_lp;
-		}
-
-		return NOTIFY_OK;
-	}
-
 	state = get_boost_state(b);
 
 	/* Boost CPU to max frequency for max boost */
 	if (state & MAX_BOOST) {
-		sysctl_sched_energy_aware = 0;
 		policy->min = get_max_boost_freq(policy);
 		return NOTIFY_OK;
 	}
@@ -539,9 +527,6 @@ static int cpu_notifier_cb(struct notifier_block *nb,
 		min_freq = get_min_freq(b, policy->cpu, state);
 		policy->min = max(policy->cpuinfo.min_freq, min_freq);
 	}
-
-	/* If we are not boosting max for app launch/device wake, enable EAS */
-	sysctl_sched_energy_aware = 1;
 
 	return NOTIFY_OK;
 }
