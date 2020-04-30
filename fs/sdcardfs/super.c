@@ -41,9 +41,6 @@ void data_release(struct kref *ref)
 	struct sdcardfs_inode_data *data =
 		container_of(ref, struct sdcardfs_inode_data, refcount);
 
-	data->d.free_task = current;
-	BUG_ON(data->abandoned == false);
-
 	kmem_cache_free(sdcardfs_inode_data_cachep, data);
 }
 
@@ -224,7 +221,9 @@ static struct inode *sdcardfs_alloc_inode(struct super_block *sb)
 
 	i->data = d;
 	kref_init(&d->refcount);
-	d->d.owner = &i->vfs_inode;
+	i->top_data = d;
+	spin_lock_init(&i->top_lock);
+	kref_get(&d->refcount);
 
 	inode_set_iversion(&i->vfs_inode, 1);
 	return &i->vfs_inode;

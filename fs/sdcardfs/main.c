@@ -361,13 +361,11 @@ static int sdcardfs_read_super(struct vfsmount *mnt, struct super_block *sb,
 	mutex_lock(&sdcardfs_super_list_lock);
 	if (sb_info->options.multiuser) {
 		setup_derived_state(d_inode(sb->s_root), PERM_PRE_ROOT,
-				sb_info->options.fs_user_id, AID_ROOT,
-				false, SDCARDFS_I(d_inode(sb->s_root))->data);
+				sb_info->options.fs_user_id, AID_ROOT);
 		snprintf(sb_info->obbpath_s, PATH_MAX, "%s/obb", dev_name);
 	} else {
 		setup_derived_state(d_inode(sb->s_root), PERM_ROOT,
-				sb_info->options.fs_user_id, AID_ROOT,
-				false, SDCARDFS_I(d_inode(sb->s_root))->data);
+				sb_info->options.fs_user_id, AID_ROOT);
 		snprintf(sb_info->obbpath_s, PATH_MAX, "%s/Android/obb", dev_name);
 	}
 	fixup_tmp_permissions(d_inode(sb->s_root));
@@ -469,12 +467,6 @@ static int __init init_sdcardfs_fs(void)
 
 	pr_info("Registering sdcardfs " SDCARDFS_VERSION "\n");
 
-	kmem_file_info_pool = KMEM_CACHE(sdcardfs_file_info, SLAB_HWCACHE_ALIGN);
-	if (!kmem_file_info_pool) {
-		err = -ENOMEM;
-		goto err;
-	}
-
 	err = sdcardfs_init_inode_cache();
 	if (err)
 		goto out;
@@ -491,7 +483,6 @@ out:
 		sdcardfs_destroy_dentry_cache();
 		packagelist_exit();
 	}
-err:
 	return err;
 }
 
@@ -501,7 +492,6 @@ static void __exit exit_sdcardfs_fs(void)
 	sdcardfs_destroy_dentry_cache();
 	packagelist_exit();
 	unregister_filesystem(&sdcardfs_fs_type);
-	kmem_cache_destroy(kmem_file_info_pool);
 	pr_info("Completed sdcardfs module unload\n");
 }
 

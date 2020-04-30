@@ -18,13 +18,10 @@
  * General Public License.
  */
 
-#include <linux/fsnotify.h>
 #include "sdcardfs.h"
 #ifdef CONFIG_SDCARD_FS_FADV_NOACTIVE
 #include <linux/backing-dev.h>
 #endif
-
-struct kmem_cache *kmem_file_info_pool;
 
 static ssize_t sdcardfs_read(struct file *file, char __user *buf,
 			   size_t count, loff_t *ppos)
@@ -259,7 +256,7 @@ static int sdcardfs_open(struct inode *inode, struct file *file)
 	}
 
 	file->private_data =
-		kmem_cache_zalloc(kmem_file_info_pool, GFP_KERNEL);
+		kzalloc(sizeof(struct sdcardfs_file_info), GFP_KERNEL);
 	if (!SDCARDFS_F(file)) {
 		err = -ENOMEM;
 		goto out_revert_cred;
@@ -277,12 +274,11 @@ static int sdcardfs_open(struct inode *inode, struct file *file)
 			fput(lower_file); /* fput calls dput for lower_dentry */
 		}
 	} else {
-		fsnotify_open(lower_file);
 		sdcardfs_set_lower_file(file, lower_file);
 	}
 
 	if (err)
-		kmem_cache_free(kmem_file_info_pool, SDCARDFS_F(file));
+		kfree(SDCARDFS_F(file));
 	else
 		sdcardfs_copy_and_fix_attrs(inode, sdcardfs_lower_inode(inode));
 
@@ -318,7 +314,7 @@ static int sdcardfs_file_release(struct inode *inode, struct file *file)
 		fput(lower_file);
 	}
 
-	kmem_cache_free(kmem_file_info_pool, SDCARDFS_F(file));
+	kfree(SDCARDFS_F(file));
 	return 0;
 }
 
@@ -374,29 +370,6 @@ static loff_t sdcardfs_file_llseek(struct file *file, loff_t offset, int whence)
 
 out:
 	return err;
-}
-
-static loff_t sdcardfs_wrapper_file_llseek(struct file *file, loff_t offset, int whence)
-{
-	loff_t pos;
-	struct dentry *dentry = file->f_path.dentry;
-	struct inode *inode = d_inode(dentry);
-	struct file *lower_file;
-
-	lower_file = sdcardfs_lower_file(file);
-
-	if (lower_file) {
-		if (sizeof(loff_t) > sizeof(long))
-			inode_lock(inode);
-		fsstack_copy_inode_size(inode, file_inode(lower_file));
-		fsstack_copy_attr_times(inode, file_inode(lower_file));
-		if (sizeof(loff_t) > sizeof(long))
-			inode_unlock(inode);
-	}
-	pos = generic_file_llseek(file, offset, whence);
-//	printk(KERN_ERR "sdcardfs file llseek %s, whence: %lld, returns:%lld\n", dentry->d_name.name, whence, pos);
-
-	return pos;
 }
 
 /*
@@ -460,7 +433,7 @@ out:
 }
 
 const struct file_operations sdcardfs_main_fops = {
-	.llseek		= sdcardfs_wrapper_file_llseek,
+	.llseek		= generic_file_llseek,
 	.read		= sdcardfs_read,
 	.write		= sdcardfs_write,
 	.unlocked_ioctl	= sdcardfs_unlocked_ioctl,
