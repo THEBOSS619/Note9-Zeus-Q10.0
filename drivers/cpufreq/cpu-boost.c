@@ -40,14 +40,14 @@ static struct kthread_work input_boost_work;
 static unsigned int input_boost_enabled = 1;
 module_param(input_boost_enabled, uint, 0644);
 
-static unsigned int input_boost_ms = CONFIG_INPUT_BOOST_DURATION_MS;
+static unsigned int input_boost_ms = CONFIG_INPUT_BOOST_DURATION_RANGE_MS;
 module_param_named(input_boost_duration, input_boost_ms, uint, 0644);
 
 static unsigned int sched_boost_on_input;
 module_param(sched_boost_on_input, uint, 0644);
 
 #ifdef CONFIG_DYNAMIC_STUNE_BOOST
-static int dynamic_stune_boost;
+static int dynamic_stune_boost = 15;
 module_param(dynamic_stune_boost, uint, 0644);
 static bool stune_boost_active;
 static int boost_slot;
