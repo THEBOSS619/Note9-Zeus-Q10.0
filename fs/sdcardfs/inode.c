@@ -20,6 +20,7 @@
 
 #include "sdcardfs.h"
 #include <linux/fs_struct.h>
+#include <linux/ratelimit.h>
 
 const struct cred *override_fsids(struct sdcardfs_sb_info *sbi,
 		struct sdcardfs_inode_data *data)
@@ -547,7 +548,7 @@ void copy_attrs(struct inode *dest, const struct inode *src)
 	dest->i_acl = src->i_acl;
 #endif
 #ifdef CONFIG_SECURITY
-	*dest->i_security = *src->i_security;
+	dest->i_security = src->i_security;
 #endif
 }
 
@@ -557,13 +558,10 @@ static int sdcardfs_permission(struct vfsmount *mnt, struct inode *inode, int ma
 	struct inode tmp;
 	struct sdcardfs_inode_data *top = top_data_get(SDCARDFS_I(inode));
 
+	if (IS_ERR(mnt))
+		return PTR_ERR(mnt);
 	if (!top)
 		return -EINVAL;
-		
-	if (IS_ERR(mnt)) {
-		data_put(top);
-		return PTR_ERR(mnt);
-	}
 
 	/*
 	 * Permission check on sdcardfs inode.
