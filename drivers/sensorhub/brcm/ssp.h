@@ -123,11 +123,7 @@
 
 extern bool ssp_debug_time_flag;
 
-#define ssp_debug_time(format, ...) \
-	do { \
-		if (unlikely(ssp_debug_time_flag)) \
-			pr_info(format, ##__VA_ARGS__); \
-	} while (0)
+#define ssp_debug_time(format, ...)
 
 /* SSP Binary Type */
 enum {
@@ -915,9 +911,6 @@ struct ssp_data {
 
 /* information of sensorhub for big data */
 	bool IsGpsWorking;
-	char resetInfo[2048];
-        char resetInfoDebug[512];
-        u64 resetInfoDebugTime;
 	u32 resetCntGPSisOn;
 /* thermistor (up & sub) table information*/
 	short tempTable_up[23];
@@ -958,7 +951,6 @@ void ssp_enable(struct ssp_data *data, bool enable);
 int ssp_spi_async(struct ssp_data *data, struct ssp_msg *msg);
 int ssp_spi_sync(struct ssp_data *data, struct ssp_msg *msg, int timeout);
 extern void clean_msg(struct ssp_msg *msg);
-extern void bcm4773_debug_info(void);
 void clean_pending_list(struct ssp_data *data);
 void toggle_mcu_reset(struct ssp_data *data);
 int initialize_mcu(struct ssp_data *data);
@@ -1039,7 +1031,6 @@ int set_sensor_position(struct ssp_data *data);
 int set_glass_type(struct ssp_data *data);
 #endif
 int set_magnetic_static_matrix(struct ssp_data *data);
-void sync_sensor_state(struct ssp_data *data);
 void set_proximity_threshold(struct ssp_data *data);
 void set_proximity_alert_threshold(struct ssp_data *data);
 void set_proximity_barcode_enable(struct ssp_data *data, bool bEnable);
@@ -1060,9 +1051,6 @@ u64 get_sensor_scanning_info(struct ssp_data *data);
 unsigned int get_firmware_rev(struct ssp_data *data);
 u8 get_accel_range(struct ssp_data *data);
 int parse_dataframe(struct ssp_data *data, char *pchRcvDataFrame, int iLength);
-void enable_debug_timer(struct ssp_data *data);
-void disable_debug_timer(struct ssp_data *data);
-int initialize_debug_timer(struct ssp_data *data);
 void get_proximity_threshold(struct ssp_data *data);
 void report_meta_data(struct ssp_data *data, struct sensor_value *s);
 void report_acc_data(struct ssp_data *data, struct sensor_value *accdata);
@@ -1092,7 +1080,6 @@ void report_step_cnt_data(struct ssp_data *data, struct sensor_value *sig_motion
 #ifdef CONFIG_SENSORS_SSP_INTERRUPT_GYRO_SENSOR
 void report_interrupt_gyro_data(struct ssp_data *data, struct sensor_value *gyrodata);
 #endif
-int print_mcu_debug(char *pchRcvDataFrame, int *pDataIdx, int iRcvDataFrameLength);
 void report_temp_humidity_data(struct ssp_data *data, struct sensor_value *temp_humi_data);
 void report_shake_cam_data(struct ssp_data *data, struct sensor_value *shake_cam_data);
 void report_bulk_comp_data(struct ssp_data *data);
@@ -1104,7 +1091,6 @@ void report_uncalib_accel_data(struct ssp_data *data, struct sensor_value *accel
 void report_wakeup_motion_data(struct ssp_data *data,struct sensor_value *wakeup_motion_data);
 
 unsigned int get_module_rev(struct ssp_data *data);
-void reset_mcu(struct ssp_data *data);
 int sensors_register(struct device *dev, void *drvdata,
 	struct device_attribute *attributes[], char *name);
 void sensors_unregister(struct device *dev,
@@ -1121,13 +1107,9 @@ ssize_t mcu_sleep_factorytest_show(struct device *dev,
 	struct device_attribute *attr, char *buf);
 ssize_t mcu_sleep_factorytest_store(struct device *dev,
 	struct device_attribute *attr, const char *buf, size_t size);
-unsigned int ssp_check_sec_dump_mode(void);
 
-void ssp_dump_task(struct work_struct *work);
 void ssp_read_big_library_task(struct work_struct *work);
 void ssp_send_big_library_task(struct work_struct *work);
-void ssp_pcm_dump_task(struct work_struct *work);
-void ssp_temp_task(struct work_struct *work);
 
 int callback_bbd_on_control(void *ssh_data, const char *str_ctrl);
 int callback_bbd_on_mcu_ready(void *ssh_data, bool ready);
@@ -1153,12 +1135,48 @@ void ssp_reset_batching_resources(struct ssp_data *data);
 irqreturn_t ssp_shub_int_handler(int irq, void *device);
 #endif
 
-//#if defined (CONFIG_SENSORS_SSP_VLTE)
-//int ssp_ckeck_lcd(int);
-//#endif
+static inline void sync_sensor_state(struct ssp_data *data)
+{
+}
+static inline void enable_debug_timer(struct ssp_data *data)
+{
+}
+static inline void disable_debug_timer(struct ssp_data *data)
+{
+}
+static inline int initialize_debug_timer(struct ssp_data *data)
+{
+	return 0;
+}
+static inline int print_mcu_debug(char *pchRcvDataFrame, int *pDataIdx, int iRcvDataFrameLength)
+{
+	return 0;
+}
+static inline void reset_mcu(struct ssp_data *data)
+{
+}
+static inline unsigned int ssp_check_sec_dump_mode(void)
+{
+	return 0;
+}
 
-int send_sensor_dump_command(struct ssp_data *data, u8 sensor_type);
-int send_all_sensor_dump_command(struct ssp_data *data);
+static inline void ssp_dump_task(struct work_struct *work)
+{
+}
+static inline void ssp_pcm_dump_task(struct work_struct *work)
+{
+}
+static inline void ssp_temp_task(struct work_struct *work)
+{
+}
+static inline int send_sensor_dump_command(struct ssp_data *data, u8 sensor_type)
+{
+	return 0;
+}
+static inline int send_all_sensor_dump_command(struct ssp_data *data)
+{
+	return 0;
+}
 
 void ssp_timestamp_sync_work_func(struct work_struct *work);
 void ssp_reset_work_func(struct work_struct *work);

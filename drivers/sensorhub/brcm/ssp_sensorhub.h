@@ -37,12 +37,9 @@
 #define SENSORHUB_IOCTL_MAGIC		'S'
 #define IOCTL_READ_BIG_CONTEXT_DATA	_IOR(SENSORHUB_IOCTL_MAGIC, 3, char *)
 
-#define sensorhub_info(str, args...) \
-	pr_info("[SSP]: %s -\n" str, __func__, ##args)
-#define sensorhub_debug(str, args...) \
-	pr_debug("[SSP]: %s -\n" str, __func__, ##args)
-#define sensorhub_err(str, args...) \
-	pr_err("[SSP]: %s -\n" str, __func__, ##args)
+#define sensorhub_info(str, args...)
+#define sensorhub_debug(str, args...)
+#define sensorhub_err(str, args...)
 
 #define KERNEL_RESET            0x01
 #define MCU_CRASHED             0x02

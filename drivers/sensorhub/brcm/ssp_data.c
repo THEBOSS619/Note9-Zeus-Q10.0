@@ -89,7 +89,6 @@ static void get_timestamp(struct ssp_data *data, char *pchRcvDataFrame,
 {
 	u64 time_delta_ns = 0;
 	u64 update_timestamp = 0;
-	u64 current_timestamp = get_current_timestamp();
 	u32 ts_index = 0;
 	u32 ts_flag = 0;
 
@@ -526,7 +525,6 @@ void ssp_batch_report(struct ssp_data *data)
 	struct sensor_value sensor_data;
 	int idx_data = 0;
 	int count = 0;
-	u64 timestamp = get_current_timestamp();
 
 	ssp_dbg("[SSP_BAT] LENGTH = %d, start index = %d ts %lld\n",
 			data->batch_event.batch_length, idx_data, timestamp);
@@ -647,33 +645,9 @@ void ssp_batch_data_read_task(struct work_struct *work)
 	mutex_unlock(&data->batch_events_lock);
 }
 #endif
-int handle_big_data(struct ssp_data *data, char *pchRcvDataFrame, int *pDataIdx)
+inline int handle_big_data(struct ssp_data *data, char *pchRcvDataFrame, int *pDataIdx)
 {
-	u8 bigType = 0;
-	struct ssp_big *big = kzalloc(sizeof(*big), GFP_KERNEL);
-
-	big->data = data;
-	bigType = pchRcvDataFrame[(*pDataIdx)++];
-	memcpy(&big->length, pchRcvDataFrame + *pDataIdx, 4);
-	*pDataIdx += 4;
-	memcpy(&big->addr, pchRcvDataFrame + *pDataIdx, 4);
-	*pDataIdx += 4;
-
-	if (bigType >= BIG_TYPE_MAX) {
-		kfree(big);
-		return FAIL;
-	}
-
-	INIT_WORK(&big->work, data->ssp_big_task[bigType]);
-#ifdef CONFIG_SENSORS_SSP_HIFI_BATCHING // HIFI batch
-	if (bigType != BIG_TYPE_READ_HIFI_BATCH)
-		queue_work(data->debug_wq, &big->work);
-	else
-		queue_work(data->batch_wq, &big->work);
-#else
-	queue_work(data->debug_wq, &big->work);
-#endif
-	return SUCCESS;
+	return 0;
 }
 
 void handle_timestamp_sync(struct ssp_data *data, char *pchRcvDataFrame, int *index)

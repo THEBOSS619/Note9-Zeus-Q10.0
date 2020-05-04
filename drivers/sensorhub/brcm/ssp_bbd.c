@@ -16,31 +16,14 @@
 #include "ssp.h"
 
 
-bool ssp_dbg;
-bool ssp_pkt_dbg;
+bool ssp_dbg = 0;
+bool ssp_pkt_dbg = 0;
 
-#define dprint(fmt, args...) \
-	do { \
-		if (unlikely(ssp_dbg)) \
-			pr_debug("[SSPBBD]:(%s:%d): " fmt, \
-			__func__, __LINE__, ##args); \
-	} while (0)
+#define dprint(fmt, args...)
 
-#define DEBUG_SHOW_HEX_SEND(msg, len) \
-	do { \
-		if (unlikely(ssp_pkt_dbg)) { \
-			print_hex_dump(KERN_INFO, "SSP->MCU: ", \
-			DUMP_PREFIX_NONE, 16, 1, (msg), (len), true); \
-		} \
-	} while (0)
+#define DEBUG_SHOW_HEX_SEND(msg, len)
 
-#define DEBUG_SHOW_HEX_RECV(msg, len) \
-	do { \
-		if (unlikely(ssp_pkt_dbg)) {\
-			print_hex_dump(KERN_INFO, "SSP<-MCU: ", \
-			DUMP_PREFIX_NONE, 16, 1, (msg), (len), true); \
-		} \
-	} while (0)
+#define DEBUG_SHOW_HEX_RECV(msg, len)
 
 enum packet_state_e {
 	WAITFOR_PKT_HEADER = 0,
@@ -159,8 +142,6 @@ int bbd_do_transfer(struct ssp_data *data, struct ssp_msg *msg,
 				pr_err("[SSPBBD] %s: shub_en(%d), is enabled %d\n", __func__,
 						data->shub_en, gpio_get_value(data->shub_en));
 			}
-
-			bcm4773_debug_info();
 
 			status = -2;
 
@@ -320,18 +301,6 @@ int callback_bbd_on_control(void *ssh_data, const char *str_ctrl)
 	} else if (strstr(str_ctrl, BBD_CTRL_GPS_OFF) || strstr(str_ctrl, BBD_CTRL_GPS_ON)) {
 		data->IsGpsWorking = (strstr(str_ctrl, "CORE_OFF") ? 0 : 1);
 	} else if (strstr(str_ctrl, BBD_CTRL_LHD_STOP)) {
-		int prefixLen = (int)strlen(BBD_CTRL_LHD_STOP) + 1; //puls one is for blank ex) "LHD:STOP "
-		int totalLen = (int)strlen(str_ctrl);
-		int copyLen = totalLen - prefixLen <= sizeof(data->resetInfo) ? totalLen - prefixLen : sizeof(data->resetInfo);
-
-		memcpy(data->resetInfo, str_ctrl + prefixLen, copyLen);
-			if(totalLen != prefixLen) {
-
-					/* this value is used on debug work func */
-					memset(data->resetInfoDebug, 0, sizeof(data->resetInfoDebug));
-					makeResetInfoString(data->resetInfo, data->resetInfoDebug);
-					data->resetInfoDebugTime = get_current_timestamp();
-			}
 	}
 	dprint("Received string command from LHD(=%s)\n", str_ctrl);
 

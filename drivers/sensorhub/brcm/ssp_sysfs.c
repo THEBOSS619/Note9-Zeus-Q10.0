@@ -848,64 +848,16 @@ static DEVICE_ATTR(register_rw, 0664,
 
 #endif //CONFIG_SSP_REGISTER_RW
 char resetString[1024] = {0, };
-static ssize_t bcm_minidump_show(struct device *dev,
+static inline ssize_t bcm_minidump_show(struct device *dev,
 	struct device_attribute *attr, char *buf)
 {
-	struct ssp_data *data  = dev_get_drvdata(dev);
-	int ret = 0;
-	int totalLen = 0, index = 0;
-        const char token = ';';
-
-	totalLen = (int)strlen(data->resetInfo)
-		+ (data->IsGpsWorking ? (int)strlen("GPS ON ") : (int)strlen("GPS OFF "));
-
-	if ((int)strlen(data->resetInfo)) {
-                memset(resetString, 0, ARRAY_SIZE(resetString));
-                for(index = 0; index < (int)strlen(data->resetInfo); index++) {
-                        if(data->resetInfo[index] == token)
-                            break;
-                        resetString[index] = data->resetInfo[index];
-                }
-                ret = snprintf(buf, totalLen + 1, "%s%s",
-                        (data->IsGpsWorking ? "GPS ON " : "GPS OFF "), data->resetInfo);
-
-        } else
-		ret =  snprintf(buf, totalLen + 1, "%s", (data->IsGpsWorking ? "GPS ON " : "GPS OFF "));
-
-	memset(data->resetInfo, 0, ARRAY_SIZE(data->resetInfo));
-
-	return ret;
+	return 0;
 }
 
-static ssize_t reset_info_show(struct device *dev,
+static inline ssize_t reset_info_show(struct device *dev,
 	struct device_attribute *attr, char *buf)
 {
-	struct ssp_data *data  = dev_get_drvdata(dev);
-	int ret = 0;
-	int totalLen = 0, index = 0;
-        const char token = ';';
-        
-	totalLen = (int)strlen(data->resetInfo)
-		+ (data->IsGpsWorking ? (int)strlen("GPS ON ") : (int)strlen("GPS OFF "));
-
-	if ((int)strlen(data->resetInfo)) {
-                for(index = 0; index < (int)strlen(data->resetInfo); index++) {
-                        if(data->resetInfo[index] == token)
-                            break;
-                        resetString[index] = data->resetInfo[index];
-                }
-        } else
-		ret =  snprintf(buf, totalLen + 1, "%s", (data->IsGpsWorking ? "GPS ON " : "GPS OFF "));
-
-        if((int)strlen(resetString)) {
-                totalLen = (int)strlen(resetString)
-		    + (data->IsGpsWorking ? (int)strlen("GPS ON ") : (int)strlen("GPS OFF "));
-        	ret = snprintf(buf, totalLen + 1, "%s%s",
-			(data->IsGpsWorking ? "GPS ON " : "GPS OFF "), resetString);
-        }
-        
-        memset(resetString, 0, ARRAY_SIZE(resetString));
-	return ret;
+	return 0;
 }
 
 static DEVICE_ATTR(mcu_rev, 0444, mcu_revision_show, NULL);
