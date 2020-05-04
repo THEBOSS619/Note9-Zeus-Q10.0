@@ -207,7 +207,7 @@ else
 	echo "Did not define a known branch. Defaulting to using standard default device defconfig."
 	make -j$(nproc) exynos9810-"$DEFAULT_DEVICE"_defconfig
 fi
-make -j$(nproc)
+make -j 8
 
 ## Cleanup
 
