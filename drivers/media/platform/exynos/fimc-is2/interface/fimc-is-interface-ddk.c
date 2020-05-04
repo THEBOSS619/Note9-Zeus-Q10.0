@@ -102,12 +102,6 @@ flush_wait_done_frame:
 					framemgr_x_barrier_common(framemgr, 0, flags);
 					fimc_is_hardware_frame_ndone(hw_ip, frame, frame->instance, IS_SHOT_INVALID_FRAMENUMBER);
 					goto flush_wait_done_frame;
-				} else if (unlikely(frame->fcount > expected_fcount)) {
-					mswarn_hw("%s:[F%d] Too early frame. Skip it.",
-							instance_id, hw_ip,
-							__func__, frame->fcount);
-					framemgr_x_barrier_common(framemgr, 0, flags);
-					return true;
 				}
 			} else {
 				framemgr_x_barrier_common(framemgr, 0, flags);
@@ -376,42 +370,6 @@ static void fimc_is_lib_camera_callback(void *this, enum lib_cb_event_type event
 		fimc_is_hardware_config_lock(hw_ip, instance_id, (u32)fcount);
 		break;
 	case LIB_EVENT_FRAME_START_ISR:
-		if (sysfs_debug.pattern_en && (hw_ip->id == DEV_HW_3AA0 || hw_ip->id == DEV_HW_3AA1)) {
-			struct fimc_is_group *group;
-			struct v4l2_subdev *subdev;
-			struct fimc_is_device_csi *csi;
-
-			group = hw_ip->group[instance_id];
-			if (IS_ERR_OR_NULL(group)) {
-				mserr_hw("group is NULL", instance_id, hw_ip);
-				return;
-			}
-
-			if (IS_ERR_OR_NULL(group->device)) {
-				mserr_hw("device is NULL", instance_id, hw_ip);
-				return;
-			}
-
-			if (IS_ERR_OR_NULL(group->device->sensor)) {
-				mserr_hw("sensor is NULL", instance_id, hw_ip);
-				return;
-			}
-
-			if (IS_ERR_OR_NULL(group->device->sensor->subdev_csi)) {
-				mserr_hw("subdev_csi is NULL", instance_id, hw_ip);
-				return;
-			}
-
-			subdev = group->device->sensor->subdev_csi;
-			csi = v4l2_get_subdevdata(subdev);
-			if (IS_ERR_OR_NULL(csi)) {
-				mserr_hw("csi is NULL", instance_id, hw_ip);
-				return;
-			}
-
-			csi_frame_start_inline(csi);
-		}
-
 		hw_ip->debug_index[1] = hw_ip->debug_index[0] % DEBUG_FRAME_COUNT;
 		index = hw_ip->debug_index[1];
 		hw_ip->debug_info[index].fcount = hw_ip->debug_index[0];

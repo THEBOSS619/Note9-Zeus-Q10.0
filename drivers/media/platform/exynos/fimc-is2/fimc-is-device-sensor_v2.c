@@ -850,7 +850,7 @@ static void fimc_is_sensor_dtp(unsigned long data)
 	FIMC_BUG_VOID(!device);
 
 	/* Don't need to dtp check */
-	if ((!device->force_stop && !device->dtp_check) || sysfs_debug.pattern_en ||
+	if ((!device->force_stop && !device->dtp_check) ||
 		!test_bit(FIMC_IS_SENSOR_FRONT_START, &device->state))
 		return;
 
@@ -887,23 +887,6 @@ static int fimc_is_sensor_start(struct fimc_is_device_sensor *device)
 		}
 	}
 
-	if (sysfs_debug.pattern_en) {
-		struct v4l2_subdev *subdev_csi;
-
-		subdev_csi = device->subdev_csi;
-		if (!subdev_csi)
-			mwarn("subdev_csi is NULL", device);
-
-		ret = v4l2_subdev_call(subdev_csi, core, ioctl, SENSOR_IOCTL_PATTERN_ENABLE, NULL);
-		if (ret) {
-			mwarn("v4l2_csi_call(ioctl) is fail(%d)", device, ret);
-			ret = -EINVAL;
-			goto p_err;
-		}
-
-		goto p_skip_module_ctrl;
-	}
-
 	subdev_module = device->subdev_module;
 	if (!subdev_module) {
 		merr("subdev_module is NULL", device);
@@ -917,7 +900,6 @@ static int fimc_is_sensor_start(struct fimc_is_device_sensor *device)
 	}
 	set_bit(FIMC_IS_SENSOR_WAIT_STREAMING, &device->state);
 
-p_skip_module_ctrl:
 p_err:
 	return ret;
 }
@@ -932,23 +914,6 @@ static int fimc_is_sensor_stop(struct fimc_is_device_sensor *device)
 	long timetowait;
 
 	FIMC_BUG(!device);
-
-	if (sysfs_debug.pattern_en) {
-		struct v4l2_subdev *subdev_csi;
-
-		subdev_csi = device->subdev_csi;
-		if (!subdev_csi)
-			mwarn("subdev_csi is NULL", device);
-
-		ret = v4l2_subdev_call(subdev_csi, core, ioctl, SENSOR_IOCTL_PATTERN_DISABLE, NULL);
-		if (ret) {
-			mwarn("v4l2_csi_call(ioctl) is fail(%d)", device, ret);
-			ret = -EINVAL;
-			goto p_err;
-		}
-
-		goto p_skip_module_ctrl;
-	}
 
 	while (--retry && test_bit(FIMC_IS_SENSOR_WAIT_STREAMING, &device->state)) {
 		mwarn(" waiting first pixel..\n", device);
@@ -979,7 +944,6 @@ static int fimc_is_sensor_stop(struct fimc_is_device_sensor *device)
 		ret = -EINVAL;
 	}
 
-p_skip_module_ctrl:
 	if (!test_bit(FIMC_IS_SENSOR_STAND_ALONE, &device->state)) {
 		struct fimc_is_device_ischain *ischain;
 
@@ -3395,14 +3359,16 @@ int fimc_is_sensor_front_start(struct fimc_is_device_sensor *device,
 		device->image.window.width,
 		device->image.window.height);
 
-	if (nonblock) {
-		schedule_work(&device->instant_work);
-	} else {
-		fimc_is_sensor_instanton(&device->instant_work);
-		if (device->instant_ret) {
-			merr("fimc_is_sensor_instanton is fail(%d)", device, device->instant_ret);
-			ret = device->instant_ret;
-			goto p_err;
+	if (!sysfs_debug.pattern_en) {
+		if (nonblock) {
+			schedule_work(&device->instant_work);
+		} else {
+			fimc_is_sensor_instanton(&device->instant_work);
+			if (device->instant_ret) {
+				merr("fimc_is_sensor_instanton is fail(%d)", device, device->instant_ret);
+				ret = device->instant_ret;
+				goto p_err;
+			}
 		}
 	}
 
@@ -3429,9 +3395,11 @@ int fimc_is_sensor_front_stop(struct fimc_is_device_sensor *device)
 
 	subdev_csi = device->subdev_csi;
 
-	ret = fimc_is_sensor_stop(device);
-	if (ret)
-		merr("sensor stream off is failed(%d)\n", device, ret);
+	if (!sysfs_debug.pattern_en) {
+		ret = fimc_is_sensor_stop(device);
+		if (ret)
+			merr("sensor stream off is failed(%d)\n", device, ret);
+	}
 
 	ret = v4l2_subdev_call(subdev_csi, video, s_stream, IS_DISABLE_STREAM);
 	if (ret)

@@ -65,7 +65,6 @@ static const unsigned int madera_cable[] = {
 	EXTCON_MECHANICAL,
 	EXTCON_JACK_MICROPHONE,
 	EXTCON_JACK_HEADPHONE,
-	EXTCON_JACK_LINE_OUT,
 	EXTCON_NONE,
 };
 
@@ -595,11 +594,6 @@ inline void madera_extcon_report(struct madera_extcon *info,
 					    SW_MICROPHONE_INSERT,
 					    attached);
 			break;
-		case EXTCON_JACK_LINE_OUT:
-			input_report_switch(info->input,
-					    SW_LINEOUT_INSERT,
-					    attached);
-			break;
 		}
 
 		input_sync(info->input);
@@ -692,7 +686,7 @@ static void madera_jds_timeout_work(struct work_struct *work)
 static void madera_extcon_hp_clamp(struct madera_extcon *info, bool clamp)
 {
 	struct madera *madera = info->madera;
-	unsigned int mask = 0, val = 0;
+	unsigned int mask, val = 0;
 	unsigned int edre_reg = 0, edre_val = 0;
 	unsigned int ep_sel = 0;
 	int ret;
@@ -716,7 +710,6 @@ static void madera_extcon_hp_clamp(struct madera_extcon *info, bool clamp)
 
 	switch (madera->type) {
 	case CS47L35:
-		break;
 	case CS47L85:
 	case WM1840:
 		edre_reg = MADERA_EDRE_MANUAL;
@@ -770,7 +763,6 @@ static void madera_extcon_hp_clamp(struct madera_extcon *info, bool clamp)
 
 	switch (madera->type) {
 	case CS47L35:
-		break;
 	case CS47L85:
 	case WM1840:
 		ret = regmap_update_bits(madera->regmap,
@@ -1814,12 +1806,6 @@ int madera_hpdet_reading(struct madera_extcon *info, int val)
 		return val;
 
 	madera_set_headphone_imp(info, val);
-
-	/* Report high impedence cables as line outputs */
-       if(val>= 500000)
-	    madera_extcon_report(info, EXTCON_JACK_LINE_OUT, true);
-	 else
-	    madera_extcon_report(info, EXTCON_JACK_HEADPHONE, true);
 
 	if (info->have_mic)
 		madera_extcon_report(info, EXTCON_JACK_MICROPHONE, true);
@@ -3485,7 +3471,7 @@ static int madera_extcon_probe(struct platform_device *pdev)
 	}
 
 	/* Skip any HPDET ranges less than the external resistance */
-	for (i = info->hpdet_init_range; i < info->num_hpdet_ranges; ++i) {
+	for (i = 0; i < info->num_hpdet_ranges; ++i) {
 		if (madera_ohm_to_hohm(info->hpdet_ranges[i].max) >=
 		    pdata->hpdet_ext_res_x100) {
 			info->hpdet_init_range = i;
@@ -3499,11 +3485,6 @@ static int madera_extcon_probe(struct platform_device *pdev)
 			pdata->hpdet_ext_res_x100 % 100);
 		goto err_input;
 	}
-
-	regmap_update_bits(madera->regmap, MADERA_HEADPHONE_DETECT_1,
-			   MADERA_HP_IMPEDANCE_RANGE_MASK,
-			   info->hpdet_init_range <<
-			   MADERA_HP_IMPEDANCE_RANGE_SHIFT);
 
 	ret = madera_request_irq(madera, MADERA_IRQ_MICDET1,
 				 "MICDET", madera_micdet, info);
@@ -3582,9 +3563,6 @@ static int madera_extcon_probe(struct platform_device *pdev)
 		input_set_capability(info->input,
 				     EV_SW,
 				     SW_JACK_PHYSICAL_INSERT);
-		input_set_capability(info->input,
-				     EV_SW,
-				     SW_LINEOUT_INSERT);
 	}
 
 	ret = input_register_device(info->input);
