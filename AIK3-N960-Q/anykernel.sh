@@ -83,6 +83,14 @@ if [ ! -e /vendor/etc/fstab.samsungexynos9810~ ]; then
 	backup_file /vendor/etc/fstab.samsungexynos9810;
 fi;
 
+if [ ! -e /vendor/etc/init/pa_daemon_kinibi.rc~ ]; then
+	backup_file /vendor/etc/init/pa_daemon_kinibi.rc;
+fi;
+
+if [ ! -e /vendor/etc/init/secure_storage_daemon_kinibi.rc~ ]; then
+	backup_file /vendor/etc/init/secure_storage_daemon_kinibi.rc;
+fi;
+
 ui_print ""
 ui_print "Removing mcRegistry..."
 ui_print ""
@@ -96,8 +104,10 @@ cp -af /tmp/anykernel/ramdisk/fstab.samsungexynos9810 /vendor/etc/;
 chmod 644 /vendor/etc/fstab.samsungexynos9810;
 chcon u:object_r:vendor_configs_file:s0 /vendor/etc/fstab.samsungexynos9810;
 
-ui_print "Copying vendor script";
+ui_print "Copying/Patching vendor script";
 cp -f $home/vendor/etc/init/init.services.rc /vendor/etc/init;
+cp -f $home/vendor/etc/init/pa_daemon_kinibi.rc /vendor/etc/init;
+cp -f $home/vendor/etc/init/secure_storage_daemon_kinibi.rc /vendor/etc/init;
 
 mv -f $home/dtb.img $split_img/extra;
 
