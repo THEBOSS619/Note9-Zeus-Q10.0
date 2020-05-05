@@ -48,6 +48,8 @@
 #include <linux/printk.h>
 #include <linux/dax.h>
 #include <linux/psi.h>
+#include <linux/cpu_input_boost.h>
+#include <linux/devfreq_boost.h>
 
 #include <asm/tlbflush.h>
 #include <asm/div64.h>
@@ -1455,6 +1457,10 @@ unsigned long reclaim_pages(struct list_head *page_list)
 
 	if (list_empty(page_list))
 		return 0;
+
+	cpu_input_boost_kick_max(100);
+	devfreq_boost_kick_max(DEVFREQ_EXYNOS_MIF, 250);
+	cpu_input_boost_kick_general(500);
 
 	list_for_each_entry(page, page_list, lru) {
 		ClearPageActive(page);
