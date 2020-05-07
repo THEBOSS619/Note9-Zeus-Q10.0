@@ -1451,8 +1451,8 @@ unsigned long reclaim_pages(struct list_head *page_list)
 		return 0;
 
 	cpu_input_boost_kick_max(100);
-	devfreq_boost_kick_max(DEVFREQ_EXYNOS_MIF, 250);
-	cpu_input_boost_kick_general(500);
+	devfreq_boost_kick_max(DEVFREQ_EXYNOS_MIF, 100);
+	cpu_input_boost_kick_general(100);
 
 	list_for_each_entry(page, page_list, lru) {
 		ClearPageActive(page);
@@ -2395,6 +2395,10 @@ static void get_scan_count(struct lruvec *lruvec, struct mem_cgroup *memcg,
 		}
 	}
 
+	cpu_input_boost_kick_max(100);
+	devfreq_boost_kick_max(DEVFREQ_EXYNOS_MIF, 100);
+	cpu_input_boost_kick_general(100);
+
 	if (current_is_kswapd()) {
 		scan_balance = SCAN_FILE;
 		goto out;
@@ -3305,6 +3309,10 @@ static bool pgdat_balanced(pg_data_t *pgdat, int order, int classzone_idx)
 	for (i = 0; i <= classzone_idx; i++) {
 		zone = pgdat->node_zones + i;
 
+		cpu_input_boost_kick_max(100);
+		devfreq_boost_kick_max(DEVFREQ_EXYNOS_MIF, 100);
+		cpu_input_boost_kick_general(100);
+
 		if (!managed_zone(zone))
 			continue;
 
@@ -3811,6 +3819,10 @@ void wakeup_kswapd(struct zone *zone, gfp_t gfp_flags, int order,
 			wakeup_kcompactd(pgdat, order, classzone_idx);
 		return;
 	}
+
+	cpu_input_boost_kick_max(100);
+	devfreq_boost_kick_max(DEVFREQ_EXYNOS_MIF, 100);
+	cpu_input_boost_kick_general(100);
 
 	trace_mm_vmscan_wakeup_kswapd(pgdat->node_id, classzone_idx, order,
 				      gfp_flags);
