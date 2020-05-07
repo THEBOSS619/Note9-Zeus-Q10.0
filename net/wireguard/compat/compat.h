@@ -26,8 +26,10 @@
 #ifdef UTS_UBUNTU_RELEASE_ABI
 #if LINUX_VERSION_CODE == KERNEL_VERSION(3, 13, 11)
 #define ISUBUNTU1404
-#elif LINUX_VERSION_CODE >= KERNEL_VERSION(4, 4, 0) && LINUX_VERSION_CODE < KERNEL_VERSION(4, 5, 0)
+#elif LINUX_VERSION_CODE < KERNEL_VERSION(4, 5, 0) && LINUX_VERSION_CODE >= KERNEL_VERSION(4, 4, 0)
 #define ISUBUNTU1604
+#elif LINUX_VERSION_CODE < KERNEL_VERSION(5, 4, 0) && LINUX_VERSION_CODE >= KERNEL_VERSION(5, 3, 0)
+#define ISUBUNTU1910
 #endif
 #endif
 #ifdef CONFIG_SUSE_KERNEL
@@ -98,7 +100,7 @@
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(3, 17, 0) && LINUX_VERSION_CODE >= KERNEL_VERSION(3, 16, 83)
 #define ipv6_dst_lookup_flow(a, b, c, d) ipv6_dst_lookup_flow(b, c, d)
-#elif (LINUX_VERSION_CODE < KERNEL_VERSION(5, 4, 5) && LINUX_VERSION_CODE >= KERNEL_VERSION(5, 4, 0)) || (LINUX_VERSION_CODE < KERNEL_VERSION(5, 3, 18) && LINUX_VERSION_CODE >= KERNEL_VERSION(4, 20, 0)) || (LINUX_VERSION_CODE < KERNEL_VERSION(4, 19, 119) && !defined(ISRHEL82))
+#elif (LINUX_VERSION_CODE < KERNEL_VERSION(5, 4, 5) && LINUX_VERSION_CODE >= KERNEL_VERSION(5, 4, 0)) || (LINUX_VERSION_CODE < KERNEL_VERSION(5, 3, 18) && LINUX_VERSION_CODE >= KERNEL_VERSION(4, 20, 0)) || (((!defined(ISDEBIAN) && LINUX_VERSION_CODE < KERNEL_VERSION(4, 19, 119)) || LINUX_VERSION_CODE < KERNEL_VERSION(4, 19, 118)) && !defined(ISRHEL82))
 #define ipv6_dst_lookup_flow(a, b, c, d) ipv6_dst_lookup(a, b, &dst, c) + (void *)0 ?: dst
 #endif
 
@@ -729,6 +731,30 @@ static inline void cpu_to_le32_array(u32 *buf, unsigned int words)
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(4, 14, 0) && !defined(ISOPENSUSE15)
 #include <crypto/algapi.h>
+static inline void crypto_xor_cpy(u8 *dst, const u8 *src1, const u8 *src2,
+				  unsigned int size)
+{
+	if (IS_ENABLED(CONFIG_HAVE_EFFICIENT_UNALIGNED_ACCESS) &&
+	    __builtin_constant_p(size) &&
+	    (size % sizeof(unsigned long)) == 0) {
+		unsigned long *d = (unsigned long *)dst;
+		unsigned long *s1 = (unsigned long *)src1;
+		unsigned long *s2 = (unsigned long *)src2;
+
+		while (size > 0) {
+			*d++ = *s1++ ^ *s2++;
+			size -= sizeof(unsigned long);
+		}
+	} else {
+		if (unlikely(dst != src1))
+			memmove(dst, src1, size);
+#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 11, 0)
+		crypto_xor(dst, src2, size);
+#else
+		__crypto_xor(dst, src2, size);
+#endif
+	}
+}
 #endif
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(3, 17, 0)
@@ -737,6 +763,10 @@ static inline void cpu_to_le32_array(u32 *buf, unsigned int words)
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(3, 17, 0) && !defined(ISRHEL7)
 #define hlist_add_behind(a, b) hlist_add_after(b, a)
+#endif
+
+#if LINUX_VERSION_CODE < KERNEL_VERSION(5, 0, 0)
+#define totalram_pages() totalram_pages
 #endif
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(4, 18, 0)
@@ -990,7 +1020,7 @@ out:
 #define COMPAT_CANNOT_USE_MAX_MTU
 #endif
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(5, 4, 29) || (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 5, 0) && LINUX_VERSION_CODE < KERNEL_VERSION(5, 5, 14))
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(5, 5, 14) && LINUX_VERSION_CODE >= KERNEL_VERSION(5, 5, 0)) || (LINUX_VERSION_CODE < KERNEL_VERSION(5, 4, 29) && !defined(ISUBUNTU1910))
 #include <linux/skbuff.h>
 #include <net/sch_generic.h>
 static inline void skb_reset_redirect(struct sk_buff *skb)
