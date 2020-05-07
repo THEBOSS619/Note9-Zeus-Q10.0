@@ -2257,14 +2257,10 @@ static bool inactive_list_is_low(struct lruvec *lruvec, bool file,
 	active = lruvec_lru_size(lruvec, active_lru, sc->reclaim_idx);
 
 	gb = (inactive + active) >> (30 - PAGE_SHIFT);
-#ifdef CONFIG_FIX_INACTIVE_RATIO
-	inactive_ratio = 1;
-#else
 	if (gb)
 		inactive_ratio = int_sqrt(10 * gb);
 	else
 		inactive_ratio = 1;
-#endif
 	return inactive * inactive_ratio < active;
 }
 
@@ -3162,11 +3158,7 @@ unsigned long try_to_free_pages(struct zonelist *zonelist, int order,
 		.priority = DEF_PRIORITY,
 		.may_writepage = !laptop_mode,
 		.may_unmap = 1,
-#ifdef CONFIG_DIRECT_RECLAIM_FILE_PAGES_ONLY
-		.may_swap = 0,
-#else
 		.may_swap = 1,
-#endif
 	};
 
 	/*
