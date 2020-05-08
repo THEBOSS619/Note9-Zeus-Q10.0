@@ -716,6 +716,8 @@ KBUILD_CFLAGS	+= $(call cc-disable-warning, sizeof-pointer-div)
 KBUILD_CFLAGS	+= $(call cc-disable-warning, psabi)
 KBUILD_CFLAGS	+= $(call cc-disable-warning, address-of-packed-member)
 KBUILD_CFLAGS   += $(call cc-disable-warning, incompatible-pointer-types)
+KBUILD_CFLAGS	+= $(call cc-disable-warning, restrict)
+KBUILD_CFLAGS	+= $(call cc-disable-warning, zero-length-bounds)
 
 ifdef CONFIG_LTO_CLANG
 lto-clang-flags	:= -flto -fvisibility=hidden
