@@ -9341,7 +9341,7 @@ static void update_cpu_capacity(struct sched_domain *sd, int cpu)
 		ehmp_update_max_cpu_capacity(cpu, capacity);
 #ifdef CONFIG_SCHED_DEBUG
 		raw_spin_unlock_irqrestore(&mcc->lock, flags);
-		pr_info("CPU%d: update max cpu_capacity %lu\n", cpu, capacity);
+		//pr_info("CPU%d: update max cpu_capacity %lu\n", cpu, capacity); *too spammy*
 		goto skip_unlock;
 #endif
 	}
