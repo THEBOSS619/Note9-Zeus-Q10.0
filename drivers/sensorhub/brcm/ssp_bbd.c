@@ -322,7 +322,7 @@ int callback_bbd_on_mcu_reset(void *ssh_data, bool IsNoResp)
 		return -1;
 
 	if (IsNoResp && !data->resetting)
-			data->IsNoRespCnt++;
+			data->IsNoRespCnt = true;
 
 	data->resetting = true;
 	//data->uResetCnt++;
