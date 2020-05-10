@@ -878,7 +878,7 @@ KBUILD_CFLAGS += $(call cc-option, -fcatch-undefined-behavior)
 KBUILD_CFLAGS += $(call cc-option, -no-integrated-as)
 KBUILD_AFLAGS += $(call cc-option, -no-integrated-as)
 else
-KBUILD_CFLAGS += --param=max-inline-insns-auto=1000
+
 # These warnings generated too much noise in a regular build.
 # Use make W=1 to enable them (see scripts/Makefile.extrawarn)
 KBUILD_CFLAGS += $(call cc-disable-warning, unused-but-set-variable)
