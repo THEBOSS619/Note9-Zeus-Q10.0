@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/arm64 4.9.222-EAS-LTO-GCMA-GCC11-DragonTC.CLANG.9 Kernel Configuration
+# Linux/arm64 4.9.223-EAS-LTO-GCMA-GCC11-DragonTC.CLANG.9 Kernel Configuration
 #
 CONFIG_ARM64=y
 CONFIG_64BIT=y
