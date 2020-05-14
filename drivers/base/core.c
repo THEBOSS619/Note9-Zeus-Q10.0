@@ -1044,8 +1044,6 @@ static void cleanup_glue_dir(struct device *dev, struct kobject *glue_dir)
 	 * for glue_dir kobj is 1.
 	 */
 	ref = atomic_read(&glue_dir->kref.refcount);
-	if (!kobject_has_children(glue_dir) && !--ref)
-		kobject_del(glue_dir);
 	kobject_put(glue_dir);
 	mutex_unlock(&gdp_mutex);
 }
