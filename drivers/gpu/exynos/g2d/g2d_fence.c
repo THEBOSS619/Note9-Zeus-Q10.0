@@ -57,7 +57,7 @@ void g2d_fence_timeout_handler(unsigned long arg)
 	 * decremented under fence_timeout_lock held if it is done by fence
 	 * signal.
 	 */
-	if (atomic_read(&task->starter.refcount) == 0) {
+	if (kref_read(&task->starter) == 0) {
 		spin_unlock_irqrestore(&task->fence_timeout_lock, flags);
 		pr_err("All fences have been signaled. (work_busy? %d)\n",
 			work_busy(&task->work));
@@ -65,7 +65,7 @@ void g2d_fence_timeout_handler(unsigned long arg)
 	}
 
 	pr_err("%s: %d Fence(s) timed out after %d msec.\n", __func__,
-		atomic_read(&task->starter.refcount), G2D_FENCE_TIMEOUT_MSEC);
+		kref_read(&task->starter), G2D_FENCE_TIMEOUT_MSEC);
 
 	/* Increase reference to prevent running the workqueue in callback */
 	kref_get(&task->starter);
@@ -209,10 +209,10 @@ static void g2d_check_valid_fence(struct fence *fence, s32 fence_fd)
 	sync_file = file->private_data;
 
 	pr_err("%s : sync_file@%p : ref %d name %s\n", __func__,
-	       sync_file, atomic_read(&sync_file->kref.refcount),
+	       sync_file, kref_read(&sync_file->kref),
 	       sync_file->name);
 	pr_err("%s : fence@%p : ref %d lock %p context %lu\n", __func__,
-	       fence, atomic_read(&fence->refcount.refcount),
+	       fence, kref_read(&fence->refcount),
 	       fence->lock, (unsigned long)fence->context);
 	pr_err(" timestamp %ld status %d magic_bit %#x\n",
 	       (long)fence->timestamp, fence_get_status(fence), fence->magic_bit);
