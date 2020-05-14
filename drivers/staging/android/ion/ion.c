@@ -563,7 +563,7 @@ static void ion_handle_get(struct ion_handle *handle)
 static struct ion_handle *ion_handle_get_check_overflow(
 					struct ion_handle *handle)
 {
-	if (atomic_read(&handle->ref.refcount) + 1 == 0)
+	if (kref_read(&handle->ref) + 1 == 0)
 		return ERR_PTR(-EOVERFLOW);
 	ion_handle_get(handle);
 	return handle;
@@ -2032,7 +2032,7 @@ static int ion_debug_buffer_show(struct seq_file *s, void *unused)
 				buffer->task_comm, buffer->pid,
 				buffer->thread_comm,
 				buffer->tid, buffer->size, buffer->kmap_cnt,
-				atomic_read(&buffer->ref.refcount),
+				kref_read(&buffer->ref),
 				buffer->handle_count, master_name,
 				buffer->flags);
 		seq_printf(s, "(");
@@ -2143,7 +2143,7 @@ static void ion_debug_event_show_one(struct seq_file *s,
 static int ion_debug_event_show(struct seq_file *s, void *unused)
 {
 	struct ion_device *dev = s->private;
-	int index = atomic_read(&dev->event_idx) % ION_EVENT_LOG_MAX;
+	int index = kref_read(&dev->event_idx) % ION_EVENT_LOG_MAX;
 	int last = index;
 
 	seq_printf(s, "%13s %10s  %8s  %18s  %11s %10s %24s\n", "timestamp",
