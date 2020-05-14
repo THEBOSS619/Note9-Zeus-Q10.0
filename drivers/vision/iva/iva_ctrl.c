@@ -220,7 +220,7 @@ static int32_t iva_ctrl_init(struct iva_proc *proc, bool en_hwa)
 	if (ret < 0) {
 		dev_err(dev, "%s() fail to enable iva clk/pwr. ret(%d)\n",
 				__func__, ret);
-		atomic_set(&proc->init_ref.refcount, 0);
+		refcount_set(&proc->init_ref.refcount, 0);
 		return ret;
 	}
 
@@ -232,8 +232,8 @@ static int32_t iva_ctrl_init(struct iva_proc *proc, bool en_hwa)
 init_skip:
 	dev_dbg(dev, "%s() glob_init_ref(%d) <- init_ref(%d)\n",
 			__func__,
-			atomic_read(&iva->glob_init_ref.refcount),
-			atomic_read(&proc->init_ref.refcount));
+			kref_read(&iva->glob_init_ref),
+			kref_read(&proc->init_ref));
 	return 0;
 }
 
@@ -292,7 +292,7 @@ static void iva_ctrl_release_proc_init_ref(struct kref *kref)
 		dev_info(dev, "%s() still global init requesters in a system. ",
 			__func__);
 		dev_info(dev, "glob_init_ref(%d)\n",
-			atomic_read(&iva->glob_init_ref.refcount));
+			kref_read(&iva->glob_init_ref));
 	}
 }
 
@@ -303,14 +303,14 @@ static int32_t iva_ctrl_deinit(struct iva_proc *proc, bool forced)
 	int		ret = 0;
 	unsigned int	put_cnt;
 
-	put_cnt = atomic_read(&proc->init_ref.refcount);
+	put_cnt = kref_read(&proc->init_ref);
 	if (!put_cnt)
 		return 0;
 
 	if (forced) {
 		dev_warn(dev, "%s() forced init requester removal,", __func__);
 		dev_warn(dev, " put_cnt(%d) == init_ref(%d)\n",
-			put_cnt, atomic_read(&proc->init_ref.refcount));
+			put_cnt, kref_read(&proc->init_ref));
 
 	} else
 		put_cnt = 1;
@@ -320,8 +320,8 @@ static int32_t iva_ctrl_deinit(struct iva_proc *proc, bool forced)
 		dev_info(dev, "%s() still init requesters in the process. ",
 			__func__);
 		dev_warn(dev, "glob_init_ref(%d) <- init_ref(%d)\n",
-			atomic_read(&iva->glob_init_ref.refcount),
-			atomic_read(&proc->init_ref.refcount));
+			kref_read(&iva->glob_init_ref),
+			kref_read(&proc->init_ref));
 	}
 
 	/* always return as successful */
@@ -425,7 +425,7 @@ static int32_t iva_ctrl_mcu_boot_file(struct iva_proc *proc,
 	if (ret) {	/* error */
 		iva_ctrl_mcu_boot_unprepare_system(iva);
 
-		atomic_set(&proc->boot_ref.refcount, 0);
+		refcount_set(&proc->boot_ref.refcount, 0);
 		return ret;
 	}
 
@@ -436,8 +436,8 @@ static int32_t iva_ctrl_mcu_boot_file(struct iva_proc *proc,
 boot_skip:
 	dev_dbg(dev, "%s() glob_init_ref(%d) <- boot_ref(%d)\n",
 			__func__,
-			atomic_read(&iva->glob_init_ref.refcount),
-			atomic_read(&proc->init_ref.refcount));
+			kref_read(&iva->glob_init_ref),
+			kref_read(&proc->init_ref));
 	return 0;
 }
 
@@ -471,7 +471,7 @@ static void iva_ctrl_release_proc_boot_ref(struct kref *kref)
 		dev_info(dev, "%s() still global boot requesters in a system.",
 			__func__);
 		dev_info(dev, "glob_boot_ref(%d)\n",
-			atomic_read(&iva->glob_boot_ref.refcount));
+			kref_read(&iva->glob_boot_ref));
 	}
 }
 
@@ -482,7 +482,7 @@ static int32_t iva_ctrl_mcu_exit(struct iva_proc *proc, bool forced)
 	int		ret = 0;
 	unsigned int	put_cnt;
 
-	put_cnt = atomic_read(&proc->boot_ref.refcount);
+	put_cnt = kref_read(&proc->boot_ref);
 	if (!put_cnt)
 		return 0;
 
@@ -490,7 +490,7 @@ static int32_t iva_ctrl_mcu_exit(struct iva_proc *proc, bool forced)
 		dev_warn(dev, "%s() forced mcu exit requester removal, ",
 			__func__);
 		dev_warn(dev, "put_cnt(%d) == boot_ref(%d)\n",
-			put_cnt, atomic_read(&proc->boot_ref.refcount));
+			put_cnt, kref_read(&proc->boot_ref));
 
 	} else
 		put_cnt = 1;
@@ -500,8 +500,8 @@ static int32_t iva_ctrl_mcu_exit(struct iva_proc *proc, bool forced)
 		dev_info(dev, "%s() still mcu boot requesters in the process.",
 			__func__);
 		dev_info(dev, "glob_boot_ref(%d) <- boot_ref(%d)\n",
-			atomic_read(&iva->glob_boot_ref.refcount),
-			atomic_read(&proc->boot_ref.refcount));
+			kref_read(&iva->glob_boot_ref),
+			kref_read(&proc->boot_ref));
 	}
 
 	/* always return as successful */
@@ -521,12 +521,12 @@ static void __maybe_unused iva_ctrl_mcu_exit_forced(struct iva_dev_data *iva)
 
 bool iva_ctrl_is_iva_on(struct iva_dev_data *iva)
 {
-	return !!atomic_read(&iva->glob_init_ref.refcount);
+	return !!kref_read(&iva->glob_init_ref);
 }
 
 bool iva_ctrl_is_boot(struct iva_dev_data *iva)
 {
-	return !!atomic_read(&iva->glob_boot_ref.refcount);
+	return !!kref_read(&iva->glob_boot_ref);
 }
 
 static int32_t iva_ctrl_get_iva_status_usr(struct iva_dev_data *iva,
@@ -785,8 +785,8 @@ static int iva_ctrl_open(struct inode *inode, struct file *filp)
 
 	iva_mem_init_proc_mem(proc);
 
-	atomic_set(&proc->init_ref.refcount, 0);
-	atomic_set(&proc->boot_ref.refcount, 0);
+	refcount_set(&proc->init_ref.refcount, 0);
+	refcount_set(&proc->boot_ref.refcount, 0);
 
 	mutex_lock(&iva->proc_mutex);
 	list_add(&proc->proc_node, &iva->proc_head);
@@ -851,7 +851,7 @@ static int iva_iommu_fault_handler(struct iommu_domain *domain,
 	struct iva_dev_data	*iva = token;
 
 	dev_err(dev, "%s() is called with fault addr(0x%lx), err_cnt(%d)\n",
-			__func__, fault_addr, atomic_read(&iva->mcu_err_cnt));
+			__func__, fault_addr, kref_read(&iva->mcu_err_cnt));
 #ifdef ENABLE_SYSMMU_FAULT_REPORT
 	iva_mcu_handle_error_k(iva, mcu_err_from_irq, 35 /* SYSMMU_FAULT */);
 #else
