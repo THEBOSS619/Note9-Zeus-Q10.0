@@ -2290,7 +2290,7 @@ enum rbin_alloc_policy {
 	RBIN_DENY = 1,
 };
 #endif
-#ifdef CONFIG_RBIN
+#if 0
 static void set_rbin_alloc_policy(enum rbin_alloc_policy val)
 {
 	struct zone *zone;

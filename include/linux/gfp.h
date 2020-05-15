@@ -41,7 +41,7 @@ struct vm_area_struct;
 #define ___GFP_OTHER_NODE	0x800000u
 #define ___GFP_WRITE		0x1000000u
 #define ___GFP_KSWAPD_RECLAIM	0x2000000u
-#ifdef CONFIG_RBIN
+#if 0
 #define ___GFP_RBIN				0x4000000u
 #else
 #define ___GFP_CMA		0x4000000u
@@ -59,7 +59,7 @@ struct vm_area_struct;
 #define __GFP_HIGHMEM	((__force gfp_t)___GFP_HIGHMEM)
 #define __GFP_DMA32	((__force gfp_t)___GFP_DMA32)
 #define __GFP_MOVABLE	((__force gfp_t)___GFP_MOVABLE)  /* ZONE_MOVABLE allowed */
-#ifdef CONFIG_RBIN
+#if 0
 #define __GFP_RBIN	((__force gfp_t)___GFP_RBIN)      /* Allocate from RBIN */
 #define GFP_ZONEMASK	(__GFP_DMA|__GFP_HIGHMEM|__GFP_DMA32|__GFP_MOVABLE)
 #else

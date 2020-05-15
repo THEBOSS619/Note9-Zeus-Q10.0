@@ -27,7 +27,7 @@ extern int __init cma_declare_contiguous(phys_addr_t base,
 			phys_addr_t size, phys_addr_t limit,
 			phys_addr_t alignment, unsigned int order_per_bit,
 			bool fixed, const char *name, struct cma **res_cma);
-#ifdef CONFIG_RBIN
+#if 0
 extern void cma_set_rbin(struct cma *cma);
 #else
 static inline void cma_set_rbin(struct cma *cma) {}

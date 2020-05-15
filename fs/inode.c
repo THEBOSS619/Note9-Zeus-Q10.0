@@ -184,7 +184,7 @@ int inode_init_always(struct super_block *sb, struct inode *inode)
 #ifdef CONFIG_RBIN
 	if ((sb->s_flags & MS_RDONLY) && !shmem_mapping(mapping))
 		mapping_set_gfp_mask(mapping, GFP_HIGHUSER_MOVABLE |
-					__GFP_RBIN);
+					__GFP_CMA);
 	else
 		mapping_set_gfp_mask(mapping, GFP_HIGHUSER_MOVABLE);
 #else

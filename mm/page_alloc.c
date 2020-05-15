@@ -429,7 +429,7 @@ char * const migratetype_names[MIGRATE_TYPES] = {
 	"Reclaimable",
 #ifdef CONFIG_CMA
 	"CMA",
-#ifdef CONFIG_RBIN
+#if 0
 	"RBIN",
 #endif
 #endif
@@ -2080,7 +2080,7 @@ static int fallbacks[MIGRATE_TYPES][4] = {
 	[MIGRATE_MOVABLE]     = { MIGRATE_RECLAIMABLE, MIGRATE_UNMOVABLE, MIGRATE_TYPES },
 #ifdef CONFIG_CMA
 	[MIGRATE_CMA]         = { MIGRATE_TYPES }, /* Never used */
-#ifdef CONFIG_RBIN
+#if 0
 	[MIGRATE_RBIN]         = { MIGRATE_TYPES }, /* Never used */
 #endif
 #endif
@@ -2094,7 +2094,7 @@ int *get_migratetype_fallbacks(int mtype)
 	return fallbacks[mtype];
 }
 
-#ifdef CONFIG_RBIN
+#if 0
 static struct page *__rmqueue_cma_rbin_fallback(struct zone *zone,
 					unsigned int order, bool is_rbin)
 {
@@ -2569,7 +2569,7 @@ static int rmqueue_bulk(struct zone *zone, unsigned int order,
 		if (is_migrate_cma(get_pcppage_migratetype(page)))
 			__mod_zone_page_state(zone, NR_FREE_CMA_PAGES,
 					      -(1 << order));
-#ifdef CONFIG_RBIN
+#if 0
 		else if (is_migrate_rbin(get_pcppage_migratetype(page)))
 			__mod_zone_page_state(zone, NR_FREE_RBIN_PAGES,
 					      -(1 << order));
@@ -2966,7 +2966,7 @@ struct page *buffered_rmqueue(struct zone *preferred_zone,
 	bool cold = ((gfp_flags & __GFP_COLD) != 0);
 	int migratetype_rmqueue = migratetype;
 
-#ifdef CONFIG_RBIN
+#if 0
 	if ((migratetype_rmqueue == MIGRATE_MOVABLE) &&
 			((gfp_flags & __GFP_RBIN) == __GFP_RBIN) &&
 			time_after(jiffies, INITIAL_JIFFIES + 20 * HZ)) {
@@ -3200,7 +3200,7 @@ bool __zone_watermark_ok(struct zone *z, unsigned int order, unsigned long mark,
 	/* If allocation can't use CMA areas don't use free CMA pages */
 	if (!(alloc_flags & ALLOC_CMA))
 		free_pages -= zone_page_state(z, NR_FREE_CMA_PAGES);
-#ifdef CONFIG_RBIN
+#if 0
 	if (!(alloc_flags & ALLOC_RBIN) || atomic_read(&z->rbin_alloc))
 		free_pages -= zone_page_state(z, NR_FREE_RBIN_PAGES);
 #endif
@@ -3244,7 +3244,7 @@ bool __zone_watermark_ok(struct zone *z, unsigned int order, unsigned long mark,
 		    !list_empty(&area->free_list[MIGRATE_CMA])) {
 			return true;
 		}
-#ifdef CONFIG_RBIN
+#if 0
 		else if ((alloc_flags & ALLOC_RBIN) &&
 		    !list_empty(&area->free_list[MIGRATE_RBIN])) {
 			return true;
@@ -3276,7 +3276,7 @@ static inline bool zone_watermark_fast(struct zone *z, unsigned int order,
 	/* If allocation can't use CMA areas don't use free CMA pages */
 	if (!(alloc_flags & ALLOC_CMA))
 		cma_rbin_pages = zone_page_state(z, NR_FREE_CMA_PAGES);
-#ifdef CONFIG_RBIN
+#if 0
 	if (!(alloc_flags & ALLOC_RBIN) || atomic_read(&z->rbin_alloc))
 		cma_rbin_pages += zone_page_state(z, NR_FREE_RBIN_PAGES);
 #endif
@@ -3879,7 +3879,7 @@ gfp_to_alloc_flags(gfp_t gfp_mask)
 		alloc_flags |= ALLOC_HARDER;
 
 #ifdef CONFIG_CMA
-#ifdef CONFIG_RBIN
+#if 0
 	if ((gfpflags_to_migratetype(gfp_mask) == MIGRATE_MOVABLE) &&
 		((gfp_mask & __GFP_RBIN) == __GFP_RBIN))
 		alloc_flags |= ALLOC_RBIN;
@@ -4348,7 +4348,7 @@ __alloc_pages_nodemask(gfp_t gfp_mask, unsigned int order,
 	if (unlikely(!zonelist->_zonerefs->zone))
 		return NULL;
 
-#ifdef CONFIG_RBIN
+#if 0
 	if (IS_ENABLED(CONFIG_CMA) && ac.migratetype == MIGRATE_MOVABLE &&
 		((gfp_mask & __GFP_RBIN) == __GFP_RBIN))
 		alloc_flags |= ALLOC_RBIN;
@@ -4853,7 +4853,7 @@ static void show_migration_types(unsigned char type)
 		[MIGRATE_HIGHATOMIC]	= 'H',
 #ifdef CONFIG_CMA
 		[MIGRATE_CMA]		= 'C',
-#ifdef CONFIG_RBIN
+#if 0
 		[MIGRATE_RBIN]		= 'R',
 #endif
 #endif

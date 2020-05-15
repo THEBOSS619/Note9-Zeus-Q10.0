@@ -4,7 +4,7 @@
 #define IS_GCMA ((struct gcma *)(void *)0xFF)
 
 struct cma {
-#ifdef CONFIG_RBIN
+#if 0
 	bool is_rbin;
 #endif
 	unsigned long   base_pfn;

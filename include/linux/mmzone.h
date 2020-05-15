@@ -54,7 +54,7 @@ enum {
 	 * a single pageblock.
 	 */
 	MIGRATE_CMA,
-#ifdef CONFIG_RBIN
+#if 0
 	/*
 	 * MIGRATE_RBIN migration type differs from MIGRATE_CMA as
 	 * it is designed to contain specific types of pages.
@@ -89,7 +89,7 @@ extern int *get_migratetype_fallbacks(int mtype);
 #  define is_migrate_cma_page(_page) \
 	(get_pageblock_migratetype(_page) == MIGRATE_CMA)
 #  define get_cma_migrate_type() MIGRATE_CMA
-#ifdef CONFIG_RBIN
+#if 0
 #  define is_migrate_rbin(migratetype) unlikely((migratetype) == MIGRATE_RBIN)
 #  define is_migrate_rbin_nolikely(migratetype) ((migratetype) == MIGRATE_RBIN)
 #  define is_migrate_rbin_page(_page) \
@@ -414,7 +414,7 @@ struct zone {
 #endif
 	struct pglist_data	*zone_pgdat;
 	struct per_cpu_pageset __percpu *pageset;
-#ifdef CONFIG_RBIN
+#if 0
 	atomic_t rbin_alloc;
 #endif
 

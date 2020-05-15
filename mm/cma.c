@@ -111,7 +111,7 @@ static int free_reserved_pages(unsigned long pfn, unsigned long count)
 	int ret = 0;
 	unsigned long base_pfn;
 	struct zone *zone;
-#ifdef CONFIG_RBIN
+#if 0
 	bool is_rbin = cma->is_rbin;
 #else
 	bool is_rbin = false;
@@ -263,7 +263,7 @@ int __init cma_init_reserved_mem_with_name(phys_addr_t base, phys_addr_t size,
 	return 0;
 }
 
-#ifdef CONFIG_RBIN
+#if 0
 void cma_set_rbin(struct cma *cma)
 {
 	cma->is_rbin = true;
@@ -486,7 +486,7 @@ struct page *cma_alloc(struct cma *cma, size_t count, unsigned int align)
 	unsigned long start = 0;
 	unsigned long bitmap_maxno, bitmap_no, bitmap_count;
 	struct page *page = NULL;
-#ifdef CONFIG_RBIN
+#if 0
 	bool is_rbin = cma ? cma->is_rbin : false;
 	bool need_mutex = (align < (MAX_ORDER - 1)) ? true : false;
 #else
@@ -566,7 +566,7 @@ struct page *cma_alloc(struct cma *cma, size_t count, unsigned int align)
 
 			mutex_unlock(&cma_mutex);
 		}
-#ifdef CONFIG_RBIN
+#if 0
 		else {
 			if (need_mutex)
 				mutex_lock(&rbin_mutex);
