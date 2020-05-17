@@ -254,7 +254,7 @@ static int teo_select(struct cpuidle_driver *drv, struct cpuidle_device *dev,
 
 	cpu_data->time_span_ns = local_clock();
 
-	duration_ns = tick_nohz_get_sleep_length(&delta_tick);
+	duration_ns = tick_nohz_get_sleep_length();
 	cpu_data->sleep_length_ns = duration_ns;
 
 	hits = 0;
@@ -451,9 +451,7 @@ static void teo_reflect(struct cpuidle_device *dev, int state)
 	 * nets, assume that the CPU might have been idle for the entire sleep
 	 * length time.
 	 */
-	if (dev->poll_time_limit ||
-	    (tick_nohz_idle_got_tick() && cpu_data->sleep_length_ns > TICK_NSEC)) {
-		dev->poll_time_limit = false;
+	if ((tick_nohz_idle_got_tick() && cpu_data->sleep_length_ns > TICK_NSEC)) {
 		cpu_data->time_span_ns = cpu_data->sleep_length_ns;
 	} else {
 		cpu_data->time_span_ns = local_clock() - cpu_data->time_span_ns;
