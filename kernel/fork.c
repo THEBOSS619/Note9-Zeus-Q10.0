@@ -2250,7 +2250,7 @@ long _do_fork(unsigned long clone_flags,
 	/* Boost DDR to the max for 500 ms when userspace launches an app */
 	if (task_is_zygote(current) && !is_display_on()) {
 	cpu_input_boost_kick_max(500);
-	devfreq_boost_kick_max(DEVFREQ_EXYNOS_MIF, 350);
+	devfreq_boost_kick_max(DEVFREQ_EXYNOS_MIF, 500);
 }
 
 	/*
