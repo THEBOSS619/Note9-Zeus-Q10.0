@@ -87,7 +87,7 @@ struct bbr {
 	u32	full_bw;	/* recent bw, to estimate if pipe is full */
 
 	/* For tracking ACK aggregation: */
-	u64	ack_epoch_mstamp;	/* start of ACK sampling epoch */
+	struct skb_mstamp	ack_epoch_mstamp;	/* start of ACK sampling epoch */
 	u16	extra_acked[2];		/* max excess data ACKed in epoch */
 	u32	ack_epoch_acked:20,	/* packets (S)ACKed in sampling epoch */
 		extra_acked_win_rtts:5,	/* age of extra_acked, in round trips */
@@ -770,8 +770,8 @@ static void bbr_update_ack_aggregation(struct sock *sk,
 	}
 
 	/* Compute how many packets we expected to be delivered over epoch. */
-	epoch_us = tcp_stamp_us_delta(tp->delivered_mstamp,
-				      bbr->ack_epoch_mstamp);
+	epoch_us = skb_mstamp_us_delta(&tp->delivered_mstamp,
+				      &bbr->ack_epoch_mstamp);
 	expected_acked = ((u64)bbr_bw(sk) * epoch_us) / BW_UNIT;
 
 	/* Reset the aggregation epoch if ACK rate is below expected rate or
