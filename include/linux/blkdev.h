@@ -596,6 +596,7 @@ struct request_queue {
 
 #define QUEUE_FLAG_DEFAULT	((1 << QUEUE_FLAG_STACKABLE)	|	\
             				 (1 << QUEUE_FLAG_SAME_SYNC)	|	\
+            				 (1 << QUEUE_FLAG_NONROT)	|	\
             				 (1 << QUEUE_FLAG_SAME_COMP))
 
 #define QUEUE_FLAG_MQ_DEFAULT	((1 << QUEUE_FLAG_STACKABLE)	|	\
