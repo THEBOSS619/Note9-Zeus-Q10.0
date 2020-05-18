@@ -19,7 +19,6 @@
 
 #include <linux/types.h>
 #include <linux/kthread.h>
-#include <linux/vmstat.h>
 
 #include <uapi/linux/ion.h>
 

@@ -371,6 +371,7 @@ struct ion_heap {
 	unsigned long flags;
 	unsigned int id;
 	const char *name;
+	void *priv;
 	struct shrinker shrinker;
 	struct list_head free_list;
 	size_t free_list_size;
