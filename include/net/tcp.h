@@ -883,6 +883,17 @@ void tcp_send_window_probe(struct sock *sk);
  */
 #define tcp_jiffies32 ((u32)jiffies)
 
+static inline u64 tcp_clock_ns(void)
+{
+	return local_clock();
+}
+
+static inline u64 tcp_clock_us(void)
+{
+	return div_u64(tcp_clock_ns(), NSEC_PER_USEC);
+}
+
+
 /* Generator for TCP TS option (RFC 7323)
  * Currently tied to 'jiffies' but will soon be driven by 1 ms clock.
  */
