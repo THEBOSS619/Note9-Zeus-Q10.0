@@ -24,6 +24,7 @@
 #include <linux/jiffies.h>
 #include <linux/cpu.h>
 #include <linux/sched.h>
+#include <linux/sched/loadavg.h>
 
 #include "../cpuquiet.h"
 

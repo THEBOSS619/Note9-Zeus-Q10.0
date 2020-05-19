@@ -31,8 +31,8 @@
 #define DEFAULT_AVG_HOTPLUG_LATENCY_MS	2
 #define DEFAULT_HOTPLUG_TIMEOUT_MS	100
 
-unsigned int cpuquiet_nr_max_cpus;
-unsigned int cpuquiet_nr_min_cpus;
+unsigned int cpuquiet_nr_max_cpus = 8;
+unsigned int cpuquiet_nr_min_cpus = 5;
 
 DEFINE_MUTEX(cpuquiet_lock);
 static DEFINE_MUTEX(cpuquiet_cpu_lock);
