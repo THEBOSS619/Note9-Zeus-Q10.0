@@ -63,10 +63,14 @@ static bool pool_refill_ok(struct ion_page_pool *pool)
 	return true;
 }
 
-static inline struct page *ion_page_pool_alloc_pages(struct ion_page_pool *pool)
+static inline struct page *ion_page_pool_alloc_pages(struct ion_page_pool *pool, bool zeroed)
 {
 	if (fatal_signal_pending(current))
 		return NULL;
+
+	if (!zeroed)
+		pool->gfp_mask &= ~__GFP_ZERO;
+
 	return alloc_pages(pool->gfp_mask, pool->order);
 }
 
@@ -172,7 +176,7 @@ struct page *ion_page_pool_alloc(struct ion_page_pool *pool, bool zeroed)
 	spin_unlock(&pool->lock);
 
 	if (!page) {
-		page = ion_page_pool_alloc_pages(pool);
+		page = ion_page_pool_alloc_pages(pool, zeroed);
 		/*
 		 * PGMASK_PAGE_FROM_BUDDY should be cleared by the allocator of
 		 * the heap before providing the buffer to the client.
