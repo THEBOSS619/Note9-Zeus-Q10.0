@@ -50,7 +50,7 @@ static int ion_cma_allocate(struct ion_heap *heap, struct ion_buffer *buffer,
 	if (!ion_is_heap_available(heap, flags, NULL))
 		return -EPERM;
 
-	info = kzalloc(sizeof(struct ion_buffer_info), GFP_KERNEL);
+	info = kzalloc(sizeof(*info), GFP_KERNEL);
 	if (!info)
 		return -ENOMEM;
 
