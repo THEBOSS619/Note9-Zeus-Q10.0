@@ -184,7 +184,9 @@ static void cpuquiet_work_func(struct work_struct *work)
 				pm_qos_request(PM_QOS_CPU_ONLINE_MAX) ? :
 							num_present_cpus(),
 				cpuquiet_nr_max_cpus);
-	min_cpus = 5;
+	min_cpus = max_t(unsigned int,
+				pm_qos_request(PM_QOS_CPU_ONLINE_MIN),
+				cpuquiet_nr_min_cpus);
 
 	mutex_unlock(&cpuquiet_min_max_cpus_lock);
 
