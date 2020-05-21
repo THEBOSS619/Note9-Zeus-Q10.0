@@ -23,6 +23,8 @@
 #include <linux/init.h>
 #include <linux/slab.h>
 #include <linux/swap.h>
+#include <linux/devfreq_boost.h>
+#include <linux/cpu_input_boost.h>
 #include <asm/cacheflush.h>
 #include "ion_priv.h"
 #include <linux/sched.h>
@@ -108,6 +110,8 @@ void ion_page_pool_refill(struct ion_page_pool *pool)
 
 	while (!pool_fillmark_reached(pool) && pool_refill_ok(pool)) {
 		page = alloc_pages(gfp_refill, pool->order);
+		cpu_input_boost_kick_max(500);
+		devfreq_boost_kick_max(DEVFREQ_EXYNOS_MIF, 500);
 		if (!page)
 			break;
 		if (!pool->cached)
@@ -116,6 +120,7 @@ void ion_page_pool_refill(struct ion_page_pool *pool)
 						  DMA_BIDIRECTIONAL);
 		ion_page_pool_add(pool, page);
 	}
+	cpu_input_boost_kick_general(350);
 }
 
 struct page *ion_page_pool_remove(struct ion_page_pool *pool, bool high)
