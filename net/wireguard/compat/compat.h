@@ -16,10 +16,8 @@
 #define ISRHEL7
 #elif RHEL_MAJOR == 8
 #define ISRHEL8
-#ifdef RHEL_MINOR
-#if RHEL_MINOR == 2
-#define ISRHEL82
-#endif
+#if RHEL_MINOR == 1
+#define ISCENTOS8
 #endif
 #endif
 #endif
@@ -100,6 +98,8 @@
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(3, 17, 0) && LINUX_VERSION_CODE >= KERNEL_VERSION(3, 16, 83)
 #define ipv6_dst_lookup_flow(a, b, c, d) ipv6_dst_lookup_flow(b, c, d)
+#elif (LINUX_VERSION_CODE < KERNEL_VERSION(5, 4, 5) && LINUX_VERSION_CODE >= KERNEL_VERSION(5, 4, 0)) || (LINUX_VERSION_CODE < KERNEL_VERSION(5, 3, 18) && LINUX_VERSION_CODE >= KERNEL_VERSION(4, 20, 0)) || ((!defined(ISRHEL8) || defined(ISCENTOS8)) && !defined(ISDEBIAN) && LINUX_VERSION_CODE < KERNEL_VERSION(4, 19, 119) && LINUX_VERSION_CODE >= KERNEL_VERSION(4, 15, 0)) || (LINUX_VERSION_CODE < KERNEL_VERSION(4, 14, 181) && LINUX_VERSION_CODE >= KERNEL_VERSION(4, 10, 0)) || (LINUX_VERSION_CODE < KERNEL_VERSION(4, 9, 224) && LINUX_VERSION_CODE >= KERNEL_VERSION(4, 5, 0)) || LINUX_VERSION_CODE < KERNEL_VERSION(4, 4, 224)
+#define ipv6_dst_lookup_flow(a, b, c, d) ipv6_dst_lookup(a, b, &dst, c) + (void *)0 ?: dst
 #endif
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(3, 12, 0) && IS_ENABLED(CONFIG_IPV6) && !defined(ISRHEL7)
@@ -729,6 +729,30 @@ static inline void cpu_to_le32_array(u32 *buf, unsigned int words)
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(4, 14, 0) && !defined(ISOPENSUSE15)
 #include <crypto/algapi.h>
+static inline void crypto_xor_cpy(u8 *dst, const u8 *src1, const u8 *src2,
+				  unsigned int size)
+{
+	if (IS_ENABLED(CONFIG_HAVE_EFFICIENT_UNALIGNED_ACCESS) &&
+	    __builtin_constant_p(size) &&
+	    (size % sizeof(unsigned long)) == 0) {
+		unsigned long *d = (unsigned long *)dst;
+		unsigned long *s1 = (unsigned long *)src1;
+		unsigned long *s2 = (unsigned long *)src2;
+
+		while (size > 0) {
+			*d++ = *s1++ ^ *s2++;
+			size -= sizeof(unsigned long);
+		}
+	} else {
+		if (unlikely(dst != src1))
+			memmove(dst, src1, size);
+#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 11, 0)
+		crypto_xor(dst, src2, size);
+#else
+		__crypto_xor(dst, src2, size);
+#endif
+	}
+}
 #endif
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(3, 17, 0)
@@ -737,6 +761,10 @@ static inline void cpu_to_le32_array(u32 *buf, unsigned int words)
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(3, 17, 0) && !defined(ISRHEL7)
 #define hlist_add_behind(a, b) hlist_add_after(b, a)
+#endif
+
+#if LINUX_VERSION_CODE < KERNEL_VERSION(5, 0, 0)
+#define totalram_pages() totalram_pages
 #endif
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(4, 18, 0)
@@ -760,7 +788,7 @@ struct __kernel_timespec {
 #endif
 #endif
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(5, 1, 0) && !defined(ISRHEL82)
+#if LINUX_VERSION_CODE < KERNEL_VERSION(5, 1, 0) && (!defined(ISRHEL8) || defined(ISCENTOS8))
 #include <linux/skbuff.h>
 #define skb_probe_transport_header(a) skb_probe_transport_header(a, 0)
 #endif
@@ -769,7 +797,7 @@ struct __kernel_timespec {
 #define ignore_df local_df
 #endif
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(5, 1, 0) && !defined(ISRHEL82)
+#if LINUX_VERSION_CODE < KERNEL_VERSION(5, 1, 0) && (!defined(ISRHEL8) || defined(ISCENTOS8))
 /* Note that all intentional uses of the non-_bh variety need to explicitly
  * undef these, conditionalized on COMPAT_CANNOT_DEPRECIATE_BH_RCU.
  */
@@ -811,7 +839,7 @@ static inline void skb_mark_not_on_list(struct sk_buff *skb)
 #if LINUX_VERSION_CODE < KERNEL_VERSION(4, 20, 0) && !defined(ISRHEL8)
 #define NLA_EXACT_LEN NLA_UNSPEC
 #endif
-#if LINUX_VERSION_CODE < KERNEL_VERSION(5, 2, 0) && !defined(ISRHEL82)
+#if LINUX_VERSION_CODE < KERNEL_VERSION(5, 2, 0) && (!defined(ISRHEL8) || defined(ISCENTOS8))
 #define NLA_MIN_LEN NLA_UNSPEC
 #define COMPAT_CANNOT_INDIVIDUAL_NETLINK_OPS_POLICY
 #endif
@@ -999,6 +1027,19 @@ static inline void skb_reset_redirect(struct sk_buff *skb)
 	skb_reset_tc(skb);
 #endif
 }
+#endif
+
+#if LINUX_VERSION_CODE < KERNEL_VERSION(3, 14, 0) && !defined(ISRHEL7)
+#define skb_get_hash skb_get_rxhash
+#endif
+
+#if LINUX_VERSION_CODE < KERNEL_VERSION(3, 15, 0) && !defined(ISRHEL7)
+#define hash rxhash
+#define l4_hash l4_rxhash
+#endif
+
+#if LINUX_VERSION_CODE < KERNEL_VERSION(3, 17, 0) && !defined(ISRHEL7)
+#define sw_hash ignore_df = 0; skb->nf_trace = skb->ooo_okay
 #endif
 
 #if defined(ISUBUNTU1604) || defined(ISRHEL7)
