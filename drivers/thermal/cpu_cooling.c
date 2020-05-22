@@ -794,7 +794,7 @@ static int cpufreq_power2state(struct thermal_cooling_device *cdev,
 	cpumask_t tempmask;
 	int num_cpus;
 
-	cpumask_and(&tempmask, &cpufreq_device->allowed_cpus, cpu_online_mask);
+	cpumask_and(&tempmask, &cpufreq_cdev->allowed_cpus, cpu_online_mask);
 	num_cpus = cpumask_weight(&tempmask);
 
 	cpu = cpumask_any_and(&cpufreq_cdev->allowed_cpus, cpu_online_mask);
@@ -969,9 +969,9 @@ __cpufreq_cooling_register(struct device_node *np,
 			goto free_table;
 		}
 
-		ret = build_static_power_table(cpufreq_dev);
+		ret = build_static_power_table(cpufreq_cdev);
 		if (ret) {
-			cool_dev = ERR_PTR(ret);
+			cdev = ERR_PTR(ret);
 			goto free_table;
 		}
 
