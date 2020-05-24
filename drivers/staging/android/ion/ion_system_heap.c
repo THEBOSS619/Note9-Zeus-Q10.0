@@ -33,7 +33,7 @@
 
 #define NUM_ORDERS ARRAY_SIZE(orders)
 
-#define ION_KTHREAD_NICE_VAL 10
+#define ION_KTHREAD_NICE_VAL 17
 
 enum ion_kthread_type {
 	ION_KTHREAD_UNCACHED,
