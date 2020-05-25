@@ -11,7 +11,6 @@ _BEGIN_STD_C
 
 /* Natural log of 2 */
 #define _M_LN2        0.693147180559945309417
-#define FLT_EVAL_METHOD 2
 
 #if __GNUC_PREREQ (3, 3)
  /* gcc >= 3.3 implicitly defines builtins for HUGE_VALx values.  */
@@ -157,9 +156,8 @@ extern int isnan (double);
     typedef long double float_t;
     typedef long double double_t;
    #else
-    /* Assume basic definitions.  */
-    typedef float  float_t;
-    typedef double double_t;
+    /* Implementation-defined.  Assume float_t and double_t have been
+     * defined previously for this configuration (e.g. config.h). */
   #endif
 #else
     /* Assume basic definitions.  */

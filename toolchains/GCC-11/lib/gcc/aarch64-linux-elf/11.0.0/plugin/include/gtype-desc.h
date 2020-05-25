@@ -849,6 +849,22 @@ extern void gt_ggc_mx_ssa_operand_memory_d (void *);
   if (X != NULL) gt_ggc_mx_grid_launch_attributes_trees (X);\
   } while (0)
 extern void gt_ggc_mx_grid_launch_attributes_trees (void *);
+#define gt_ggc_m_36vec_omp_declare_variant_entry_va_gc_(X) do { \
+  if (X != NULL) gt_ggc_mx_vec_omp_declare_variant_entry_va_gc_ (X);\
+  } while (0)
+extern void gt_ggc_mx_vec_omp_declare_variant_entry_va_gc_ (void *);
+#define gt_ggc_m_30omp_declare_variant_base_entry(X) do { \
+  if (X != NULL) gt_ggc_mx_omp_declare_variant_base_entry (X);\
+  } while (0)
+extern void gt_ggc_mx_omp_declare_variant_base_entry (void *);
+#define gt_ggc_m_38hash_table_omp_declare_variant_hasher_(X) do { \
+  if (X != NULL) gt_ggc_mx_hash_table_omp_declare_variant_hasher_ (X);\
+  } while (0)
+extern void gt_ggc_mx_hash_table_omp_declare_variant_hasher_ (void *);
+#define gt_ggc_m_42hash_table_omp_declare_variant_alt_hasher_(X) do { \
+  if (X != NULL) gt_ggc_mx_hash_table_omp_declare_variant_alt_hasher_ (X);\
+  } while (0)
+extern void gt_ggc_mx_hash_table_omp_declare_variant_alt_hasher_ (void *);
 #define gt_ggc_m_24hash_map_char__unsigned_(X) do { \
   if (X != NULL) gt_ggc_mx_hash_map_char__unsigned_ (X);\
   } while (0)
@@ -1005,6 +1021,14 @@ extern void gt_ggc_mx_vec_loop_info_va_gc_ (void *);
   if (X != NULL) gt_ggc_mx_gnat_binding_level (X);\
   } while (0)
 extern void gt_ggc_mx_gnat_binding_level (void *);
+#define gt_ggc_m_18packable_type_hash(X) do { \
+  if (X != NULL) gt_ggc_mx_packable_type_hash (X);\
+  } while (0)
+extern void gt_ggc_mx_packable_type_hash (void *);
+#define gt_ggc_m_32hash_table_packable_type_hasher_(X) do { \
+  if (X != NULL) gt_ggc_mx_hash_table_packable_type_hasher_ (X);\
+  } while (0)
+extern void gt_ggc_mx_hash_table_packable_type_hasher_ (void *);
 #define gt_ggc_m_13pad_type_hash(X) do { \
   if (X != NULL) gt_ggc_mx_pad_type_hash (X);\
   } while (0)
@@ -2194,6 +2218,22 @@ extern void gt_pch_nx_ssa_operand_memory_d (void *);
   if (X != NULL) gt_pch_nx_grid_launch_attributes_trees (X);\
   } while (0)
 extern void gt_pch_nx_grid_launch_attributes_trees (void *);
+#define gt_pch_n_36vec_omp_declare_variant_entry_va_gc_(X) do { \
+  if (X != NULL) gt_pch_nx_vec_omp_declare_variant_entry_va_gc_ (X);\
+  } while (0)
+extern void gt_pch_nx_vec_omp_declare_variant_entry_va_gc_ (void *);
+#define gt_pch_n_30omp_declare_variant_base_entry(X) do { \
+  if (X != NULL) gt_pch_nx_omp_declare_variant_base_entry (X);\
+  } while (0)
+extern void gt_pch_nx_omp_declare_variant_base_entry (void *);
+#define gt_pch_n_38hash_table_omp_declare_variant_hasher_(X) do { \
+  if (X != NULL) gt_pch_nx_hash_table_omp_declare_variant_hasher_ (X);\
+  } while (0)
+extern void gt_pch_nx_hash_table_omp_declare_variant_hasher_ (void *);
+#define gt_pch_n_42hash_table_omp_declare_variant_alt_hasher_(X) do { \
+  if (X != NULL) gt_pch_nx_hash_table_omp_declare_variant_alt_hasher_ (X);\
+  } while (0)
+extern void gt_pch_nx_hash_table_omp_declare_variant_alt_hasher_ (void *);
 #define gt_pch_n_24hash_map_char__unsigned_(X) do { \
   if (X != NULL) gt_pch_nx_hash_map_char__unsigned_ (X);\
   } while (0)
@@ -2350,6 +2390,14 @@ extern void gt_pch_nx_vec_loop_info_va_gc_ (void *);
   if (X != NULL) gt_pch_nx_gnat_binding_level (X);\
   } while (0)
 extern void gt_pch_nx_gnat_binding_level (void *);
+#define gt_pch_n_18packable_type_hash(X) do { \
+  if (X != NULL) gt_pch_nx_packable_type_hash (X);\
+  } while (0)
+extern void gt_pch_nx_packable_type_hash (void *);
+#define gt_pch_n_32hash_table_packable_type_hasher_(X) do { \
+  if (X != NULL) gt_pch_nx_hash_table_packable_type_hasher_ (X);\
+  } while (0)
+extern void gt_pch_nx_hash_table_packable_type_hasher_ (void *);
 #define gt_pch_n_13pad_type_hash(X) do { \
   if (X != NULL) gt_pch_nx_pad_type_hash (X);\
   } while (0)
@@ -3243,6 +3291,14 @@ extern void gt_pch_p_20ssa_operand_memory_d
     (void *, void *, gt_pointer_operator, void *);
 extern void gt_pch_p_28grid_launch_attributes_trees
     (void *, void *, gt_pointer_operator, void *);
+extern void gt_pch_p_36vec_omp_declare_variant_entry_va_gc_
+    (void *, void *, gt_pointer_operator, void *);
+extern void gt_pch_p_30omp_declare_variant_base_entry
+    (void *, void *, gt_pointer_operator, void *);
+extern void gt_pch_p_38hash_table_omp_declare_variant_hasher_
+    (void *, void *, gt_pointer_operator, void *);
+extern void gt_pch_p_42hash_table_omp_declare_variant_alt_hasher_
+    (void *, void *, gt_pointer_operator, void *);
 extern void gt_pch_p_24hash_map_char__unsigned_
     (void *, void *, gt_pointer_operator, void *);
 extern void gt_pch_p_18vec_gimple__va_gc_
@@ -3320,6 +3376,10 @@ extern void gt_pch_p_11loop_info_d
 extern void gt_pch_p_20vec_loop_info_va_gc_
     (void *, void *, gt_pointer_operator, void *);
 extern void gt_pch_p_18gnat_binding_level
+    (void *, void *, gt_pointer_operator, void *);
+extern void gt_pch_p_18packable_type_hash
+    (void *, void *, gt_pointer_operator, void *);
+extern void gt_pch_p_32hash_table_packable_type_hasher_
     (void *, void *, gt_pointer_operator, void *);
 extern void gt_pch_p_13pad_type_hash
     (void *, void *, gt_pointer_operator, void *);

@@ -1996,6 +1996,8 @@ class auto_suppress_location_wrappers
 
 extern machine_mode element_mode (const_tree);
 extern machine_mode vector_type_mode (const_tree);
+extern unsigned int vector_element_bits (const_tree);
+extern tree vector_element_bits_tree (const_tree);
 
 /* The "canonical" type for this type node, which is used by frontends to
    compare the type for equality with another type.  If two types are
@@ -2646,8 +2648,8 @@ extern machine_mode vector_type_mode (const_tree);
    they are killing assignments.  Thus the variable may now
    be treated as a GIMPLE register, and use real instead of
    virtual ops in SSA form.  */
-#define DECL_GIMPLE_REG_P(DECL) \
-  DECL_COMMON_CHECK (DECL)->decl_common.gimple_reg_flag
+#define DECL_NOT_GIMPLE_REG_P(DECL) \
+  DECL_COMMON_CHECK (DECL)->decl_common.not_gimple_reg_flag
 
 extern tree decl_value_expr_lookup (tree);
 extern void decl_value_expr_insert (tree, tree);
@@ -4641,7 +4643,6 @@ extern hashval_t type_hash_canon_hash (tree);
 extern tree type_hash_canon (unsigned int, tree);
 
 extern tree convert (tree, tree);
-extern unsigned int expr_align (const_tree);
 extern tree size_in_bytes_loc (location_t, const_tree);
 inline tree
 size_in_bytes (const_tree t)
@@ -4699,9 +4700,10 @@ extern tree nreverse (tree);
 
 extern int list_length (const_tree);
 
-/* Returns the first FIELD_DECL in a type.  */
+/* Returns the first/last FIELD_DECL in a RECORD_TYPE.  */
 
-extern tree first_field (const_tree);
+extern tree first_field (const_tree) ATTRIBUTE_NONNULL (1);
+extern tree last_field (const_tree) ATTRIBUTE_NONNULL (1);
 
 /* Given an initializer INIT, return TRUE if INIT is zero or some
    aggregate of zeros.  Otherwise return FALSE.  If NONZERO is not
