@@ -136,6 +136,7 @@ exynos_cpufreq_cooling_register(struct device_node *np, const struct cpumask *cl
  */
 void cpufreq_cooling_unregister(struct thermal_cooling_device *cdev);
 
+unsigned long cpufreq_cooling_get_level(unsigned int cpu, unsigned int freq);
 #else /* !CONFIG_CPU_THERMAL */
 static inline struct thermal_cooling_device *
 cpufreq_cooling_register(struct cpufreq_policy *policy)
@@ -172,6 +173,11 @@ static inline
 void cpufreq_cooling_unregister(struct thermal_cooling_device *cdev)
 {
 	return;
+}
+static inline
+unsigned long cpufreq_cooling_get_level(unsigned int cpu, unsigned int freq)
+{
+	return THERMAL_CSTATE_INVALID;
 }
 #endif	/* CONFIG_CPU_THERMAL */
 
