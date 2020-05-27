@@ -493,14 +493,14 @@ ashmem_shrink_scan(struct shrinker *shrink, struct shrink_control *sc)
 		lru_del(range);
 
 		freed += range_size(range);
-		mutex_unlock(&ashmem_mutex);
+		mutex_unlock(&list_lock);
 		f->f_op->fallocate(f,
 				   FALLOC_FL_PUNCH_HOLE | FALLOC_FL_KEEP_SIZE,
 				   start, end - start);
 		fput(f);
 		if (atomic_dec_and_test(&ashmem_shrink_inflight))
 			wake_up_all(&ashmem_shrink_wait);
-		if (!mutex_trylock(&ashmem_mutex))
+		if (!mutex_trylock(&list_lock))
 			goto out;
 		if (--sc->nr_to_scan <= 0)
 			break;
