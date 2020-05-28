@@ -14,6 +14,7 @@
 #define __S5P_MFC_COMMON_H __FILE__
 
 #include <linux/exynos_iovmm.h>
+#include <asm/cacheflush.h>
 
 #include "s5p_mfc_regs_v10.h"
 #include "s5p_mfc_macros.h"
