@@ -840,7 +840,7 @@ enum lru_status binder_alloc_free_page(struct list_head *item,
 
 	if (vma) {
 
-		zap_page_range(vma, page_addr, PAGE_SIZE, NULL);
+		zap_page_range(vma, page_addr, PAGE_SIZE);
 
 	}
 
