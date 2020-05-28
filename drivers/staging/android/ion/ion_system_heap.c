@@ -34,7 +34,7 @@
 
 #define NUM_ORDERS ARRAY_SIZE(orders)
 
-#define ION_KTHREAD_NICE_VAL 17
+#define ION_KTHREAD_NICE_VAL 19
 
 enum ion_kthread_type {
 	ION_KTHREAD_UNCACHED,
@@ -236,7 +236,7 @@ free_pages:
 	return -ENOMEM;
 }
 
-static int max_page_pool_size = 24300;
+static int max_page_pool_size = 48600;
 module_param(max_page_pool_size, int, 0600);
 
 static void ion_system_heap_free(struct ion_buffer *buffer)

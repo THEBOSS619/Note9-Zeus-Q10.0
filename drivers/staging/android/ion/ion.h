@@ -40,7 +40,7 @@ struct ion_buffer;
 /* ION page pool marks in bytes */
 #ifdef CONFIG_ION_POOL_AUTO_REFILL
 #define ION_POOL_FILL_MARK (CONFIG_ION_POOL_FILL_MARK * SZ_1M)
-#define POOL_LOW_MARK_PERCENT	20UL
+#define POOL_LOW_MARK_PERCENT	40UL
 #define ION_POOL_LOW_MARK ((ION_POOL_FILL_MARK * POOL_LOW_MARK_PERCENT) / 100)
 #else
 #define ION_POOL_FILL_MARK 0UL
@@ -48,7 +48,7 @@ struct ion_buffer;
 #endif
 
 /* if low watermark of zones have reached, defer the refill in this window */
-#define ION_POOL_REFILL_DEFER_WINDOW_MS	10
+#define ION_POOL_REFILL_DEFER_WINDOW_MS	15
 
 /**
  * struct ion_platform_heap - defines a heap in the given platform
