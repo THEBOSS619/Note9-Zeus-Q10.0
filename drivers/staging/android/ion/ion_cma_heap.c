@@ -59,6 +59,11 @@ static int ion_cma_allocate(struct ion_heap *heap, struct ion_buffer *buffer,
 		size = ALIGN(len, ION_PROTECTED_BUF_ALIGN);
 	}
 
+	if (align > CONFIG_CMA_ALIGNMENT) {
+		align = get_order(size);
+		align = CONFIG_CMA_ALIGNMENT;
+	}
+
 	page = cma_alloc(cma_heap->cma, (PAGE_ALIGN(size) >> PAGE_SHIFT),
 			 (align ? get_order(align) : 0));
 	if (!page) {
