@@ -1072,13 +1072,13 @@ static int __init exynos_hpgov_parse_dt(void)
 	struct device_node *np = of_find_node_by_name(NULL, "hotplug_governor");
 
 	if (arg_overclock == 1) {
-		exynos_hpgov.single_change_ms = 40;
-		exynos_hpgov.dual_change_ms = 35;
-		exynos_hpgov.quad_change_ms = 30;
-		exynos_hpgov.big_heavy_thr = 800;
-		exynos_hpgov.lit_heavy_thr = 400;
-		exynos_hpgov.big_idle_thr = 200;
-		exynos_hpgov.lit_idle_thr = 150;
+		exynos_hpgov.single_change_ms = 250;
+		exynos_hpgov.dual_change_ms = 245;
+		exynos_hpgov.quad_change_ms = 240;
+		exynos_hpgov.big_heavy_thr = 850;
+		exynos_hpgov.lit_heavy_thr = 350;
+		exynos_hpgov.big_idle_thr = 250;
+		exynos_hpgov.lit_idle_thr = 200;
 		exynos_hpgov.ldsum_heavy_thr = 850;
 		exynos_hpgov.ldsum_enabled = 0;
 		exynos_hpgov.skip_lit_enabled = 0;
