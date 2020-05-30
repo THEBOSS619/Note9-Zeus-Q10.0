@@ -47,7 +47,7 @@
 #ifdef MODULE_PARAM_PREFIX
 #undef MODULE_PARAM_PREFIX
 #endif
-#define MODULE_PARAM_PREFIX "rcupdate_ignored."
+#define MODULE_PARAM_PREFIX "rcupdate."
 
 #ifndef CONFIG_TINY_RCU
 module_param(rcu_expedited, int, 0);

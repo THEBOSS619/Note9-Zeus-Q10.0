@@ -162,7 +162,7 @@ static ssize_t rcu_expedited_store(struct kobject *kobj,
 }
 KERNEL_ATTR_RW(rcu_expedited);
 
-int rcu_normal = 1;
+int rcu_normal;
 static ssize_t rcu_normal_show(struct kobject *kobj,
 			       struct kobj_attribute *attr, char *buf)
 {
