@@ -295,7 +295,7 @@ free_power_table:
 	return ret;
 }
 
-static int build_static_power_table(struct cpufreq_cooling_device *cpufreq_device)
+static int build_static_power_table(struct cpufreq_cooling_device *cpufreq_cdev)
 {
 	int i, j;
 #if defined(CONFIG_SOC_EXYNOS9810)
@@ -325,66 +325,66 @@ static int build_static_power_table(struct cpufreq_cooling_device *cpufreq_devic
 	asv_param = ect_gen_param_get_table(gen_block, "DTM_BIG_ASV");
 
 	if (volt_temp_param && asv_param) {
-		cpufreq_device->var_volt_size = volt_temp_param->num_of_row - 1;
-		cpufreq_device->var_temp_size = volt_temp_param->num_of_col - 1;
+		cpufreq_cdev->var_volt_size = volt_temp_param->num_of_row - 1;
+		cpufreq_cdev->var_temp_size = volt_temp_param->num_of_col - 1;
 
-		cpufreq_device->var_coeff = kzalloc(sizeof(int) *
+		cpufreq_cdev->var_coeff = kzalloc(sizeof(int) *
 							volt_temp_param->num_of_row *
 							volt_temp_param->num_of_col,
 							GFP_KERNEL);
-		if (!cpufreq_device->var_coeff)
+		if (!cpufreq_cdev->var_coeff)
 			goto err_mem;
 
-		cpufreq_device->asv_coeff = kzalloc(sizeof(int) *
+		cpufreq_cdev->asv_coeff = kzalloc(sizeof(int) *
 							asv_param->num_of_row *
 							asv_param->num_of_col,
 							GFP_KERNEL);
-		if (!cpufreq_device->asv_coeff)
+		if (!cpufreq_cdev->asv_coeff)
 			goto free_var_coeff;
 
-		cpufreq_device->var_table = kzalloc(sizeof(int) *
+		cpufreq_cdev->var_table = kzalloc(sizeof(int) *
 							volt_temp_param->num_of_row *
 							volt_temp_param->num_of_col,
 							GFP_KERNEL);
-		if (!cpufreq_device->var_table)
+		if (!cpufreq_cdev->var_table)
 			goto free_asv_coeff;
 
-		memcpy(cpufreq_device->var_coeff, volt_temp_param->parameter,
+		memcpy(cpufreq_cdev->var_coeff, volt_temp_param->parameter,
 			sizeof(int) * volt_temp_param->num_of_row * volt_temp_param->num_of_col);
-		memcpy(cpufreq_device->asv_coeff, asv_param->parameter,
+		memcpy(cpufreq_cdev->asv_coeff, asv_param->parameter,
 			sizeof(int) * asv_param->num_of_row * asv_param->num_of_col);
-		memcpy(cpufreq_device->var_table, volt_temp_param->parameter,
+		memcpy(cpufreq_cdev->var_table, volt_temp_param->parameter,
 			sizeof(int) * volt_temp_param->num_of_row * volt_temp_param->num_of_col);
 	} else {
 		pr_err("%s: Failed to get param table from ECT\n", __func__);
 		return -EINVAL;
 	}
 
-	for (i = 1; i <= cpufreq_device->var_volt_size; i++) {
-		long asv_coeff = (long)cpufreq_device->asv_coeff[3 * i + 0] * asv_group * asv_group
-				+ (long)cpufreq_device->asv_coeff[3 * i + 1] * asv_group
-				+ (long)cpufreq_device->asv_coeff[3 * i + 2];
+	for (i = 1; i <= cpufreq_cdev->var_volt_size; i++) {
+		long asv_coeff = (long)cpufreq_cdev->asv_coeff[3 * i + 0] * asv_group * asv_group
+				+ (long)cpufreq_cdev->asv_coeff[3 * i + 1] * asv_group
+				+ (long)cpufreq_cdev->asv_coeff[3 * i + 2];
 		asv_coeff = asv_coeff / 100;
 
-		for (j = 1; j <= cpufreq_device->var_temp_size; j++) {
-			long var_coeff = (long)cpufreq_device->var_coeff[i * (cpufreq_device->var_temp_size + 1) + j];
+		for (j = 1; j <= cpufreq_cdev->var_temp_size; j++) {
+			long var_coeff = (long)cpufreq_cdev->var_coeff[i * (cpufreq_cdev->var_temp_size + 1) + j];
 			var_coeff =  ratio * var_coeff * asv_coeff;
 			var_coeff = var_coeff / 100000;
-			cpufreq_device->var_table[i * (cpufreq_device->var_temp_size + 1) + j] = (int)var_coeff;
+			cpufreq_cdev->var_table[i * (cpufreq_cdev->var_temp_size + 1) + j] = (int)var_coeff;
 		}
 	}
 
 	return 0;
 
 free_asv_coeff:
-	kfree(cpufreq_device->asv_coeff);
+	kfree(cpufreq_cdev->asv_coeff);
 free_var_coeff:
-	kfree(cpufreq_device->var_coeff);
+	kfree(cpufreq_cdev->var_coeff);
 err_mem:
 	return -ENOMEM;
 }
 
-static int lookup_static_power(struct cpufreq_cooling_device *cpufreq_device,
+static int lookup_static_power(struct cpufreq_cooling_device *cpufreq_cdev,
 		unsigned long voltage, int temperature, u32 *power)
 {
 	int volt_index = 0, temp_index = 0;
@@ -392,8 +392,8 @@ static int lookup_static_power(struct cpufreq_cooling_device *cpufreq_device,
 	voltage = voltage / 1000;
 	temperature  = temperature / 1000;
 
-	for (volt_index = 0; volt_index <= cpufreq_device->var_volt_size; volt_index++) {
-		if (voltage < cpufreq_device->var_table[volt_index * ((int)cpufreq_device->var_temp_size + 1)]) {
+	for (volt_index = 0; volt_index <= cpufreq_cdev->var_volt_size; volt_index++) {
+		if (voltage < cpufreq_cdev->var_table[volt_index * ((int)cpufreq_cdev->var_temp_size + 1)]) {
 			volt_index = volt_index - 1;
 			break;
 		}
@@ -402,11 +402,11 @@ static int lookup_static_power(struct cpufreq_cooling_device *cpufreq_device,
 	if (volt_index == 0)
 		volt_index = 1;
 
-	if (volt_index > cpufreq_device->var_volt_size)
-		volt_index = cpufreq_device->var_volt_size;
+	if (volt_index > cpufreq_cdev->var_volt_size)
+		volt_index = cpufreq_cdev->var_volt_size;
 
-	for (temp_index = 0; temp_index <= cpufreq_device->var_temp_size; temp_index++) {
-		if (temperature < cpufreq_device->var_table[temp_index]) {
+	for (temp_index = 0; temp_index <= cpufreq_cdev->var_temp_size; temp_index++) {
+		if (temperature < cpufreq_cdev->var_table[temp_index]) {
 			temp_index = temp_index - 1;
 			break;
 		}
@@ -415,11 +415,11 @@ static int lookup_static_power(struct cpufreq_cooling_device *cpufreq_device,
 	if (temp_index == 0)
 		temp_index = 1;
 
-	if (temp_index > cpufreq_device->var_temp_size)
-		temp_index = cpufreq_device->var_temp_size;
+	if (temp_index > cpufreq_cdev->var_temp_size)
+		temp_index = cpufreq_cdev->var_temp_size;
 
-	index = (int)(volt_index * (cpufreq_device->var_temp_size + 1) + temp_index);
-	*power = (unsigned int)cpufreq_device->var_table[index];
+	index = (int)(volt_index * (cpufreq_cdev->var_temp_size + 1) + temp_index);
+	*power = (unsigned int)cpufreq_cdev->var_table[index];
 
 	return 0;
 }
@@ -636,10 +636,10 @@ static int cpufreq_set_cur_state(struct thermal_cooling_device *cdev,
 static int exynos_cpufreq_cooling_get_level(struct thermal_cooling_device *cdev,
 				 unsigned long value)
 {
-	struct cpufreq_cooling_device *cpufreq_device = cdev->devdata;
-	int level = get_level(cpufreq_device, value);
+	struct cpufreq_cooling_device *cpufreq_cdev = cdev->devdata;
+	int level = get_level(cpufreq_cdev, value);
 
-	if (level == THERMAL_CSTATE_INVALID && value > cpufreq_device->freq_table[0])
+	if (level == THERMAL_CSTATE_INVALID && value > cpufreq_cdev->freq_table[0])
 		level = 0;
 
 	return level;
