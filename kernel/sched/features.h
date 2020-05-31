@@ -3,7 +3,7 @@
  * them to run sooner, but does not allow tons of sleepers to
  * rip the spread apart.
  */
-SCHED_FEAT(GENTLE_FAIR_SLEEPERS, true)
+SCHED_FEAT(GENTLE_FAIR_SLEEPERS, false)
 
 /*
  * Place new tasks ahead so that they do not starve already running
@@ -53,7 +53,7 @@ SCHED_FEAT(TTWU_QUEUE, true)
 /*
  * When doing wakeups, attempt to limit superfluous scans of the LLC domain.
  */
-SCHED_FEAT(SIS_AVG_CPU, false)
+SCHED_FEAT(SIS_AVG_CPU, true)
 SCHED_FEAT(SIS_PROP, true)
 
 #ifdef HAVE_RT_PUSH_IPI
@@ -144,7 +144,7 @@ SCHED_FEAT(MIN_CAPACITY_CAPPING, true)
  * Use the Simplified Energy Model for EAS accounting only for
  * active costs of CPUs.
  */
-SCHED_FEAT(EAS_SIMPLIFIED_EM, true)
+SCHED_FEAT(EAS_SIMPLIFIED_EM, false)
 
 /*
  * Inflate the effective utilization of SchedTune-boosted tasks, which
