@@ -4666,12 +4666,30 @@
 #define HAVE_andvnx16qi3 (TARGET_SVE)
 #define HAVE_iorvnx16qi3 (TARGET_SVE)
 #define HAVE_xorvnx16qi3 (TARGET_SVE)
+#define HAVE_andvnx8qi3 (TARGET_SVE)
+#define HAVE_iorvnx8qi3 (TARGET_SVE)
+#define HAVE_xorvnx8qi3 (TARGET_SVE)
+#define HAVE_andvnx4qi3 (TARGET_SVE)
+#define HAVE_iorvnx4qi3 (TARGET_SVE)
+#define HAVE_xorvnx4qi3 (TARGET_SVE)
+#define HAVE_andvnx2qi3 (TARGET_SVE)
+#define HAVE_iorvnx2qi3 (TARGET_SVE)
+#define HAVE_xorvnx2qi3 (TARGET_SVE)
 #define HAVE_andvnx8hi3 (TARGET_SVE)
 #define HAVE_iorvnx8hi3 (TARGET_SVE)
 #define HAVE_xorvnx8hi3 (TARGET_SVE)
+#define HAVE_andvnx4hi3 (TARGET_SVE)
+#define HAVE_iorvnx4hi3 (TARGET_SVE)
+#define HAVE_xorvnx4hi3 (TARGET_SVE)
+#define HAVE_andvnx2hi3 (TARGET_SVE)
+#define HAVE_iorvnx2hi3 (TARGET_SVE)
+#define HAVE_xorvnx2hi3 (TARGET_SVE)
 #define HAVE_andvnx4si3 (TARGET_SVE)
 #define HAVE_iorvnx4si3 (TARGET_SVE)
 #define HAVE_xorvnx4si3 (TARGET_SVE)
+#define HAVE_andvnx2si3 (TARGET_SVE)
+#define HAVE_iorvnx2si3 (TARGET_SVE)
+#define HAVE_xorvnx2si3 (TARGET_SVE)
 #define HAVE_andvnx2di3 (TARGET_SVE)
 #define HAVE_iorvnx2di3 (TARGET_SVE)
 #define HAVE_xorvnx2di3 (TARGET_SVE)
@@ -13557,12 +13575,30 @@ extern rtx        gen_aarch64_pred_udivvnx2di                        (rtx, rtx, 
 extern rtx        gen_andvnx16qi3                                    (rtx, rtx, rtx);
 extern rtx        gen_iorvnx16qi3                                    (rtx, rtx, rtx);
 extern rtx        gen_xorvnx16qi3                                    (rtx, rtx, rtx);
+extern rtx        gen_andvnx8qi3                                     (rtx, rtx, rtx);
+extern rtx        gen_iorvnx8qi3                                     (rtx, rtx, rtx);
+extern rtx        gen_xorvnx8qi3                                     (rtx, rtx, rtx);
+extern rtx        gen_andvnx4qi3                                     (rtx, rtx, rtx);
+extern rtx        gen_iorvnx4qi3                                     (rtx, rtx, rtx);
+extern rtx        gen_xorvnx4qi3                                     (rtx, rtx, rtx);
+extern rtx        gen_andvnx2qi3                                     (rtx, rtx, rtx);
+extern rtx        gen_iorvnx2qi3                                     (rtx, rtx, rtx);
+extern rtx        gen_xorvnx2qi3                                     (rtx, rtx, rtx);
 extern rtx        gen_andvnx8hi3                                     (rtx, rtx, rtx);
 extern rtx        gen_iorvnx8hi3                                     (rtx, rtx, rtx);
 extern rtx        gen_xorvnx8hi3                                     (rtx, rtx, rtx);
+extern rtx        gen_andvnx4hi3                                     (rtx, rtx, rtx);
+extern rtx        gen_iorvnx4hi3                                     (rtx, rtx, rtx);
+extern rtx        gen_xorvnx4hi3                                     (rtx, rtx, rtx);
+extern rtx        gen_andvnx2hi3                                     (rtx, rtx, rtx);
+extern rtx        gen_iorvnx2hi3                                     (rtx, rtx, rtx);
+extern rtx        gen_xorvnx2hi3                                     (rtx, rtx, rtx);
 extern rtx        gen_andvnx4si3                                     (rtx, rtx, rtx);
 extern rtx        gen_iorvnx4si3                                     (rtx, rtx, rtx);
 extern rtx        gen_xorvnx4si3                                     (rtx, rtx, rtx);
+extern rtx        gen_andvnx2si3                                     (rtx, rtx, rtx);
+extern rtx        gen_iorvnx2si3                                     (rtx, rtx, rtx);
+extern rtx        gen_xorvnx2si3                                     (rtx, rtx, rtx);
 extern rtx        gen_andvnx2di3                                     (rtx, rtx, rtx);
 extern rtx        gen_iorvnx2di3                                     (rtx, rtx, rtx);
 extern rtx        gen_xorvnx2di3                                     (rtx, rtx, rtx);
